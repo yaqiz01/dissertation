@@ -1,12 +1,13 @@
+
 MAIN=text/thesis
 SIG=text/signature
 
-all:
-	latexmk -pdf -f $(MAIN).tex
+thesis.pdf: text/*
+	latexmk -pdf $(MAIN).tex
 	latexmk -c
 
 sig:
-	latexmk -pdf -f $(SIG).tex
+	latexmk -pdf $(SIG).tex
 	latexmk -c
 
 clean:
