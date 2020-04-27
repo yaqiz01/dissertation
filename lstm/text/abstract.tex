@@ -1,0 +1,18 @@
+\begin{abstract}
+Recurrent Neural Network (RNN) applications form a major class of
+    AI-powered, low-latency data center workloads.
+Most execution models for RNN acceleration
+    break computation graphs into BLAS kernels,
+    which lead to significant inter-kernel data movement
+    and resource underutilization.
+We show that by supporting more general loop constructs that capture design parameters in accelerators,
+it is possible to improve resource utilization using cross-kernel optimization without sacrificing programmability.
+Such abstraction level enables a design space search that can lead to efficient usage of
+  on-chip resources on a spatial architecture across a range of problem sizes.
+We evaluate our optimization strategy on such abstraction with DeepBench using a configurable spatial accelerator.
+We demonstrate that this implementation provides
+    a geometric speedup of 30x in performance, 1.6x in area, and 2x in power efficiency
+compared to a Tesla V100 GPU, and a geometric speedup of 2x
+compared to Microsoft Brainwave implementation on a Stratix 10 FPGA.
+
+\end{abstract}

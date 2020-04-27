@@ -1,0 +1,41 @@
+\section{Specialization}
+\label{specialization}
+
+
+
+
+
+
+
+
+%For Spatial, this means that only around 700 total design points need to be estimated to closely approximate the accelerator's area/performance Pareto front, even for extremely large spaces.
+%The compiler can then further tune the total number of initial random samples based on the complexity of the application.
+%, making this autotuner suitable for real applications. 
+%\begin{figure}[!htb]
+
+
+% \subsection{FPGAs}
+% An FPGA is conceptually a large, flattened fabric of registers, SRAMs, and logic with off-chip DRAM being its 
+% only notion of hierarchy.  It offers bit-level flexibility when mapping applications and can compose these bit-level
+% operations to create logical bus-level operations. As a consequence of being so flexible, it takes a very long time to 
+% map RTL designs to it.
+
+
+% \subsection{Plasticine}
+
+% Plasticine is a tiled-based hierarchical architecture that has three major types of coarse-grain
+% resources: Pattern compute units (PCU) are processing element with SIMD data path that can map
+% unrolled inner loop body. Pattern memory units (PMU) contain a banked scratchpad with single lane 
+% pipeline stages to map address calculation. On the fringe, there are specialized address
+% generators (AG) to map calculation of off-chip address. 
+
+% To target hierarchical architecture with limited stages inside each PCU, Spatial tries to split
+% large loop body into multiple PCU by iteratively partitioning the inner loop data flow graph to satisfy the 
+% number of stages, fan-in, fan-out, and maximum live variables requirements of each PCU.
+% Additionally, Spatial extracts address calculation of the on-chip scratchpad and map those
+% stages into PMU to eliminate round trip communication overhead with PCU. Finally, Spatial performs a couple
+% of optimizations to reduce usage of PCU.
+
+% Once spatial constructs are lowered into ``virtual'' Plasticine CUs, a Plasticine low-level
+% compiler is used to perform placement and routing, mapping of the internal primitives, and
+% generate Plasticine configuration binary.

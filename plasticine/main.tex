@@ -1,0 +1,985 @@
+\documentclass[sigconf]{acmart}
+\usepackage{mathptmx} % This is Times font
+\usepackage{booktabs} % For formal tables
+\usepackage{listings}           % Code listing
+\usepackage{courier}            % standard fixed width font
+\usepackage{datetime}
+\usepackage{tikz}               % for bar plot
+\usepackage[T1]{fontenc}
+\usepackage{array}
+\usepackage{balance}
+\usepackage{colortbl}
+%\usepackage{cite}
+\usepackage{fancyvrb}
+\usepackage{multirow}
+\usepackage[output-decimal-marker={.}]{siunitx}
+\usepackage{stackengine}
+\renewcommand{\textrightarrow}{$\rightarrow$}
+
+%\newcolumntype{d}[1]{D{.}{\cdot}{#1} }
+\newcommand{\specialcell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+
+%\renewcommand\scriptsize{\@setfontsize\scriptsize{7}{8}}
+
+
+\pdfpagewidth=8.5in
+\pdfpageheight=11in
+
+\newcommand*\rot{\rotatebox{90}}
+\newcommand{\christos}[1]{{\textcolor{darkgreen}{[~CHRISTOS:~#1~]}}}
+\newcommand{\matt}[1]{{\textcolor{blue}{[~MATT:~#1~]}}}
+\newcommand{\david}[1]{{\textcolor{purple}{[~???:~#1~]}}}
+\newcommand{\todo}[1]{{\color{red} \bf [TODO: #1]}}
+\newcommand{\gist}[1]{{\color{blue} FINAL GIST: #1 \\}}
+
+% Command to indicate new text added in the camera-ready version
+\newcommand{\nt}[1]{{\color{blue} #1}}
+
+\definecolor{vbgray}{gray}{0.9}
+\definecolor{darkgreen}{RGB} {0, 100, 0}
+\definecolor{darkred}{RGB} {255, 0, 0}
+\definecolor{blue}{RGB} {0, 135, 255}
+\definecolor{yellow}{RGB} {224, 173, 0}
+\usepackage{color}
+\definecolor{codegreen}{RGB}{51,153,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\def\tick{{\color{darkgreen} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\ytick{{\color{orange} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\x{{\color{darkred} {$\bm{\times}$}}}
+
+\lstdefinelanguage{Scala}{
+  basicstyle=\fontsize{7}{7}\selectfont\tt,frame=tlbr,framesep=4pt,framerule=0pt,
+	showspaces=false,                
+  morestring=[b]",
+  morestring=[b]',
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen}\bfseries,
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	keywordstyle=[2]\color{blue},
+	keywords=[2]{val},
+	keywordstyle=[3]\color{yellow}\bfseries,
+	keywords=[3]{Float, Int},
+	keywordstyle=[4]\color{orange}\bfseries,
+	keywords=[4]{Matrix, Array},
+	keywordstyle=\color{magenta}\bfseries,
+  morekeywords={map,mapRows,mapCols,zip,zipWithIndex,groupBy,sum,min,minBy,reduce,fold,for,flatMap,multiFold,groupByFold,filter,flatMap,do,while,slice,copy,hashReduce,Map,Fold}
+}
+
+\lstdefinelanguage{PPL}{
+  morestring=[b]",
+  morestring=[b]',
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morekeywords={mapRows,mapCols,zip,zipWithIndex,groupBy,sum,min,minBy,reduce,for,filter,do,while,slice,copy,multiFold,fold,groupByFold,map,flatMap}
+}
+
+\lstdefinelanguage{Pseudo}{
+  morestring=[b]",
+  morestring=[b]',
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morekeywords={For, End, Foreach}
+}
+
+\lstset{
+  language=PPL,
+  basicstyle=\fontsize{7}{7}\selectfont\tt,
+  keywordstyle=\bfseries,
+  %aboveskip=3pt,%\smallskipamount,
+  %belowskip=3pt,%\negsmallskipamount,
+  %lineskip=2pt,
+  basewidth={0.54em, 0.4em},%
+  numbers=left,
+  numberstyle=\small,%\fontsize{7}{7}\ttfamily\bfseries\selectfont\color{gray},
+  columns=fixed,
+  xleftmargin=0.25in,
+  firstnumber=auto,
+  showstringspaces=false,
+  escapechar=@,
+  escapeinside={(*@}{@*)}
+}
+
+% Command to add a "gist" or summary
+
+\title{Plasticine: A Reconfigurable Architecture For \\ Parallel Patterns}
+\author{
+Raghu Prabhakar\quad Yaqi Zhang\quad David Koeplinger\quad Matt Feldman\\ 
+Tian Zhao\quad Stefan Hadjis\quad Ardavan Pedram\quad Christos Kozyrakis\quad Kunle Olukotun\\
+\quad\\
+Stanford University 
+}
+\email{{raghup17, yaqiz, dkoeplin, mattfel, tianzhao, shadjis, perdavan, kozyraki, kunle}@stanford.edu}
+
+\renewcommand{\shortauthors}{R. Prabhakar et al.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%---COPYRIGHT GARBAGE-----%%%%%%%%%%%%%
+\copyrightyear{2017} 
+\acmYear{2017} 
+\setcopyright{acmlicensed}
+\acmConference{ISCA '17}{June 24-28, 2017}{Toronto, ON, Canada}
+\acmPrice{15.00}
+\acmDOI{10.1145/3079856.3080256}
+\acmISBN{978-1-4503-4892-8/17/06}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10010583.10010600.10010628.10010629</concept_id>
+<concept_desc>Hardware~Hardware accelerators</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011041.10011043</concept_id>
+<concept_desc>Software and its engineering~Retargetable compilers</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Hardware~Hardware accelerators}
+\ccsdesc[300]{Software and its engineering~Retargetable compilers}
+
+\begin{abstract}
+\input{text/abstract}
+\end{abstract}
+
+\keywords{parallel patterns, reconfigurable architectures, hardware accelerators, CGRAs}
+
+\thispagestyle{empty}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%TODO: REMOVE THESE LINES FOR SUBMISSION %%%
+%\date{}
+%\begin{tikzpicture}[overlay, remember picture]
+%\path (current page.north east) ++(-1,-1) node[below left] {\todo{Last updated: {\today}~at~{\currenttime}}};
+%\end{tikzpicture}
+%\vspace{-20pt} %% Adds space in doc for some reason
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\input{text/introduction}
+\input{text/patterns}
+\input{text/plasticine}
+%\input{text/compiler}
+\input{text/evaluation}
+\input{text/relatedWork}
+\input{text/conclusion}
+
+
+\section*{Acknowledgments}
+\label{acknowledgements}
+The authors thank Tony Wu for his assistance with this paper, 
+and the reviewers for their suggestions.
+This work is supported by DARPA 
+Contract-Air Force FA8750-12-2-0335;
+Army Contracts FA8750-14-2-0240 and FA8750-12-20335;
+NSF Grants CCF-1111943 and IIS-1247701.
+The views and conclusions contained herein are those
+of the authors and should not be interpreted as necessarily
+representing the official policies or endorsements, either expressed or implied, of DARPA or the U.S. Government.
+
+%\def\bibliofont{\fontsize{6}{7}}
+%\def\bibfont{\fontsize{6}{7}}
+
+\def\bibliofont{\scriptsize}
+%\def\bibfont{\scriptsize}
+\renewcommand{\bibfont}{\fontsize{6.46pt}{6.46pt}\selectfont} %\scriptsize}
+
+
+\pagebreak
+\bibliographystyle{ACM-Reference-Format}
+%\bibliography{references}
+
+\fontsize{8}{9}{
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{00}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[\protect\citeauthoryear{Auerbach, Bacon, Cheng, and Rabbah}{Auerbach
+  et~al\mbox{.}}{2010}]%
+        {auerbach10lime}
+\bibfield{author}{\bibinfo{person}{Joshua Auerbach}, \bibinfo{person}{David~F.
+  Bacon}, \bibinfo{person}{Perry Cheng}, {and} \bibinfo{person}{Rodric
+  Rabbah}.} \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{Lime: A Java-compatible and Synthesizable Language
+  for Heterogeneous Architectures}. In \bibinfo{booktitle}{{\em Proceedings of
+  the ACM International Conference on Object Oriented Programming Systems
+  Languages and Applications}} {\em (\bibinfo{series}{OOPSLA})}.
+  \bibinfo{pages}{89--108}.
+\newblock
+\showISBNx{978-1-4503-0203-6}
+\showDOI{%
+\url{https://doi.org/10.1145/1869459.1869469}}
+
+
+\bibitem[\protect\citeauthoryear{Bachrach, Vo, Richards, Lee, Waterman,
+  Avizienis, Wawrzynek, and Asanovic}{Bachrach et~al\mbox{.}}{2012}]%
+        {chisel}
+\bibfield{author}{\bibinfo{person}{Jonathan. Bachrach}, \bibinfo{person}{Huy
+  Vo}, \bibinfo{person}{Brian Richards}, \bibinfo{person}{Yunsup Lee},
+  \bibinfo{person}{Andrew Waterman}, \bibinfo{person}{Rimas Avizienis},
+  \bibinfo{person}{John Wawrzynek}, {and} \bibinfo{person}{Krste Asanovic}.}
+  \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{Chisel: Constructing hardware in a Scala embedded
+  language}. In \bibinfo{booktitle}{{\em Design Automation Conference (DAC),
+  2012 49th ACM/EDAC/IEEE}}. \bibinfo{pages}{1212--1221}.
+\newblock
+\showISSN{0738-100X}
+
+
+\bibitem[\protect\citeauthoryear{Bacon, Rabbah, and Shukla}{Bacon
+  et~al\mbox{.}}{2013}]%
+        {fpgaProgramming}
+\bibfield{author}{\bibinfo{person}{David Bacon}, \bibinfo{person}{Rodric
+  Rabbah}, {and} \bibinfo{person}{Sunil Shukla}.}
+  \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{FPGA Programming for the Masses}.
+\newblock \bibinfo{journal}{{\em Queue\/}} \bibinfo{volume}{11},
+  \bibinfo{number}{2}, Article \bibinfo{articleno}{40} (\bibinfo{date}{Feb.}
+  \bibinfo{year}{2013}), \bibinfo{numpages}{13}~pages.
+\newblock
+\showISSN{1542-7730}
+\showDOI{%
+\url{https://doi.org/10.1145/2436696.2443836}}
+
+
+\bibitem[\protect\citeauthoryear{Bolsens}{Bolsens}{2006}]%
+        {bolsens}
+\bibfield{author}{\bibinfo{person}{Ivo Bolsens}.}
+  \bibinfo{year}{2006}\natexlab{}.
+\newblock \bibinfo{title}{Programming Modern FPGAs, International Forum on
+  Embedded Multiprocessor SoC, Keynote,}.
+\newblock
+  \bibinfo{howpublished}{\url{http://www.xilinx.com/univ/mpsoc2006keynote.pdf}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Calhoun, Ryan, Khanna, Putic, and
+  Lach}{Calhoun et~al\mbox{.}}{2010}]%
+        {calhoun}
+\bibfield{author}{\bibinfo{person}{Benton.~Highsmith Calhoun},
+  \bibinfo{person}{Joseph~F. Ryan}, \bibinfo{person}{Sudhanshu Khanna},
+  \bibinfo{person}{Mateja Putic}, {and} \bibinfo{person}{John Lach}.}
+  \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{Flexible Circuits and Architectures for Ultralow
+  Power}.
+\newblock \bibinfo{journal}{{\it Proc. IEEE}} \bibinfo{volume}{98},
+  \bibinfo{number}{2} (\bibinfo{date}{Feb} \bibinfo{year}{2010}),
+  \bibinfo{pages}{267--282}.
+\newblock
+\showISSN{0018-9219}
+\showDOI{%
+\url{https://doi.org/10.1109/JPROC.2009.2037211}}
+
+
+\bibitem[\protect\citeauthoryear{Callahan, Hauser, and Wawrzynek}{Callahan
+  et~al\mbox{.}}{2000}]%
+        {garp}
+\bibfield{author}{\bibinfo{person}{Timothy~J. Callahan},
+  \bibinfo{person}{John~R. Hauser}, {and} \bibinfo{person}{John Wawrzynek}.}
+  \bibinfo{year}{2000}\natexlab{}.
+\newblock \showarticletitle{The Garp architecture and C compiler}.
+\newblock \bibinfo{journal}{{\em Computer\/}} \bibinfo{volume}{33},
+  \bibinfo{number}{4} (\bibinfo{date}{Apr} \bibinfo{year}{2000}),
+  \bibinfo{pages}{62--69}.
+\newblock
+\showISSN{0018-9162}
+\showDOI{%
+\url{https://doi.org/10.1109/2.839323}}
+
+
+\bibitem[\protect\citeauthoryear{Casper and Olukotun}{Casper and
+  Olukotun}{2014}]%
+        {casper}
+\bibfield{author}{\bibinfo{person}{Jared Casper} {and} \bibinfo{person}{Kunle
+  Olukotun}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Hardware Acceleration of Database Operations}. In
+  \bibinfo{booktitle}{{\em Proceedings of the 2014 ACM/SIGDA International
+  Symposium on Field-programmable Gate Arrays}} {\em (\bibinfo{series}{FPGA
+  '14})}. \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{151--160}.
+\newblock
+\showISBNx{978-1-4503-2671-1}
+\showDOI{%
+\url{https://doi.org/10.1145/2554688.2554787}}
+
+
+\bibitem[\protect\citeauthoryear{Catanzaro, Garland, and Keutzer}{Catanzaro
+  et~al\mbox{.}}{2011}]%
+        {catanzaro11copperhead}
+\bibfield{author}{\bibinfo{person}{Bryan Catanzaro}, \bibinfo{person}{Michael
+  Garland}, {and} \bibinfo{person}{Kurt Keutzer}.}
+  \bibinfo{year}{2011}\natexlab{}.
+\newblock \showarticletitle{Copperhead: compiling an embedded data parallel
+  language}. In \bibinfo{booktitle}{{\em Proceedings of the 16th ACM symposium
+  on Principles and practice of parallel programming}} {\em
+  (\bibinfo{series}{PPoPP})}. \bibinfo{publisher}{ACM}, \bibinfo{address}{New
+  York, NY, USA}, \bibinfo{pages}{47--56}.
+\newblock
+\showISBNx{978-1-4503-0119-0}
+\showDOI{%
+\url{https://doi.org/10.1145/1941553.1941562}}
+
+
+\bibitem[\protect\citeauthoryear{Chen, Luo, Liu, Zhang, He, Wang, Li, Chen, Xu,
+  Sun, and Temam}{Chen et~al\mbox{.}}{2014}]%
+        {dadiannao}
+\bibfield{author}{\bibinfo{person}{Yunji Chen}, \bibinfo{person}{Tao Luo},
+  \bibinfo{person}{Shaoli Liu}, \bibinfo{person}{Shijin Zhang},
+  \bibinfo{person}{Liqiang He}, \bibinfo{person}{Jia Wang},
+  \bibinfo{person}{Ling Li}, \bibinfo{person}{Tianshi Chen},
+  \bibinfo{person}{Zhiwei Xu}, \bibinfo{person}{Ninghui Sun}, {and}
+  \bibinfo{person}{Olivier Temam}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{DaDianNao: A Machine-Learning Supercomputer}. In
+  \bibinfo{booktitle}{{\em 2014 47th Annual IEEE/ACM International Symposium on
+  Microarchitecture}}. \bibinfo{pages}{609--622}.
+\newblock
+\showISSN{1072-4451}
+\showDOI{%
+\url{https://doi.org/10.1109/MICRO.2014.58}}
+
+
+\bibitem[\protect\citeauthoryear{Chen, Krishna, Emer, and Sze}{Chen
+  et~al\mbox{.}}{2016}]%
+        {eyeriss}
+\bibfield{author}{\bibinfo{person}{Yu-Hsin Chen}, \bibinfo{person}{Tushar
+  Krishna}, \bibinfo{person}{Joel Emer}, {and} \bibinfo{person}{Vivienne Sze}.}
+  \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{14.5 Eyeriss: An energy-efficient reconfigurable
+  accelerator for deep convolutional neural networks}. In
+  \bibinfo{booktitle}{{\em 2016 IEEE International Solid-State Circuits
+  Conference (ISSCC)}}. IEEE, \bibinfo{pages}{262--263}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Chung, Davis, and Lee}{Chung
+  et~al\mbox{.}}{2013}]%
+        {linqits}
+\bibfield{author}{\bibinfo{person}{Eric~S. Chung}, \bibinfo{person}{John~D.
+  Davis}, {and} \bibinfo{person}{Jaewon Lee}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{LINQits: Big Data on Little Clients}. In
+  \bibinfo{booktitle}{{\em Proceedings of the 40th Annual International
+  Symposium on Computer Architecture}} {\em (\bibinfo{series}{ISCA '13})}.
+  \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{261--272}.
+\newblock
+\showISBNx{978-1-4503-2079-5}
+\showDOI{%
+\url{https://doi.org/10.1145/2485922.2485945}}
+
+
+\bibitem[\protect\citeauthoryear{Cronquist, Fisher, Figueroa, Franklin, and
+  Ebeling}{Cronquist et~al\mbox{.}}{1999}]%
+        {rapid}
+\bibfield{author}{\bibinfo{person}{Darren~C. Cronquist}, \bibinfo{person}{Chris
+  Fisher}, \bibinfo{person}{Miguel Figueroa}, \bibinfo{person}{Paul Franklin},
+  {and} \bibinfo{person}{Carl Ebeling}.} \bibinfo{year}{1999}\natexlab{}.
+\newblock \showarticletitle{Architecture design of reconfigurable pipelined
+  datapaths}. In \bibinfo{booktitle}{{\em Advanced Research in VLSI, 1999.
+  Proceedings. 20th Anniversary Conference on}}. \bibinfo{pages}{23--40}.
+\newblock
+\showISSN{1522-869X}
+\showDOI{%
+\url{https://doi.org/10.1109/ARVLSI.1999.756035}}
+
+
+\bibitem[\protect\citeauthoryear{Essen, Wood, Carroll, Friedman, Panda,
+  Ylvisaker, Ebeling, and Hauck}{Essen et~al\mbox{.}}{2009}]%
+        {staticVsScheduled}
+\bibfield{author}{\bibinfo{person}{Brian~Van Essen}, \bibinfo{person}{Aaron
+  Wood}, \bibinfo{person}{Allan Carroll}, \bibinfo{person}{Stephen Friedman},
+  \bibinfo{person}{Robin Panda}, \bibinfo{person}{Benjamin Ylvisaker},
+  \bibinfo{person}{Carl Ebeling}, {and} \bibinfo{person}{Scott Hauck}.}
+  \bibinfo{year}{2009}\natexlab{}.
+\newblock \showarticletitle{Static versus scheduled interconnect in
+  Coarse-Grained Reconfigurable Arrays}. In \bibinfo{booktitle}{{\em 2009
+  International Conference on Field Programmable Logic and Applications}}.
+  \bibinfo{pages}{268--275}.
+\newblock
+\showISSN{1946-147X}
+\showDOI{%
+\url{https://doi.org/10.1109/FPL.2009.5272293}}
+
+
+\bibitem[\protect\citeauthoryear{Gao and Kozyrakis}{Gao and Kozyrakis}{2016}]%
+        {hrl}
+\bibfield{author}{\bibinfo{person}{Mingyu Gao} {and} \bibinfo{person}{Christos
+  Kozyrakis}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{HRL: Efficient and flexible reconfigurable logic
+  for near-data processing}. In \bibinfo{booktitle}{{\em 2016 IEEE
+  International Symposium on High Performance Computer Architecture (HPCA)}}.
+  \bibinfo{pages}{126--137}.
+\newblock
+\showDOI{%
+\url{https://doi.org/10.1109/HPCA.2016.7446059}}
+
+
+\bibitem[\protect\citeauthoryear{George, Lee, Novo, Rompf, Brown, Sujeeth,
+  Odersky, Olukotun, and Ienne}{George et~al\mbox{.}}{2014}]%
+        {george14fpl}
+\bibfield{author}{\bibinfo{person}{Nithin George}, \bibinfo{person}{HyoukJoong
+  Lee}, \bibinfo{person}{David Novo}, \bibinfo{person}{Tiark Rompf},
+  \bibinfo{person}{Kevin~J. Brown}, \bibinfo{person}{Arvind~K. Sujeeth},
+  \bibinfo{person}{Martin Odersky}, \bibinfo{person}{Kunle Olukotun}, {and}
+  \bibinfo{person}{Paolo Ienne}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Hardware system synthesis from Domain-Specific
+  Languages}. In \bibinfo{booktitle}{{\em Field Programmable Logic and
+  Applications (FPL), 2014 24th International Conference on}}.
+  \bibinfo{pages}{1--8}.
+\newblock
+\showDOI{%
+\url{https://doi.org/10.1109/FPL.2014.6927454}}
+
+
+\bibitem[\protect\citeauthoryear{Goldstein, Schmit, Moe, Budiu, Cadambi,
+  Taylor, and Laufer}{Goldstein et~al\mbox{.}}{1999}]%
+        {piperench}
+\bibfield{author}{\bibinfo{person}{Seth~Copen Goldstein},
+  \bibinfo{person}{Herman Schmit}, \bibinfo{person}{Matthew Moe},
+  \bibinfo{person}{Mihai Budiu}, \bibinfo{person}{Srihari Cadambi},
+  \bibinfo{person}{R.~Reed Taylor}, {and} \bibinfo{person}{Ronald Laufer}.}
+  \bibinfo{year}{1999}\natexlab{}.
+\newblock \showarticletitle{PipeRench: A Co/Processor for Streaming Multimedia
+  Acceleration}. In \bibinfo{booktitle}{{\em Proceedings of the 26th Annual
+  International Symposium on Computer Architecture}} {\em
+  (\bibinfo{series}{ISCA '99})}. \bibinfo{publisher}{IEEE Computer Society},
+  \bibinfo{address}{Washington, DC, USA}, \bibinfo{pages}{28--39}.
+\newblock
+\showISBNx{0-7695-0170-2}
+\showDOI{%
+\url{https://doi.org/10.1145/300979.300982}}
+
+
+\bibitem[\protect\citeauthoryear{Govindaraju, Ho, Nowatzki, Chhugani, Satish,
+  Sankaralingam, and Kim}{Govindaraju et~al\mbox{.}}{2012}]%
+        {dyser}
+\bibfield{author}{\bibinfo{person}{Venkatraman. Govindaraju},
+  \bibinfo{person}{Chen-Han Ho}, \bibinfo{person}{Tony Nowatzki},
+  \bibinfo{person}{Jatin Chhugani}, \bibinfo{person}{Nadathur Satish},
+  \bibinfo{person}{Karthikeyan Sankaralingam}, {and} \bibinfo{person}{Changkyu
+  Kim}.} \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{DySER: Unifying Functionality and Parallelism
+  Specialization for Energy-Efficient Computing}.
+\newblock \bibinfo{journal}{{\em IEEE Micro\/}} \bibinfo{volume}{32},
+  \bibinfo{number}{5} (\bibinfo{date}{Sept} \bibinfo{year}{2012}),
+  \bibinfo{pages}{38--51}.
+\newblock
+\showISSN{0272-1732}
+\showDOI{%
+\url{https://doi.org/10.1109/MM.2012.51}}
+
+
+\bibitem[\protect\citeauthoryear{Hameed, Qadeer, Wachs, Azizi, Solomatnikov,
+  Lee, Richardson, Kozyrakis, and Horowitz}{Hameed et~al\mbox{.}}{2010}]%
+        {inefficiencies}
+\bibfield{author}{\bibinfo{person}{Rehan Hameed}, \bibinfo{person}{Wajahat
+  Qadeer}, \bibinfo{person}{Megan Wachs}, \bibinfo{person}{Omid Azizi},
+  \bibinfo{person}{Alex Solomatnikov}, \bibinfo{person}{Benjamin~C. Lee},
+  \bibinfo{person}{Stephen Richardson}, \bibinfo{person}{Christos Kozyrakis},
+  {and} \bibinfo{person}{Mark Horowitz}.} \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{Understanding Sources of Inefficiency in
+  General-purpose Chips}. In \bibinfo{booktitle}{{\em Proceedings of the 37th
+  Annual International Symposium on Computer Architecture}} {\em
+  (\bibinfo{series}{ISCA '10})}. \bibinfo{publisher}{ACM},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{37--47}.
+\newblock
+\showISBNx{978-1-4503-0053-7}
+\showDOI{%
+\url{https://doi.org/10.1145/1815961.1815968}}
+
+
+\bibitem[\protect\citeauthoryear{Han, Liu, Mao, Pu, Pedram, Horowitz, and
+  Dally}{Han et~al\mbox{.}}{2016}]%
+        {eie}
+\bibfield{author}{\bibinfo{person}{Song Han}, \bibinfo{person}{Xingyu Liu},
+  \bibinfo{person}{Huizi Mao}, \bibinfo{person}{Jing Pu},
+  \bibinfo{person}{Ardavan Pedram}, \bibinfo{person}{Mark~A Horowitz}, {and}
+  \bibinfo{person}{William~J Dally}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{EIE: efficient inference engine on compressed deep
+  neural network}.
+\newblock \bibinfo{journal}{{\em arXiv preprint arXiv:1602.01528\/}}
+  (\bibinfo{year}{2016}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Koeplinger, Prabhakar, Zhang, Delimitrou,
+  Kozyrakis, and Olukotun}{Koeplinger et~al\mbox{.}}{2016}]%
+        {dhdl}
+\bibfield{author}{\bibinfo{person}{David Koeplinger}, \bibinfo{person}{Raghu
+  Prabhakar}, \bibinfo{person}{Yaqi Zhang}, \bibinfo{person}{Christina
+  Delimitrou}, \bibinfo{person}{Christos Kozyrakis}, {and}
+  \bibinfo{person}{Kunle Olukotun}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Automatic Generation of Efficient Accelerators for
+  Reconfigurable Hardware}. In \bibinfo{booktitle}{{\em International Symposium
+  in Computer Architecture}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Kuon and Rose}{Kuon and Rose}{2007}]%
+        {fpgaVsAsic}
+\bibfield{author}{\bibinfo{person}{Ian Kuon} {and} \bibinfo{person}{Jonathan
+  Rose}.} \bibinfo{year}{2007}\natexlab{}.
+\newblock \showarticletitle{Measuring the Gap Between FPGAs and ASICs}.
+\newblock \bibinfo{journal}{{\em IEEE Transactions on Computer-Aided Design of
+  Integrated Circuits and Systems\/}} \bibinfo{volume}{26}, \bibinfo{number}{2}
+  (\bibinfo{date}{Feb} \bibinfo{year}{2007}), \bibinfo{pages}{203--215}.
+\newblock
+\showISSN{0278-0070}
+\showDOI{%
+\url{https://doi.org/10.1109/TCAD.2006.884574}}
+
+
+\bibitem[\protect\citeauthoryear{Kuon, Tessier, and Rose}{Kuon
+  et~al\mbox{.}}{2008}]%
+        {fpgaSurvey}
+\bibfield{author}{\bibinfo{person}{Ian Kuon}, \bibinfo{person}{Russell
+  Tessier}, {and} \bibinfo{person}{Jonathan Rose}.}
+  \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{FPGA Architecture: Survey and Challenges}.
+\newblock \bibinfo{journal}{{\em Found. Trends Electron. Des. Autom.\/}}
+  \bibinfo{volume}{2}, \bibinfo{number}{2} (\bibinfo{date}{Feb.}
+  \bibinfo{year}{2008}), \bibinfo{pages}{135--253}.
+\newblock
+\showISSN{1551-3939}
+\showDOI{%
+\url{https://doi.org/10.1561/1000000005}}
+
+
+\bibitem[\protect\citeauthoryear{Lee, Brown, Sujeeth, Rompf, and Olukotun}{Lee
+  et~al\mbox{.}}{2014}]%
+        {micro14lee}
+\bibfield{author}{\bibinfo{person}{HyoukJoong Lee}, \bibinfo{person}{Kevin~J.
+  Brown}, \bibinfo{person}{Arvind~K. Sujeeth}, \bibinfo{person}{Tiark Rompf},
+  {and} \bibinfo{person}{Kunle Olukotun}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Locality-Aware Mapping of Nested Parallel Patterns
+  on GPUs}. In \bibinfo{booktitle}{{\em Proceedings of the 47th Annual IEEE/ACM
+  International Symposium on Microarchitecture}} {\em (\bibinfo{series}{IEEE
+  Micro})}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Leng, Hetherington, ElTantawy, Gilani, Kim,
+  Aamodt, and Reddi}{Leng et~al\mbox{.}}{2013}]%
+        {gpuwattch}
+\bibfield{author}{\bibinfo{person}{Jingwen Leng}, \bibinfo{person}{Tayler
+  Hetherington}, \bibinfo{person}{Ahmed ElTantawy}, \bibinfo{person}{Syed
+  Gilani}, \bibinfo{person}{Nam~Sung Kim}, \bibinfo{person}{Tor~M. Aamodt},
+  {and} \bibinfo{person}{Vijay~Janapa Reddi}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{GPUWattch: Enabling Energy Optimizations in
+  GPGPUs}. In \bibinfo{booktitle}{{\em Proceedings of the 40th Annual
+  International Symposium on Computer Architecture}} {\em
+  (\bibinfo{series}{ISCA '13})}. \bibinfo{publisher}{ACM},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{487--498}.
+\newblock
+\showISBNx{978-1-4503-2079-5}
+\showDOI{%
+\url{https://doi.org/10.1145/2485922.2485964}}
+
+
+\bibitem[\protect\citeauthoryear{Mei, Vernalde, Verkest, De~Man, and
+  Lauwereins}{Mei et~al\mbox{.}}{2003}]%
+        {adres}
+\bibfield{author}{\bibinfo{person}{Bingfeng Mei}, \bibinfo{person}{Serge
+  Vernalde}, \bibinfo{person}{Diederik Verkest}, \bibinfo{person}{Hugo De~Man},
+  {and} \bibinfo{person}{Rudy Lauwereins}.} \bibinfo{year}{2003}\natexlab{}.
+\newblock \bibinfo{booktitle}{{\em ADRES: An Architecture with Tightly Coupled
+  VLIW Processor and Coarse-Grained Reconfigurable Matrix}}.
+\newblock \bibinfo{publisher}{Springer Berlin Heidelberg},
+  \bibinfo{address}{Berlin, Heidelberg}, \bibinfo{pages}{61--70}.
+\newblock
+\showISBNx{978-3-540-45234-8}
+\showDOI{%
+\url{https://doi.org/10.1007/978-3-540-45234-8_7}}
+
+
+\bibitem[\protect\citeauthoryear{Mishra, Callahan, Chelcea, Venkataramani,
+  Goldstein, and Budiu}{Mishra et~al\mbox{.}}{2006}]%
+        {tartan}
+\bibfield{author}{\bibinfo{person}{Mahim Mishra}, \bibinfo{person}{Timothy~J.
+  Callahan}, \bibinfo{person}{Tiberiu Chelcea}, \bibinfo{person}{Girish
+  Venkataramani}, \bibinfo{person}{Seth~C. Goldstein}, {and}
+  \bibinfo{person}{Mihai Budiu}.} \bibinfo{year}{2006}\natexlab{}.
+\newblock \showarticletitle{Tartan: Evaluating Spatial Computation for Whole
+  Program Execution}. In \bibinfo{booktitle}{{\em Proceedings of the 12th
+  International Conference on Architectural Support for Programming Languages
+  and Operating Systems}} {\em (\bibinfo{series}{ASPLOS XII})}.
+  \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{163--174}.
+\newblock
+\showISBNx{1-59593-451-0}
+\showDOI{%
+\url{https://doi.org/10.1145/1168857.1168878}}
+
+
+\bibitem[\protect\citeauthoryear{Odersky}{Odersky}{2011}]%
+        {scala}
+\bibfield{author}{\bibinfo{person}{M. Odersky}.}
+  \bibinfo{year}{2011}\natexlab{}.
+\newblock \bibinfo{title}{Scala}.
+\newblock \bibinfo{howpublished}{\url{http://www.scala-lang.org}}.
+  (\bibinfo{year}{2011}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Ouyang, Lin, Qi, Wang, Yu, and Jiang}{Ouyang
+  et~al\mbox{.}}{2014}]%
+        {baidu}
+\bibfield{author}{\bibinfo{person}{Jian Ouyang}, \bibinfo{person}{Shiding Lin},
+  \bibinfo{person}{Wei Qi}, \bibinfo{person}{Yong Wang}, \bibinfo{person}{Bo
+  Yu}, {and} \bibinfo{person}{Song Jiang}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{SDA: Software-Defined Accelerator for LargeScale
+  DNN Systems} {\em (\bibinfo{series}{Hot Chips 26})}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Ovtcharov, Ruwase, Kim, Fowers, Strauss, and
+  Chung}{Ovtcharov et~al\mbox{.}}{2015}]%
+        {catapultdnn}
+\bibfield{author}{\bibinfo{person}{Kalin Ovtcharov}, \bibinfo{person}{Olatunji
+  Ruwase}, \bibinfo{person}{Joo-Young Kim}, \bibinfo{person}{Jeremy Fowers},
+  \bibinfo{person}{Karin Strauss}, {and} \bibinfo{person}{Eric~S. Chung}.}
+  \bibinfo{year}{2015}\natexlab{}.
+\newblock \bibinfo{booktitle}{{\em Accelerating Deep Convolutional Neural
+  Networks Using Specialized Hardware}}.
+\newblock \bibinfo{type}{{T}echnical {R}eport}. \bibinfo{institution}{Microsoft
+  Research}.
+\newblock
+\showURL{%
+\url{http://research-srv.microsoft.com/pubs/240715/CNN%20Whitepaper.pdf}}
+
+
+\bibitem[\protect\citeauthoryear{Parashar, Pellauer, Adler, Ahsan, Crago,
+  Lustig, Pavlov, Zhai, Gambhir, Jaleel, Allmon, Rayess, Maresh, and
+  Emer}{Parashar et~al\mbox{.}}{2013}]%
+        {ti}
+\bibfield{author}{\bibinfo{person}{Angshuman Parashar},
+  \bibinfo{person}{Michael Pellauer}, \bibinfo{person}{Michael Adler},
+  \bibinfo{person}{Bushra Ahsan}, \bibinfo{person}{Neal Crago},
+  \bibinfo{person}{Daniel Lustig}, \bibinfo{person}{Vladimir Pavlov},
+  \bibinfo{person}{Antonia Zhai}, \bibinfo{person}{Mohit Gambhir},
+  \bibinfo{person}{Aamer Jaleel}, \bibinfo{person}{Randy Allmon},
+  \bibinfo{person}{Rachid Rayess}, \bibinfo{person}{Stephen Maresh}, {and}
+  \bibinfo{person}{Joel Emer}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{Triggered Instructions: A Control Paradigm for
+  Spatially-programmed Architectures}. In \bibinfo{booktitle}{{\em Proceedings
+  of the 40th Annual International Symposium on Computer Architecture}} {\em
+  (\bibinfo{series}{ISCA '13})}. \bibinfo{publisher}{ACM},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{142--153}.
+\newblock
+\showISBNx{978-1-4503-2079-5}
+\showDOI{%
+\url{https://doi.org/10.1145/2485922.2485935}}
+
+
+\bibitem[\protect\citeauthoryear{Pedram, Gerstlauer, and van~de Geijn}{Pedram
+  et~al\mbox{.}}{2012}]%
+        {LAC_SBAC}
+\bibfield{author}{\bibinfo{person}{Ardavan Pedram}, \bibinfo{person}{Andreas
+  Gerstlauer}, {and} \bibinfo{person}{Robert van~de Geijn}.}
+  \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{On the Efficiency of Register File versus Broadcast
+  Interconnect for Collective Communications in Data-Parallel Hardware
+  Accelerators}. In \bibinfo{booktitle}{{\em Proceedings of the 2012 IEEE 24th
+  International Symposium on Computer Architecture and High Performance
+  Computing (SBAC-PAD)}}. \bibinfo{pages}{19--26}.
+\newblock
+\showISSN{1550-6533}
+\showDOI{%
+\url{https://doi.org/10.1109/SBAC-PAD.2012.35}}
+
+
+\bibitem[\protect\citeauthoryear{Pedram, Richardson, Galal, Kvatinsky, and
+  Horowitz}{Pedram et~al\mbox{.}}{2017}]%
+        {dark}
+\bibfield{author}{\bibinfo{person}{Ardavan Pedram}, \bibinfo{person}{Stephen
+  Richardson}, \bibinfo{person}{Sameh Galal}, \bibinfo{person}{Shahar
+  Kvatinsky}, {and} \bibinfo{person}{Mark Horowitz}.}
+  \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Dark memory and accelerator-rich system
+  optimization in the dark silicon era}.
+\newblock \bibinfo{journal}{{\em IEEE Design \& Test\/}} \bibinfo{volume}{34},
+  \bibinfo{number}{2} (\bibinfo{year}{2017}), \bibinfo{pages}{39--50}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Pedram, van~de Geijn, and Gerstlauer}{Pedram
+  et~al\mbox{.}}{2012}]%
+        {LAP_TC12}
+\bibfield{author}{\bibinfo{person}{Ardavan Pedram}, \bibinfo{person}{Robert
+  van~de Geijn}, {and} \bibinfo{person}{Andreas Gerstlauer}.}
+  \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{Codesign Tradeoffs for High-Performance, Low-Power
+  Linear Algebra Architectures}.
+\newblock \bibinfo{journal}{{\em IEEE Transactions on Computers, Special Issue
+  on Power efficient computing\/}} \bibinfo{volume}{61}, \bibinfo{number}{12}
+  (\bibinfo{year}{2012}), \bibinfo{pages}{1724--1736}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{{Peyton Jones}~[editor], Hughes~[editor],
+  Augustsson, Barton, Boutel, Burton, Fraser, Fasel, Hammond, Hinze, Hudak,
+  Johnsson, Jones, Launchbury, Meijer, Peterson, Reid, Runciman, and
+  Wadler}{{Peyton Jones}~[editor] et~al\mbox{.}}{1999}]%
+        {haskell}
+\bibfield{author}{\bibinfo{person}{Simon {Peyton Jones}~[editor]},
+  \bibinfo{person}{John Hughes~[editor]}, \bibinfo{person}{Lennart Augustsson},
+  \bibinfo{person}{Dave Barton}, \bibinfo{person}{Brian Boutel},
+  \bibinfo{person}{Warren Burton}, \bibinfo{person}{Simon Fraser},
+  \bibinfo{person}{Joseph Fasel}, \bibinfo{person}{Kevin Hammond},
+  \bibinfo{person}{Ralf Hinze}, \bibinfo{person}{Paul Hudak},
+  \bibinfo{person}{Thomas Johnsson}, \bibinfo{person}{Mark Jones},
+  \bibinfo{person}{John Launchbury}, \bibinfo{person}{Erik Meijer},
+  \bibinfo{person}{John Peterson}, \bibinfo{person}{Alastair Reid},
+  \bibinfo{person}{Colin Runciman}, {and} \bibinfo{person}{Philip Wadler}.}
+  \bibinfo{year}{1999}\natexlab{}.
+\newblock \bibinfo{title}{{Haskell}~98 --- {A} Non-strict, Purely Functional
+  Language}.
+\newblock \bibinfo{howpublished}{Available from
+  \url{http://www.haskell.org/definition/}}.   (\bibinfo{date}{feb}
+  \bibinfo{year}{1999}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Poon, Wilton, and Yan}{Poon
+  et~al\mbox{.}}{2005}]%
+        {fpgaPower}
+\bibfield{author}{\bibinfo{person}{Kara K.~W. Poon}, \bibinfo{person}{Steven
+  J.~E. Wilton}, {and} \bibinfo{person}{Andy Yan}.}
+  \bibinfo{year}{2005}\natexlab{}.
+\newblock \showarticletitle{A Detailed Power Model for Field-programmable Gate
+  Arrays}.
+\newblock \bibinfo{journal}{{\em ACM Trans. Des. Autom. Electron. Syst.\/}}
+  \bibinfo{volume}{10}, \bibinfo{number}{2} (\bibinfo{date}{April}
+  \bibinfo{year}{2005}), \bibinfo{pages}{279--302}.
+\newblock
+\showISSN{1084-4309}
+\showDOI{%
+\url{https://doi.org/10.1145/1059876.1059881}}
+
+
+\bibitem[\protect\citeauthoryear{Prabhakar, Koeplinger, Brown, Lee, De~Sa,
+  Kozyrakis, and Olukotun}{Prabhakar et~al\mbox{.}}{2016}]%
+        {delite2maxj}
+\bibfield{author}{\bibinfo{person}{Raghu Prabhakar}, \bibinfo{person}{David
+  Koeplinger}, \bibinfo{person}{Kevin~J. Brown}, \bibinfo{person}{HyoukJoong
+  Lee}, \bibinfo{person}{Christopher De~Sa}, \bibinfo{person}{Christos
+  Kozyrakis}, {and} \bibinfo{person}{Kunle Olukotun}.}
+  \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Generating Configurable Hardware from Parallel
+  Patterns}. In \bibinfo{booktitle}{{\em Proceedings of the Twenty-First
+  International Conference on Architectural Support for Programming Languages
+  and Operating Systems}} {\em (\bibinfo{series}{ASPLOS '16})}.
+  \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{651--665}.
+\newblock
+\showISBNx{978-1-4503-4091-5}
+\showDOI{%
+\url{https://doi.org/10.1145/2872362.2872415}}
+
+
+\bibitem[\protect\citeauthoryear{Putnam, Caulfield, Chung, Chiou,
+  Constantinides, Demme, Esmaeilzadeh, Fowers, Gopal, Gray, Haselman, Hauck,
+  Heil, Hormati, Kim, Lanka, Larus, Peterson, Pope, Smith, Thong, Xiao, and
+  Burger}{Putnam et~al\mbox{.}}{2014}]%
+        {catapult}
+\bibfield{author}{\bibinfo{person}{Andrew Putnam}, \bibinfo{person}{Adrian~M.
+  Caulfield}, \bibinfo{person}{Eric~S. Chung}, \bibinfo{person}{Derek Chiou},
+  \bibinfo{person}{Kypros Constantinides}, \bibinfo{person}{John Demme},
+  \bibinfo{person}{Hadi Esmaeilzadeh}, \bibinfo{person}{Jeremy Fowers},
+  \bibinfo{person}{Gopi~Prashanth Gopal}, \bibinfo{person}{Jan Gray},
+  \bibinfo{person}{Michael Haselman}, \bibinfo{person}{Scott Hauck},
+  \bibinfo{person}{Stephen Heil}, \bibinfo{person}{Amir Hormati},
+  \bibinfo{person}{Joo-Young Kim}, \bibinfo{person}{Sitaram Lanka},
+  \bibinfo{person}{James Larus}, \bibinfo{person}{Eric Peterson},
+  \bibinfo{person}{Simon Pope}, \bibinfo{person}{Aaron Smith},
+  \bibinfo{person}{Jason Thong}, \bibinfo{person}{Phillip~Yi Xiao}, {and}
+  \bibinfo{person}{Doug Burger}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{A Reconfigurable Fabric for Accelerating
+  Large-scale Datacenter Services}. In \bibinfo{booktitle}{{\em Proceeding of
+  the 41st Annual International Symposium on Computer Architecuture}} {\em
+  (\bibinfo{series}{ISCA '14})}. \bibinfo{publisher}{IEEE Press},
+  \bibinfo{address}{Piscataway, NJ, USA}, \bibinfo{pages}{13--24}.
+\newblock
+\showISBNx{978-1-4799-4394-4}
+\showURL{%
+\url{http://dl.acm.org/citation.cfm?id=2665671.2665678}}
+
+
+\bibitem[\protect\citeauthoryear{Ragan-Kelley, Barnes, Adams, Paris, Durand,
+  and Amarasinghe}{Ragan-Kelley et~al\mbox{.}}{2013}]%
+        {pldi13halide}
+\bibfield{author}{\bibinfo{person}{Jonathan Ragan-Kelley},
+  \bibinfo{person}{Connelly Barnes}, \bibinfo{person}{Andrew Adams},
+  \bibinfo{person}{Sylvain Paris}, \bibinfo{person}{Fr{\'e}do Durand}, {and}
+  \bibinfo{person}{Saman Amarasinghe}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{Halide: A Language and Compiler for Optimizing
+  Parallelism, Locality, and Recomputation in Image Processing Pipelines}. In
+  \bibinfo{booktitle}{{\em Proceedings of the 34th ACM SIGPLAN Conference on
+  Programming Language Design and Implementation}} {\em (\bibinfo{series}{PLDI
+  '13})}. \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{519--530}.
+\newblock
+\showISBNx{978-1-4503-2014-6}
+\showDOI{%
+\url{https://doi.org/10.1145/2491956.2462176}}
+
+
+\bibitem[\protect\citeauthoryear{Rosenfeld, Cooper-Balis, and Jacob}{Rosenfeld
+  et~al\mbox{.}}{2011}]%
+        {dramsim2}
+\bibfield{author}{\bibinfo{person}{Paul Rosenfeld}, \bibinfo{person}{Elliott
+  Cooper-Balis}, {and} \bibinfo{person}{Bruce Jacob}.}
+  \bibinfo{year}{2011}\natexlab{}.
+\newblock \showarticletitle{DRAMSim2: A Cycle Accurate Memory System
+  Simulator}.
+\newblock \bibinfo{journal}{{\em IEEE Computer Architecture Letters\/}}
+  \bibinfo{volume}{10}, \bibinfo{number}{1} (\bibinfo{date}{Jan}
+  \bibinfo{year}{2011}), \bibinfo{pages}{16--19}.
+\newblock
+\showISSN{1556-6056}
+\showDOI{%
+\url{https://doi.org/10.1109/L-CA.2011.4}}
+
+
+\bibitem[\protect\citeauthoryear{Sujeeth, Brown, Lee, Rompf, Chafi, Odersky,
+  and Olukotun}{Sujeeth et~al\mbox{.}}{2014}]%
+        {delite-tecs14}
+\bibfield{author}{\bibinfo{person}{Arvind~K. Sujeeth},
+  \bibinfo{person}{Kevin~J. Brown}, \bibinfo{person}{HyoukJoong Lee},
+  \bibinfo{person}{Tiark Rompf}, \bibinfo{person}{Hassan Chafi},
+  \bibinfo{person}{Martin Odersky}, {and} \bibinfo{person}{Kunle Olukotun}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Delite: A Compiler Architecture for
+  Performance-Oriented Embedded Domain-Specific Languages}. In
+  \bibinfo{booktitle}{{\em TECS'14: ACM Transactions on Embedded Computing
+  Systems}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Sujeeth, Rompf, Brown, Lee, Chafi, Popic, Wu,
+  Prokopec, Jovanovic, Odersky, and Olukotun}{Sujeeth et~al\mbox{.}}{2013}]%
+        {ecoop13sujeeth}
+\bibfield{author}{\bibinfo{person}{Arvind~K. Sujeeth}, \bibinfo{person}{Tiark
+  Rompf}, \bibinfo{person}{Kevin~J. Brown}, \bibinfo{person}{HyoukJoong Lee},
+  \bibinfo{person}{Hassan Chafi}, \bibinfo{person}{Victoria Popic},
+  \bibinfo{person}{Michael Wu}, \bibinfo{person}{Aleksander Prokopec},
+  \bibinfo{person}{Vojin Jovanovic}, \bibinfo{person}{Martin Odersky}, {and}
+  \bibinfo{person}{Kunle Olukotun}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{Composition and Reuse with Compiled Domain-Specific
+  Languages}. In \bibinfo{booktitle}{{\em European Conference on Object
+  Oriented Programming}} {\em (\bibinfo{series}{ECOOP})}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Taylor, Kim, Miller, Wentzlaff, Ghodrat,
+  Greenwald, Hoffman, Johnson, Lee, Lee, Ma, Saraf, Seneski, Shnidman,
+  Strumpen, Frank, Amarasinghe, and Agarwal}{Taylor et~al\mbox{.}}{2002}]%
+        {raw}
+\bibfield{author}{\bibinfo{person}{Michael~Bedford Taylor},
+  \bibinfo{person}{Jason Kim}, \bibinfo{person}{Jason Miller},
+  \bibinfo{person}{David Wentzlaff}, \bibinfo{person}{Fae Ghodrat},
+  \bibinfo{person}{Ben Greenwald}, \bibinfo{person}{Henry Hoffman},
+  \bibinfo{person}{Paul Johnson}, \bibinfo{person}{Jae-Wook Lee},
+  \bibinfo{person}{Walter Lee}, \bibinfo{person}{Albert Ma},
+  \bibinfo{person}{Arvind Saraf}, \bibinfo{person}{Mark Seneski},
+  \bibinfo{person}{Nathan Shnidman}, \bibinfo{person}{Volker Strumpen},
+  \bibinfo{person}{Matt Frank}, \bibinfo{person}{Saman Amarasinghe}, {and}
+  \bibinfo{person}{Anant Agarwal}.} \bibinfo{year}{2002}\natexlab{}.
+\newblock \showarticletitle{The Raw Microprocessor: A Computational Fabric for
+  Software Circuits and General-Purpose Programs}.
+\newblock \bibinfo{journal}{{\em IEEE Micro\/}} \bibinfo{volume}{22},
+  \bibinfo{number}{2} (\bibinfo{date}{March} \bibinfo{year}{2002}),
+  \bibinfo{pages}{25--35}.
+\newblock
+\showISSN{0272-1732}
+\showDOI{%
+\url{https://doi.org/10.1109/MM.2002.997877}}
+
+
+\bibitem[\protect\citeauthoryear{Voitsechov and Etsion}{Voitsechov and
+  Etsion}{2014}]%
+        {sgmf}
+\bibfield{author}{\bibinfo{person}{Dani Voitsechov} {and} \bibinfo{person}{Yoav
+  Etsion}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Single-graph Multiple Flows: Energy Efficient
+  Design Alternative for GPGPUs}. In \bibinfo{booktitle}{{\em Proceeding of the
+  41st Annual International Symposium on Computer Architecuture}} {\em
+  (\bibinfo{series}{ISCA '14})}. \bibinfo{publisher}{IEEE Press},
+  \bibinfo{address}{Piscataway, NJ, USA}, \bibinfo{pages}{205--216}.
+\newblock
+\showISBNx{978-1-4799-4394-4}
+\showURL{%
+\url{http://dl.acm.org/citation.cfm?id=2665671.2665703}}
+
+
+\bibitem[\protect\citeauthoryear{Wu, Lottarini, Paine, Kim, and Ross}{Wu
+  et~al\mbox{.}}{2014}]%
+        {q100}
+\bibfield{author}{\bibinfo{person}{Lisa Wu}, \bibinfo{person}{Andrea
+  Lottarini}, \bibinfo{person}{Timothy~K. Paine}, \bibinfo{person}{Martha~A.
+  Kim}, {and} \bibinfo{person}{Kenneth~A. Ross}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Q100: The Architecture and Design of a Database
+  Processing Unit}. In \bibinfo{booktitle}{{\em Proceedings of the 19th
+  International Conference on Architectural Support for Programming Languages
+  and Operating Systems}} {\em (\bibinfo{series}{ASPLOS '14})}.
+  \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{255--268}.
+\newblock
+\showISBNx{978-1-4503-2305-5}
+\showDOI{%
+\url{https://doi.org/10.1145/2541940.2541961}}
+
+
+\end{thebibliography}
+}
+
+\end{document}

@@ -1,0 +1,8 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we describe a set of techniques for performing cross-kernel optimization within RNN cells.
+We identify that by moving away from BLAS abstraction and focus on optimizing loop-level construct,
+we are able to achieve consistent hardware utilization when serving RNN cells of different sizes.
+We show that we are able to perform 10-20x performance improvement at a less advanced technology
+compared to the state-of-the-art GPU platform, and a geometric speedup of 2x compared to the state-of-the-art FPGA-based platform.

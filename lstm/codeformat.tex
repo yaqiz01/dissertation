@@ -1,0 +1,64 @@
+\usepackage{listings}           % Code listing
+\usepackage{courier}
+\definecolor{vbgray}{gray}{0.9}
+\definecolor{darkgreen}{RGB} {0, 100, 0}
+\definecolor{darkred}{RGB} {255, 0, 0}
+\definecolor{orange}{RGB} {255, 128, 0}
+\def\tick{{\color{darkgreen} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\ytick{{\color{orange} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\x{{\color{darkred} {$\bm{\times}$}}}
+
+\definecolor{red}{RGB}{255,0,0}
+\definecolor{vbgray}{gray}{0.9}
+\definecolor{darkgreen}{RGB} {0, 100, 0}
+\definecolor{darkred}{RGB} {255, 0, 0}
+\definecolor{blue}{RGB} {0, 135, 255}
+\definecolor{yellow}{RGB} {224, 173, 0}
+\definecolor{codegreen}{RGB}{52,123,0}
+\definecolor{codegray}{rgb}{0.6,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+\definecolor{lightback}{rgb}{0.95,0.95,0.95}
+\def\tick{{\color{darkgreen} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\ytick{{\color{orange} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\x{{\color{darkred} {$\bm{\times}$}}}
+
+\lstdefinelanguage{Spatial}{
+  basicstyle=\fontsize{7}{7}\selectfont\ttfamily,frame=tlbr,framesep=4pt,framerule=0pt,
+  tabsize=2,
+  basewidth={0.55em, 0.4em},%
+  numbers=left,
+  showspaces=false,
+  keywordstyle=\bfseries,
+  breaklines=true,
+  columns=fixed,
+  %xleftmargin=0.25in,
+  firstnumber=auto,
+  showstringspaces=false,
+  escapechar=@,
+  escapeinside={(*@}{@*)},
+  morestring=[b]",
+  morestring=[b]',
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen}, %\bfseries,
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  keywordstyle=[2]\color{blue},
+  keywords=[2]{val, def, type},
+  keywordstyle=[3]\color{yellow}\bfseries,
+  keywords=[3]{Float, Float8, Int, String, T, Void, Bit, Half, FltPt},
+  keywordstyle=[4]\color{orange}\bfseries,
+  keywords=[4]{Matrix, Array},
+  keywordstyle=[5]\color{blue}\bfseries,
+  keywords=[5]{StreamIn, StreamOut, DRAM, ArgIn, ArgOut, HostIO, RegFile, Reg, SRAM, SRAM1, SRAM2, FIFO, LIFO, LUT, LineBuffer},
+  keywordstyle=[6]\bfseries,
+  keywords=[6]{enq, deq, load, store, scatter, gather, :=, push, pop, peek},
+  keywordstyle=[7]\color{magenta},
+  keywords=[7]{until, par, by, value},
+  keywordstyle=[8]\color{red}\bfseries,
+  keywords=[8]{C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10},
+  keywordstyle=\color{magenta}\bfseries,
+  morekeywords={Foreach,Reduce,MemReduce,MemFold,Fold,Accel,Stream,FSM,Sequential,if,else,Parallel,Pipe, DummyPipe}
+}

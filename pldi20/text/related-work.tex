@@ -1,0 +1,88 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Streaming Dataflow IRs}
+Although many works claim to emit efficient and information-rich dataflow IRs for the downstream compilers, very few of them can capture the high-level parallel patterns and implementation details that are critical to RDA mappings. For example, TensorFlow \cite{tensorflow} emits dataflow IR composed of tensor operations. However, its IR lacks information on the parallel patterns within these operations. In contrast, most of the streaming languages \cite{streamit, synaid, maxj} are not able to extract nested loop-level parallelism from modern data-intensive applications. For example, StreamIt \cite{streamit}, a language tailored for streaming computing, also adopts distributed control as in \name{}. However, it lacks the necessary language features to describe deeply and irregularly nested loops that are common in modern data-intensive applications.
+
+\paragraph{Hardware Architectures}
+Spatial reconfigurable accelerators (\eg, Dyser~\cite{dyser} and Tartan~\cite{tartan}) have only one-level of hierarchy.
+Hence, such accelerators' performance can be bottlenecked by their limited interconnect bandwidth and power budget.
+Sparse Processing Unit (SPU)~\cite{sparseaccel} can sustain higher interconnect bandwidth by introducing on-chip hierarchy; however, it lacks support for polyhedral memory banking~\cite{poly_cong}, a pivotal optimization to achieve massive parallel accesses to on-chip memory. Plasticine~\cite{plasticine} provides us with the desired architecture features; however, its compiler lacks the necessary components to support efficient streaming execution. Given that Plasticine resembles many key features of the RDA model, we target Plasticine with \name{}.
+
+\paragraph{Spatial Compilers}
+Most previous works \cite{nowatzki, spatial-computation} only consider allocating resources at the same level. \name{} takes a more general assumption by co-allocating resources at multiple levels of an accelerator's hierarchy.
+
+The Plasticine compiler~\cite{plasticine} is similar to \name{} that it also uses a token-based control protocol.
+However, it performs worse than \name{} due to the following reasons.
+First, the Plasticine compiler allocates VBs for every level of Spatial's (a high-level language) control hierarchy. 
+The communication between parent and child controllers lead to both communication hotspots around the parent, and bubbles before entering a steady-state of the loop iterations. 
+Second, the Plasticine compiler assigns a single memory PB for each logical memory in the Spatial program. 
+Hence, it could not handle the case where a logical memory exceeds the capacity or bank limits of the physical PBs.
+Third, the Plasticine compiler only supports polyhedral memory partitioning at the first dimension of the on-chip memory. 
+Hence, its applicability to data-intensive applications with high-dimension tensor algebra is questionable.
+Last, compared to \name{}'s separate allocation and assignment phases described in \Cref{sec:control} and \Cref{sec:decompose},
+the Plasticine compiler allocates one VB for a specific type of PB and underutilizes resources within PBs.
+
+
+% Ignore arch for now; we assume arch
+
+% \paragraph{Plasticine Compiler}
+% The Plasticine compiler described in the original paper also uses a token-based control protocal.
+% However, the Plasticine compiler still allocates VB for each level of the controller hierarchy in Spatial
+% and pass tokens between the parent and child controllers, which creates communication hot-spot around the
+% parant controller and suffers from bubble during warmup phase of the loop iteartions.
+% \yz{Rephrase this}
+% In addition, their compiler assigns a single memory PB to each logical memory in the program; 
+% the compiler cannot handle logical memory exceeding capacity or bank limit of the physical PBs.
+% The simple strided banking scheme also disallows parallelized access on multiple dimension of the memory,
+% which can greatly limits the application design space.
+% Finally, unlike spaerate allocation and assignment phases described in \Cref{sec:alloc} and \Cref{sec:pruning},
+% they allocate a VB for a specific type of PB, which under under utilizes resource whin PBs.
+
+
+% \gist{
+% CGRA: \\
+% \cite{tartan} \\
+% Imperative to Spatial Architectures: \\
+% \cite{synaid}: 
+% \begin{outline}
+% \1 Target green array. Tiles of stack based 18-bit processors. Small local memory per
+% core.
+% \1 Small benchmarks: trigonometric, FFT, bithack, etc..
+% \end{outline}
+% \cite{zaidi}
+% His thesis:\\
+% \url{https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-870.pdf} \\
+% Targeting FPGA. We probably don't want to cite this guy.
+
+% Partitioning: \\
+% \cite{nowatzki} - Partitioning data flow graph using ISL \\
+
+% Summary:
+% Looks like we are not the first one trying to map imperative language to spatial architecture. But there are still major differences.
+% Some of the work is mapping to FPGAs, similar to high-level synthesis tools.
+% Many of the other works like \cite{zaidi} only focus on the data-flow graph and do not handle memory accesses. Although we both trying to support imperative language on spatial accelerator, our focus is never to accelerate control heavy code on the accelerator, but rather to target data intensive application with more flexibility.
+
+% \cite{synaid} is actually very relevant but the architecture is at a much smaller scale. It does have distributed on-chip memory but their memory is a stack used to store program for processors. None of the prior work has consider using distributed memory to compose logically single memory with strong-consistency and coherence. Another major difference is that these architecture does not have global network and DRAM that introduces variable latency. 
+% So this changes how the application is mapped onto the accelerator. Our approach is completely distributed streaming approach while they tends to use statically scheduled approach.
+% Finally the applications are very different. Most of their applications are very small kernels or image/audio encoding/decoding. Our benchmarks has a mix of full ML models + graph + others
+% }
+
+% Maybe related \cite{sparseaccel}
+
+% Triggered Instruction \cite{ti}
+% Tartan\cite{tartan}
+
+% \gist{
+% 	\begin{itemize}
+% 		\item Plasticine compiler: \cite{plasticine}
+% 		\item Tartan: \cite{tartan} Single op partitions w/ handshaking, direct template translation.
+% 		\item Zaidi Thesis: \cite{zaidi} Conversion to bluespec, also uses token-based control. No partitioning / merging.
+% 		\item Partitioning: \cite{nowatzki} Solver-based partitioning, very small arrays (4x4 dyser, etc.), with statically known delays and single-op partitions. Does not handle merging.
+% 		\item SparseAccel: \cite{sparseaccel}\ Architecture paper, basically nothing about compilers.  (NR)
+% 		\item streamit for RAW: \cite{streamit} No memory consistency due to pure stream structure, fine grained arch. Mesh of processors.
+% 		\item Triggered Instructions \cite{ti} Fine grained processor architecture, with caches. (Micro paper: manual mapping, assembly, NR)
+% 		\item Chlorophyll: \cite{synaid} Maps subset of C to GreenArrays (small spatial stack-processor architecture). Distinct Non-distributed arrays vs distributed arrays, optional partition annotations, static for loops (unrestricted while), uses Rosette backend solver (branch and bound, SA, Ant, Tabu Search, picked Simulated Annealing). Actual generation is synthesis based.
+% 		\item Spatial computation \cite{spatial-computation} Maps ANSI C to Verilog, handshake + token based execution with speculative execution. Uses crossbar network for memory (although we assume pre-banked memory). Fine grained control, uses Pegasus for memory dependence graph and tokens for synchronization. Does not address partitioning / merging.
+% 	\end{itemize}
+% }

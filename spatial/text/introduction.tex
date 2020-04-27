@@ -1,0 +1,132 @@
+\section{Introduction}
+\label{intro}
+
+%\gist{spatial architectures are important}
+Recent trends in technology scaling, the availability of large amounts of data, and novel algorithmic breakthroughs
+have spurred accelerator architecture research. Reconfigurable architectures like field-programmable gate arrays (FPGAs) and coarse-grain reconfigurable  architectures (CGRAs)
+have received renewed interest from academic researchers and industry practitioners alike, primarily due to their potential performance and energy efficiency benefits over conventional CPUs. 
+FPGAs are now being used to accelerate web search
+in datacenters at Microsoft and Baidu~\cite{catapult, baidu},
+Amazon now offers FPGA instances as part of AWS~\cite{awsf1}, 
+and Intel has announced products like in-package Xeon-FPGA systems~\cite{harp}
+and FPGA-accelerated storage systems~\cite{nand_flash}.
+Similarly, several recent research prototypes~\cite{dyser, ti, scaledeep, scnn, plasticine}
+and startups~\cite{wavecomp, nervana} have explored various
+kinds of CGRAs at different granularities. 
+Growing use of such reconfigurable architectures has made them more available to programmers now than ever before.
+
+
+Reconfigurable devices are able to accelerate applications, in part, by exploiting multiple levels of nested parallelism and data locality with custom data pipelines and memory hierarchies.
+Unfortunately, the same features that make reconfigurable architectures efficient also make them much more complex to program. An accelerator design must account for the timing between pipelined signals and
+the physically limited compute and memory resources available on the target device. It must also manage partitioning of data between local scratchpads and off-chip memory to achieve good data locality. 
+The combination of these complexities leads to intractable accelerator design spaces~\cite{cascaval}.
+
+
+These challenges have caused programmability to be a key limiting factor to widespread adoption of CGRAs and FPGAs~\cite{fpgaMasses,DeSutter2013}. 
+The space of CGRA programmability is fragmented with incompatible, architecture-specific programming models.
+The current state of the art in programming FPGAs involves using a combination of vendor-supplied IP blocks, hand-tuned hardware modules written using either low-level RTL or high-level synthesis tools, and architecture-specific glue logic to communicate with off-chip components such as DRAM. 
+Hardware description languages (HDLs) like Verilog and VHDL are designed for explicit specification of hardware, 
+placing the burden on the user to solve the complexities of implementing their algorithm in hardware.
+
+
+%\ardavan{this [area] is optimization so I don't think it belongs here}
+%\david{I'm not so sure about that. Limited area resources are a fundamental challenge with targeting an FPGA}
+%\ardavan{now you jumped from hard to program to complex design space without a transition.}
+%\david{complex design space is part of what makes them hard to program - but this could be clearer}
+%This design complexity creates a persistent need for better tools to program reconfigurable devices.
+%\todo{For this reason, HDLs are considered prohibitively complicated by most software programmers interested in
+%accelerating their applications.}
+
+High-level synthesis (HLS) tools like SDAccel~\cite{sdaccel}, Vivado HLS~\cite{vivadohls}, and Intel's OpenCL SDK~\cite{opencl_sdk} raise the level of abstraction compared to HDLs significantly. 
+For example, HLS tools allow programmers to write accelerator designs in terms of untimed, nested loops and offer library functions for common operations like data transfer between a CPU host and the FPGA.  
+However, existing commercial HLS tools have all been built on top of software languages like C, OpenCL, and Matlab. 
+These software languages have been built to target instruction-based processors like CPUs and GPUs. 
+Consequently, although existing HLS tools raise the level of abstraction for targeting reconfigurable architectures, they do so with an ad-hoc, often underspecified mix of software and hardware abstractions.  
+For instance, while SDAccel can convert nested loops into hardware state machines, the language has no notion of the architecture's memory hierarchy and cannot pipeline loops at arbitrary nesting levels~\cite{vivado_userguide}.
+Programmers must keep in mind that, despite the software programming abstractions, they must employ hardware, not software, optimization techniques.
+This makes it challenging to write HLS code which produces fully optimized designs~\cite{nane2016survey}.
+%As a result, it can be quite challenging to write HLS programs which produce fully optimized designs~\cite{nane2016survey}.
+%\todo{As datasets continue to grow and compute power fails to have commensurate scaling,
+%it is becoming obvious that dataflow architectures will provide one avenue for domain experts to
+%squeeze out better performance for their algorithms.}
+
+\input{figs/gemm}
+
+%Languages like Java and C++ were able
+%to enhance software engineering by lifting the abstraction, and their respective compilers used their view
+%of the entire program space to perform optimizations that are otherwise too convoluted for a person
+%to do when handwriting assembly. 
+In this work, we first summarize high-level language abstractions required to create a new high-level synthesis language from the ground up, including syntax for managing memory, control, and accelerator-host interfaces on a reconfigurable architecture.
+We suggest that this ``clean slate'' approach to high-level synthesis language design leads to a language which is semantically cleaner when targeting reconfigurable architectures, particularly when optimizing for data locality and parallelism. 
+These abstractions help programmer productivity and allow both the user and compiler to more easily optimize designs for improved performance. 
+
+
+We then describe a new domain specific language (DSL) and compiler framework called Spatial which implements these abstractions to support higher level, performance oriented hardware accelerator design. 
+Figure~\ref{fig:matmult} shows an example of a basic implementation of matrix multiplication in Spatial.
+As this figure shows, Spatial code is like existing HLS languages in that programs are untimed and the language encourages accelerator designs to be expressed in terms of nested loops. However, unlike existing HLS tools, Spatial gives users more explicit control over the memory hierarchy through a library of on-chip and off-chip memory templates (e.g. the \texttt{DRAM} and \texttt{SRAM} in Figure~\ref{fig:matmult}).
+Spatial automatically pipelines arbitrarily nested loops, and banks, buffers, and duplicates memories for the user based on parallel access patterns by default. 
+This is in contrast to modern HLS tools, which largely rely on the user to add explicit pragmas to their code in order make these optimizations.
+Spatial also supports tuning of parameterized designs via automated design space exploration (DSE).
+Unlike prior approaches~\cite{dhdl} which use variance-prone heuristic random search, Spatial employs an active machine learning framework called HyperMapper \cite{Bodin2016:PACT16} to drive exploration.
+This tuning allows a single accelerator design to be quickly ported across target architectures and vendors with ease.
+
+When targeting FPGAs, Spatial generates optimized, synthesizable Chisel code along with C++ code which can be used on a host CPU to administrate initialization and execution of the accelerator on the target FPGA. 
+Spatial currently supports Xilinx Ultrascale+ VU9P FPGAs on Amazon's EC2 F1 Instances, Xilinx Zynq-7000 and Ultrascale+ ZCU102 SoCs, and Altera DE1 and Arria 10 SoCs.
+The constructs in Spatial are general across reconfigurable architectures, meaning Spatial programs can also be used to target CGRAs. In this paper, we demonstrate this by targeting our recently proposed Plasticine CGRA~\cite{plasticine}.
+
+
+
+
+
+
+%Similarly, we introduce Spatial, a complete Domain Specific Language (DSL)
+%that both provides the high-level abstractions needed to simplify programming spatial architectures and
+%the hardware-specific optimizations over the entire application that are otherwise extremely challenging
+%to do by hand in a low level language.
+
+The contributions of this paper are as follows:
+\vspace{-5pt}
+\begin{itemize}
+	\item We discuss the abstractions required to describe target-agnostic accelerator designs for reconfigurable architectures (Section~\ref{background}). We then describe Spatial's implementation of these constructs (Section~\ref{language}) and the optimizations that these abstraction enables in the Spatial compiler (Section~\ref{compiler}).
+
+  \vspace{5pt}
+
+	\item We describe an improved method of fast, automated design parameter space exploration using HyperMapper (Section~\ref{dse}). This approach is evaluated in Section~\ref{evaluation}.
+
+  \vspace{5pt}
+
+	\item We evaluate Spatial's ability to efficiently express a wide variety of applications and
+    target multiple architectures from the same source code. We demonstrate Spatial targeting two FPGAs and the Plasticine CGRA. 
+    We quantitatively compare Spatial to SDAccel on the VU9P FPGA on a diverse set of benchmarks (Section~\ref{evaluation}), showing a geometric mean speedup of $2.9\times$ with 42\% less code.
+    We provide a qualitative comparison of Spatial to other related work in Section~\ref{related}.
+\end{itemize}
+%Describe Spatial abstractions and enabled optimizations
+%Evaluation of an improved method for parameter space exploration 
+%Evaluation on two fine/flat architectures - FPGAs (Zynq versus Ultrascale+) compared to HLS and handwritten stuffs
+%Evaluation with a coarse/hierarchical - Plasticine
+
+%In the remainder of this paper,
+%Section~\ref{relatedWork} describes the various requirements for an accelerator design language and compares these requirements to existing work.
+%Section~\ref{language} describes Spatial's abstractions and syntax as they relate to these requirements in Section~\ref{language}.
+%Section~\ref{compiler} describes Spatial's intermediate representation and the various optimizations the compiler performs on this representation.
+%Section~\ref{specialization} elaborates on how Spatial programs are specialized for various classes of reconfigurable architectures.
+%Section~\ref{evaluation} discusses the evaluation of Spatial across FPGAs, against SDAccel \todo{and handwritten Verilog}, and on the Plasticine CGRA.
+
+
+%%% OLDER STUFF
+
+%While FPGAs are the most flexible reconfigurable architecture, coarse-grain reconfigurable architectures (CGRAs) have improved performance, energy efficiency, and design turnaround time for supported applications \cite{?}
+%However, CGRAs have seen far less adoption thus far, primarily due to their cumbersome programming models.
+%Coarse-grain reconfigurable architectures (GGRAs) have seen far less adoption thus far.
+%\todo{Faster design turnaround time will likely spur adoption of CGRAs in the future} \cite{?}.
+
+% Reconfigurable devices accelerate applications by exploiting parallelism with both deep pipelines and replicated computation. The local scratchpads in these architectures allow them to exploit data locality far better than a single cache.
+%The demand for reconfigurable architectures has been driven primarily by the performance and energy efficiency benefits they can offer over conventional CPUs.
+%Managing the address space is specifically challenging as there are many options for memory partitioning and control scheduling .
+%This yields into a huge design space tradeoff in spite of obvious resources constraints like area.
+
+%Local scratchpads
+%Unfortunately, this also mean programs must manually manage the architecture's memory hierarchy with fine grained allocation of scratch pad memories.
+%it makes them much more complex to program as they require manual management of memory hierarchy by fine grain control of scratch pad memories.
+%To program the architectural details and utilize the resources fine details such as timing and control signals also need to be encapsulated in the program.
+

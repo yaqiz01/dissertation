@@ -1,0 +1,345 @@
+\documentclass[sigplan,screen]{acmart}
+\usepackage[scaled]{beramono}
+\usepackage[T1]{fontenc}            % Type 1 fonts
+
+\usepackage{booktabs}   %% For formal tables: http://ctan.org/pkg/booktabs
+\usepackage{multirow}   %% For tables with merged columns/rows
+\usepackage{array}
+\usepackage{dcolumn}
+\newcolumntype{d}[1]{D{.}{.}{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\newcommand{\mcl}[1]{\multicolumn{1}{c}{#1}}
+\newcommand{\mc}[1]{\multicolumn{1}{c}{\bf #1}}
+\newcommand{\ml}[1]{\multicolumn{1}{l}{\bf #1}}
+\newcommand{\mb}[1]{\multicolumn{1}{l}{\bf #1}}
+
+\usepackage{subcaption} %% For complex figures with subfigures/subcaptions
+                        %% http://ctan.org/pkg/subcaption
+
+\usepackage{picture}
+\usepackage{listings}           % Code listing
+\newcommand*{\ep}{\ensuremath{\prime}}
+\usepackage{amssymb}      % Math symbols
+
+\usepackage{color}        % Colors
+\usepackage{balance}      % Balanced last page
+
+%\usepackage{bm}           % bold math
+\usepackage{inputenc}
+%\renewcommand*{\ttdefault}{tgcursor}
+
+\newcommand{\christos}[1]{{\textcolor{darkgreen}{[~CHRISTOS:~#1~]}}}
+\newcommand{\ardavan}[1]{{\textcolor{orange}{[~ARDAVAN:~#1~]}}}
+\newcommand{\david}[1]{{\textcolor{blue}{[~DAVID:~#1~]}}}
+\newcommand{\argg}[1]{\textbf{\fontsize{8}{10}\texttt{#1}}}
+\newcommand{\todo}[1]{{\color{red} \bf [TODO: #1]}}
+% Command to indicate new text added in the camera-ready version
+\newcommand{\nt}[1]{{\color{blue} #1}}
+% Command to add a "gist" or summary
+\newcommand{\gist}[1]{{\color{blue} GIST: #1 \\}}
+
+\makeatletter
+\newcommand\beramonott{%
+  \def\fvm@Scale{0.85}% scales the font down
+  \fontfamily{fvm}\selectfont% selects the Bera Mono font
+}
+\makeatother
+
+
+\definecolor{vbgray}{gray}{0.9}
+\definecolor{darkgreen}{RGB} {0, 100, 0}
+\definecolor{darkred}{RGB} {255, 0, 0}
+\def\tick{{\color{darkgreen} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\ytick{{\color{orange} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\x{{\color{darkred} {$\bm{\times}$}}}
+
+\definecolor{vbgray}{gray}{0.9}
+\definecolor{darkgreen}{RGB} {0, 100, 0}
+\definecolor{darkred}{RGB} {255, 0, 0}
+\definecolor{blue}{RGB} {0, 135, 255}
+\definecolor{yellow}{RGB} {224, 173, 0}
+\definecolor{codegreen}{RGB}{51,123,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+\definecolor{lightback}{rgb}{0.95,0.95,0.95}
+\def\tick{{\color{darkgreen} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\ytick{{\color{orange} \textbf{\tikz\fill[scale=0.5](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}}}
+\def\x{{\color{darkred} {$\bm{\times}$}}}
+
+\lstdefinelanguage{Spatial}{
+  basicstyle=\fontsize{7}{7}\beramonott,
+  frame=tlbr,
+  framesep=4pt,
+  framerule=0pt,
+  tabsize=2,
+  basewidth={0.55em, 0.4em},%
+  numbers=left,
+  showspaces=false,  
+  keywordstyle=\fontseries{b},   
+  breaklines=true,
+  columns=fullflexible,
+  xleftmargin=0.5cm,
+  firstnumber=auto,
+  showstringspaces=false,
+  escapechar=@,
+  escapeinside={(*@}{@*)},
+  morestring=[b]",
+  morestring=[b]',
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  backgroundcolor=\color{backcolour},   
+  commentstyle=\color{codegreen}, %\fontseries{b},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  keywordstyle=[2]\color{blue},
+  keywords=[2]{val, def, type},
+  keywordstyle=[3]\color{blue}\fontseries{b},
+  keywords=[3]{Float, Int, String, T, Void, Bit, Half, FltPt},
+  keywordstyle=[4]\color{orange}\fontseries{b},
+  keywords=[4]{Matrix, Array},
+  keywordstyle=[5]\color{darkgreen}\fontseries{b},
+  keywords=[5]{StreamIn, StreamOut, DRAM, ArgIn, ArgOut, HostIO, RegFile, Reg, SRAM, FIFO, LIFO, LUT, LineBuffer},
+  keywordstyle=[6]\fontseries{b},
+  keywords=[6]{enq, deq, load, store, scatter, gather, :=, value, push, pop, peek},
+  keywordstyle=[7]\color{magenta},
+  keywords=[7]{until, par, by},
+  keywordstyle=\color{magenta}\fontseries{b},
+  morekeywords={Foreach,Reduce,MemReduce,MemFold,Fold,Accel,Stream,FSM,Sequential,if,else,Parallel,Pipe, DummyPipe}
+}
+
+\lstdefinelanguage{SpatialTable}{
+  frame=tb,
+  framexleftmargin=4pt,
+  framextopmargin=0pt,
+  framexbottommargin=0pt, 
+  basicstyle=\fontsize{8}{8}\beramonott,
+  framesep=2pt,
+  framerule=0pt,
+  tabsize=2,
+  numbers=none,
+  showspaces=false,  
+  keywordstyle=\fontseries{b},   
+  breaklines=true,
+  columns=fullflexible,
+  xleftmargin=0.5cm, %0.25in, 
+  firstnumber=auto,
+  showstringspaces=false,
+  escapechar=@,
+  escapeinside={(*@}{@*)},
+  morestring=[b]",
+  morestring=[b]',
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  %backgroundcolor=\color{backcolour},   
+  commentstyle=\color{codegreen}\fontseries{b},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  keywordstyle=[2]\color{blue},
+  keywords=[2]{val, def},
+  keywordstyle=[3]\color{blue}\fontseries{b},
+  keywords=[3]{Float, Int, String, T, Void, Bit},
+  keywordstyle=[4]\color{orange}\fontseries{b},
+  keywords=[4]{Matrix, Array},
+  keywordstyle=[5]\color{darkgreen}\fontseries{b},
+  keywords=[5]{StreamIn, StreamOut, DRAM, ArgIn, ArgOut, HostIO, RegFile, Reg, SRAM, FIFO, LIFO, LUT, LineBuffer},
+  keywordstyle=[6]\fontseries{b},
+  keywords=[6]{enq, deq, load, store, scatter, gather,:=,<<=, value, push, pop, peek, continue, action, next, func, reduce, body},
+  keywordstyle=[7]\color{magenta},
+  keywords=[7]{until, par, by},
+  keywordstyle=\color{magenta}\fontseries{b},
+  morekeywords={Foreach,Reduce,MemReduce,MemFold,Fold,Accel,Stream,FSM, if, else, Parallel, Pipe,Sequential, DummyPipe }
+}
+
+
+\lstdefinelanguage{Pseudo}{
+  tabsize=2,
+  basewidth={0.55em, 0.4em},
+  columns=fullflexible,
+  xleftmargin=0.5cm,
+  numbers=left,
+  showspaces=false,  
+  keywordstyle=\bfseries,   
+  breaklines=true,
+  basicstyle=\fontsize{8}{8}\beramonott,
+  morestring=[b]",
+  morestring=[b]',
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  escapeinside={@@}{@@},
+  keywordstyle=\bfseries,
+  morekeywords={function, input, output, if, for, all, each, let, in, else, break, then, end, return}
+}
+
+
+
+
+\begin{document}
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10010583.10010600.10010628.10010629</concept_id>
+<concept_desc>Hardware~Hardware accelerators</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011008.10011009.10011016</concept_id>
+<concept_desc>Software and its engineering~Data flow languages</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011041.10011047</concept_id>
+<concept_desc>Software and its engineering~Source code generation</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10010583.10010600.10010628.10011716</concept_id>
+<concept_desc>Hardware~Reconfigurable logic applications</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Hardware~Hardware accelerators}
+\ccsdesc[500]{Software and its engineering~Data flow languages}
+\ccsdesc[500]{Software and its engineering~Source code generation}
+\ccsdesc[300]{Hardware~Reconfigurable logic applications}
+
+\setcopyright{acmlicensed}
+\acmPrice{15.00}
+\acmDOI{10.1145/3192366.3192379}
+\acmYear{2018}
+\copyrightyear{2018}
+\acmISBN{978-1-4503-5698-5/18/06}
+\acmConference[PLDI'18]{39th ACM SIGPLAN Conference on Programming Language Design and Implementation}{June 18--22, 2018}{Philadelphia, PA, USA}
+
+\acmPrice{15.00}
+\acmDOI{10.1145/3192366.3192379}
+\acmISBN{978-1-4503-5698-5/18/06}
+
+\setcopyright{acmlicensed}
+\bibliographystyle{ACM-Reference-Format}
+
+\title{Spatial: A Language and Compiler for Application Accelerators}
+
+\author{David Koeplinger}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{dkoeplin@stanford.edu} 
+
+\author{Matthew Feldman}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{mattfel@stanford.edu} 
+
+\author{Raghu Prabhakar}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{raghup17@stanford.edu} 
+
+\author{Yaqi Zhang}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{yaqiz@stanford.edu}    
+
+\author{Stefan Hadjis}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{shadjis@stanford.edu}    
+
+\author{Ruben Fiszel}
+\affiliation{
+  \institution{EPFL, Switzerland}
+  %\country{Switzerland}
+}
+\email{rfiszel@stanford.edu}    
+
+\author{Tian Zhao}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{tianzhao@stanford.edu} 
+
+\author{Luigi Nardi}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{lnardi@stanford.edu}   
+
+\author{Ardavan Pedram}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{perdavan@stanford.edu} 
+
+\author{Christos Kozyrakis}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{kozyraki@stanford.edu} 
+
+\author{Kunle Olukotun}
+\affiliation{
+  \institution{Stanford University, USA}
+  % \country{USA}
+}
+\email{kunle@stanford.edu}    
+
+
+\renewcommand{\shortauthors}{D. Koeplinger et al.}
+
+\begin{abstract}
+\input{text/abstract}
+\end{abstract}
+
+\keywords{domain-specific languages, compilers, hardware accelerators, high-level synthesis, reconfigurable architectures, FPGAs, CGRAs}
+
+\maketitle
+
+
+\input{text/introduction}
+\input{text/background}
+\input{text/language}
+\input{text/compiler}
+\input{text/evaluation}
+\input{text/related}
+\input{text/conclusion}
+
+\appendix
+\section{Appendix}
+\input{text/appendixa}
+
+\section*{Acknowledgments}
+\label{acknowledgements}
+The authors thank the anonymous reviewers for their feedback.
+This material is based on research sponsored in part by DARPA 
+under agreements number FA8750-17-2-0095, FA8750-12-2-0335, and FA8750-14-2-0240,
+and NSF grants SHF-1563078 and IIS-1247701.
+The U.S. Government is authorized to reproduce and distribute reprints for Governmental purposes
+notwithstanding any copyright notation thereon.
+The views and conclusions contained herein are those of the authors and should not be
+interpreted as necessarily representing the official policies or endorsements, either 
+expressed or implied, of DARPA, NSF, or the U.S. Government.
+
+
+\balance
+\bibliography{references}
+
+\end{document}
+\grid

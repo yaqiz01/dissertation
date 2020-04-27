@@ -1,0 +1,112 @@
+
+\section{Introduction}
+\label{sec:intro}
+
+Recurrent Neural Networks (RNNs) are a class of sequence models that plays a key role
+  in low-latency,
+  AI-powered services in datacenters \cite{fowers2018configurable, jouppi2017datacenter}.
+In these services,
+  the platforms assume that user requests come in individual samples
+  and need to be served with very stringent latency window
+  for real-time human computer interaction.
+  An example of such workload is
+  Google Translate, where inference happens concurrently when a user types.
+Despite its popularity, RNN model serving is hard to accelerate efficiently.
+Modern software and hardware platforms support optimized BLAS routines.
+To serve RNNs on these platforms,
+  a compiler tends to stitch multiple optimized BLAS kernels into a single computation graph.
+While a hardware accelerator might execute each individual kernel efficiently,
+it misses the opportunity of global cross-kernel optimization that can dramatically
+improves performance and energy-efficiency.
+This approach leads to two issues.
+First, communication between BLAS kernels creates large intermediate results, which can
+lead to poor memory performance when the blocking size is not properly tuned for the target
+system.
+Missing the opportunity of cross-kernel fusion can lead to huge performance loss
+due to different access latency at each level of memory hierarchy in a processor-based
+architecture. On a spatial architecture, while the first two levels of memory hierarchies,
+  i.e. registers and on-chip scratchpads,
+  tend to have single cycle access latency,
+  the energy required to access these two types of memory would be widely different.
+Therefore, lack of cross-kernel fusion can lead to inefficient allocation of
+scratchpad resource and low energy-efficiency.
+Second, hardware accelerators tend to use large vectorization in
+compute and memory access to boost compute density
+when accelerating BLAS kernels. However, hardware accelerators tend to suffer from resource
+underutilization when the workload size is not multiples of the vector size.
+The utilization is worse with RNN applications that are composed of sequences of small matrix
+  multiplications due to small hidden unit sizes and many time steps.
+Moreover, many accelerator platforms are optimized for BLAS level-3 (matrix-matrix) operations, e.g. NVBLAS Library for GPU \cite{nvblas}, TPU \cite{jouppi2017datacenter}, EIE \cite{han2016eie}, EyeRiss \cite{chen2017eyeriss}, and DaDianNao \cite{chen2014dadiannao}.
+These platforms suffer from low resource utilization when serving single-batch,
+  real-time RNN applications
+  that contain a lot of matrix-vector multiplication (MVM) executions.
+
+To address these issues, we propose the following strategies.
+First, we fuse all the gate functions with the element-wise, non-linear functions in the same time step.
+This way, all of our intermediate results are buffered in the registers as opposed to the
+scratchpads.
+Second, we spatially parallelize and pipeline the computation graph.
+We vectorize the inner-loop of the tiled dot product to explore SIMD parallelism and fine-grain pipelining.
+We also explore tiled parallelism and coarse-grain pipelining by unrolling the outer loop nests
+based on the amount of available compute resources.
+These strategies exploit the gate-level parallelism in RNN cells, balance the pipelines of
+MVM and element-wise non-linear functions, and maximize the resource utilization when serving
+RNN models on different problem sizes. In addition, the entire pipeline is data-flow
+driven with no dynamic scheduling overhead.
+
+We evaluate the proposed strategies by serving RNN tasks in DeepBench \cite{deepbench}
+  on the target spatial architecture.
+We implement the designs in Spatial \cite{spatial_koeplinger},
+  a Domain-Specific-Language (DSL) that describes
+  applications with nested loops and explicit
+  hardware memory hierarchy.
+We choose Plasticine \cite{plasticine},
+  a coarse-grained reconfigurable architecture (CGRA),
+  as the target spatial architecture.
+Furthermore, we propose augmentations to the Plasticine microarchitecture
+  in order to support the mix-precision operations,
+  which is critical for serving RNNs in real-time.
+
+Finally, we compare the results to those obtained by serving DeepBench tasks on the
+  state-of-the-art RNN serving platforms.
+We show that our implementation delivers consistently high FLOPS utilization across
+tasks of various sizes.
+We also demonstrate energy-efficiency advantage of
+spatial architectures compared to processor-based architectures.
+
+The key contributions of this paper are:
+\begin{enumerate}
+\item
+  We analyze the computation and memory layout of
+  RNN cell implementations on commercially available platforms.
+  We find that BLAS abstraction leads to
+  expensive inter-kernel data movement and resource underutilization.
+\item
+  We address these issues by describing RNN applications using
+  abstractions with more general loop constructs that enable 
+  cross-kernel optimization, spatial parallelization, and pipelining
+  of arbitrary loop nesting.
+  To achieve low-latency inference for RNN applications,
+  we propose micro-architectural co-design to a spatial architecture in order
+  to enable low-precision operations.
+\item
+  Finally, we thoroughly evaluate CPU,
+    general purpose graphics processing unit (GPGPU),
+    field-programmable gate array (FPGA), and a previously-proposed CGRA,
+    as serving platforms for RNN applications.
+\end{enumerate}
+
+The rest of the paper is organized as follows.
+Section~\ref{sec:back}
+  provides backgrounds on the RNN algorithms,
+  the DSL and hardware platform used in this paper.
+Section~\ref{sec:app} discusses the available RNN implementations
+  on commercially available platforms.
+  We then discuss the optimization strategies implemented in this work
+  that address the inefficiency in these implementations.
+Section~\ref{sec:arch} discusses the architectural changes
+  for supporting efficient RNN inference on the target spatial architecture.
+Section~\ref{sec:eval} details our evaluation methodology and experimental results.
+Section~\ref{sec:related} discusses related works on available
+  software and hardware optimization strategies for serving RNN applications.
+Section~\ref{sec:conclusion} offers concluding remarks.

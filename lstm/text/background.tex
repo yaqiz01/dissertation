@@ -1,0 +1,103 @@
+\section{Background}
+\label{sec:back}
+RNNs are widely used to model arbitrary sequential tasks.
+An RNN contains a cell unit to iteratively consume
+  a T-step input sequence $x = [x_0, x_1, \cdots, x_T]$
+  in order to generate an output sequence $y = [y_0, y_1, \cdots, y_T]$.
+Long Short-Term Memory (LSTM) \cite{hochreiter1997long}
+  and Gated Recurrent Unit (GRU) \cite{chung2014empirical}
+  are popular RNN cell units.
+In this paper, we use LSTM as an example.
+Nevertheless, our optimization techniques can be generalized to any other types of RNN cells.
+In Section \ref{sec:eval},
+  we also provide evaluations of GRU implemented using our techniques.
+
+\subsection{LSTM Cell}
+At step $t$, an LSTM generates an
+  output $y_t$ and the next memory cell states $c_t$ and $h_t$ as follows:
+  \begin{align}
+    \centering
+    i_t &= \sigma (W_{h_i} h_{t-1} + W_{x_i} x_t + b_i) \label{eq:1} \\
+    j_t &= \tanh (W_{h_j} h_{t-1} + W_{x_j} x_t + b_j) \label{eq:2} \\
+    f_t &= \sigma (W_{h_f} h_{t-1} + W_{x_f} x_t + b_f) \label{eq:3} \\
+    o_t &= \sigma (W_{h_o} h_{t-1} + W_{x_o} x_t + b_o)\label{eq:4} \\
+    c_t &= f_t \circ c_{t-1} + i_t \circ j_t \label{eq:5} \\
+    y_t &= h_t = o_t \circ \tanh (c_t) \label{eq:6}
+  \end{align}
+$H, D$ are dimensions of hidden states and input features, respectively.
+$R$ is the sum of hidden state and input feature dimensions.
+$\circ$ is the Hadamard product.
+Table \ref{tab:spec_lstm} shows the specifications for each matrix and vector in an LSTM cell.
+
+\begin{table}[t]
+\vskip 0.15in
+\centering
+\scriptsize
+\begin{tabular}{p{1cm}m{1cm}m{5cm}}
+\toprule
+  Name & Shape & Specification \\
+  \midrule
+  $x_t$    & $D$      &  LSTM cell's input vector\\
+  $f_t$    & $H$      &  Forget gate's activation vector\\
+  $i_t$    & $H$      &  Input gate's activation vector\\
+  $o_t$    & $H$      &  Output gate's activation vector\\
+  $j_t$    & $H$      &  Candidate of memory gate's activation vector\\
+  $c_t$    & $H$      &  Memory gate's vector \\
+  $W_{h_{i,j,f,o}}$   & $H,H$    &  Hidden state's weight matrices at gate $i,j,f,o$\\
+  $W_{x_{i,j,f,o}}$   & $H,D$    &  Input vector's weight matrices at gate $i,j,f,o$\\
+  $b$      & $H$      &  Bias vector at gate $i$,$j$,$f$,$o$\\
+\bottomrule
+\end{tabular}
+\caption{LSTM specifications.}
+\label{tab:spec_lstm}
+\vskip -0.1in
+\end{table}
+
+\subsection{Spatial Reconfigurable Architectures}
+Spatial reconfigurable architectures, such as FPGAs and CGRAs, are gaining traction as data center accelerators for their
+energy efficiency \cite{awsf1, catapult, baidu}.
+Compared to processor-based architectures, spatial architectures can reach high resource utilization
+  by reconfiguring memory and compute based on the applications and computation requirements.
+In addition to exploiting parallelism, pipelining of data-flow graph in
+  a spatial architecture provides high compute throughput.
+Nonetheless, the traditional low-level programming
+  interface and long synthesis time of FPGA is the major obstacle
+  for it to become a mainstream accelerator.
+As opposed to bit-level flat-interconnection in FPGAs,
+  CGRAs are usually configured at higher level of granularity and contain a hierarchical interconnection network.
+In exchange, the reduction in flexibility
+  in hardware translates to lowered routing overhead and
+  higher clock frequency.
+The reduced routing
+  overhead provides higher compute density and memory capacity,
+  which makes CGRA an attractive
+  platform to accelerate deep learning workloads.
+Due to the flexibility in mapping applications,
+  spatial architectures often require design space exploration (DSE)
+  in order to achieve good resource
+  utilization and performance \cite{dse_koeplinger, fpgadse}.
+
+\subsection{Spatial}
+Spatial is a hardware-centric DSL that targets FPGAs and a previously
+  proposed CGRA, Plasticine.
+A user describes applications in un-parallelized pattern-based loops with explicit
+memory hierarchies.
+Spatial automatically schedules, parallelizes, and pipelines arbitrary loop nests.
+To scale the memory bandwidth with parallelism, Spatial banks the scratchpad memories.
+To sustain the throughput of pipelining, Spatial also buffers the intermediate memories.
+Spatial exposes important design parameters such as blocking size and unrolling factor.
+Using the exposed parameters,
+  users can easily tune their design either manually or with an external DSE engine to
+  balance the pipeline stages and saturate resource for different tasks on different
+  hardware targets.
+
+\subsection{Plasticine}
+Plasticine is a CGRA that accelerates general
+  nested loops in Spatial.
+It consists of primarily two types of units:
+  a pattern compute unit (PCU) containing a single instruction multiple data (SIMD) pipeline
+  optimized for accelerating vectorized map and reduction loops,
+  and a pattern memory unit (PMU) containing configurable
+  memory that to support banking and buffering schemes for various access patterns.
+Plasticine supports parallelizing and pipelining arbitrarily nested loops from Spatial.
+More architectural details will be explained in Section \ref{sec:arch}.

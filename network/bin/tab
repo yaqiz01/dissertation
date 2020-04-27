@@ -1,0 +1,122 @@
+#!env/bin/python2
+
+from os import listdir
+from os.path import isfile, isdir, join, splitext, basename, dirname 
+import os, sys
+import math
+import numpy as np
+import pandas as pd
+import imp
+from plasticine_model import *
+
+def mergeSwitch():
+    new = pd.read_csv("data/switch28.csv", header=0,
+        encoding="utf-8-sig",
+    )
+    new = new.assign(sim_scalar=0)
+    old = pd.read_csv("data/old/switch28.csv", header=0,
+        encoding="utf-8-sig",
+    )
+    tab = new
+    tab = pd.concat([tab, lookup(old, WIDTH=512, drop=False)], axis=0, sort=True)
+    tab = pd.concat([tab, lookup(old, WIDTH=32, LINKS_SW=1, drop=False)], axis=0, sort=True)
+    tab.to_csv("data/switch28_merged.csv", sep=",")
+    # print(lookup(tab, WIDTH=32, LINKS_SW=1))
+
+def main():
+    summary = pd.read_csv(
+        'data/summary.csv', 
+        header=0, # row for header file
+        encoding="utf-8-sig",
+    )
+
+    tab = lookup(summary, best_param=True)
+    print(tab[['backend', 'total_net_power', 'app', 'vswitch_inactive_power',
+        'vswitch_active_energy']].sort_values('total_net_power').tail(10))
+
+    model = PlasticineModel()
+    # tab = model.routertb
+
+    # columns = tab.columns.values
+    # columns = [c for c in columns if c not in [STATIC_POWER_HEADER, DYNAMIC_POWER_HEADER,
+        # ENERGY_HEADER, DYNAMIC_ENERGY_HEADER, 'power', AREA_HEADER, 'synthesis slack (ns)',
+        # 'vc_buffer_size']]
+
+    # print('Router:')
+    # for c in columns:
+        # print('{}: {}'.format(c, tab[c].unique().tolist()))
+
+    # tab = model.switchtb
+
+    # columns = tab.columns.values
+    # columns = [c for c in columns if c not in [STATIC_POWER_HEADER, DYNAMIC_POWER_HEADER,
+        # ENERGY_HEADER, DYNAMIC_ENERGY_HEADER, 'power', AREA_HEADER, 'synthesis slack (ns)']]
+
+    # print(tab[tab['LINKS_SW']==3].sort_values('power').tail(10))
+
+    # print('')
+    # print('Switch:')
+    # for c in columns:
+        # print('{}: {}'.format(c, tab[c].unique().tolist()))
+    # print(tab['dynamic power (W)'] / tab['static power (W)'])
+    # print(tab['static power (W)'] / tab['synthesis area (um^2)'])
+    # tab = model.switchtb
+    # tab = lookup(tab, sim_scalar=0)
+    # print(tab['static power (W)'] / tab['synthesis area (um^2)'])
+    # print(tab['dynamic power (W)'] + tab['static power (W)'])
+    # for x in sorted(tab['static power (W)'].tolist()):
+        # print(x)
+    # tab = model.routertb
+    # tab = lookup(tab, sim_scalar=1)
+    # print(tab['static power (W)'])
+    
+    # ig = imp.load_source('g', 'isca2019/data/igraph/P14x14__LSTM_0.py')
+    # print(ig.g)
+
+    # print(lookup(old, num_nodes_per_router=2))
+    # print(new['num_nodes_per_router'])
+
+    # backends = ["P14x14", "H14x14v3s4", "H14x14v2s4", "H14x14v1s4", "H14x14v0s0"]
+    # tab = loadSimData('data/sims')
+    # tab = lookup(tab, backend="H14x14v1s4c2", param="DotProduct_0")
+    # print(tab)
+    # print(get_col(lookup(tab), 'vcLimit'))
+    # summary = pd.read_csv(
+        # 'data/sims/summary.csv', 
+        # header=0, # row for header file
+        # encoding="utf-8-sig",
+    # )
+    # cols = []
+    # cols += ['backend', 'total_vswitch_energy', 'total_vswitch_energy', 'total_router_energy', 'NetVC']
+    # cols += ['DynHopsVec', 'DynHopsScal', 'StatHopsVec', 'StatHopsScal']
+    # print(lookup(summary, param='Blackscholes_0')[cols])
+
+    # model = PlasticineModel('data','28')
+    # backends = ["H14x14v1s4"]
+    # backends = ["Tv2s4t1800", "Tv2s4t3600", "Tv2s4t600"]
+    # backends = ["P14x14", "Tv3s4t1800", "Tv3s4t3600", "Tv3s4t600"]
+    # tab = loadSimData(backends, 'data/')    # tab = tab.set_index('prtime', append=True).sort_index(level='prtime')
+    # tab = lookup(tab, app="LogReg")
+    # print(tab)
+    # print("vc:")
+    # print(get_col(tab, "NetVC"))
+    # print("DynHopsVec:")
+    # print(get_col(tab, "DynHopsVec"))
+    # print("DynHopsScal:")
+    # print(get_col(tab, "DynHopsScal"))
+    # print("StatHopsScal:")
+    # print(get_col(tab, "StatHopsScal"))
+    # print("StatHopsVec:")
+    # print(get_col(tab, "StatHopsVec"))
+    # print("asic:")
+    # print(get_col(tab, "asic"))
+    # print("row:")
+    # print(get_col(tab, "row"))
+    # print("p2p:")
+    # print(get_col(tab, "p2p"))
+    # tab = loadSummary('data/sims/summary.csv')
+    # print(tab['p2p'].to_dict())
+    # mergeSwitch()
+
+if __name__ == "__main__":
+    main()

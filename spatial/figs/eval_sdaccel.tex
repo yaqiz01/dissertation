@@ -1,0 +1,158 @@
+
+
+\begin{table*}
+\caption{Number of lines of code (LOC), area utilization, and runtime comparisons between SDAccel and Spatial on a single VU9P FPGA. 
+For reference, the first row lists the total number of FPGA resources available. LOC improvements are percent improvements from SDAccel. The remaining improvement factors are calculated as $(SDAccel / Spatial)$. 
+\vspace{-10pt}
+}
+\label{t:hls_comp}
+
+\fontsize{8.5}{9.5}\selectfont
+\begin{tabular}{llll d{3.0} d{6.0} d{4.0} d{4.0} d{4.1} }
+\ml{}                                                           & \ml{}           &\ml{}          & \ml{}                & \mc{LOC}    & \mc{LUTs}         & \mc{BRAM}         & \mc{DSPs}         & \mc{Time (ms)} \\ \toprule
+\ml{Benchmark}                                                  & \ml{Data Sizes} &\ml{DSE size}  & \ml{\emph{Capacity}} & \mc{---}    & 914400            & 1680              & 5640              & \mc{---} \\
+\midrule
+
+% \multirow{3}{*}{
+% \hspace{-8pt}\begin{tabular}{l}
+% \bf{AES} \\
+% Encryption \\
+% \end{tabular}
+% }                                                               &
+% \multirow{3}{*}{32kB data }
+%                                                                 & SDAccel         & 333                  & 338305      & 589               & 0                 & 2.23 \\
+%                                                                 &                 & Spatial              & 150         & 600027            & 442               & 9                 & 14.45 \\
+%                                                                 &                 & \ml{Relative}        & \mc{54.8\%} & \mc{0.56$\times$} & \mc{1.33$\times$} & \mc{1.33$\times$} & \mc{0.15$\times$} \\ \midrule
+
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+\bf{BS} \\
+Black-Scholes \\
+Option pricing \\
+\end{tabular}
+}                                                               &
+\multirow{3}{*}{ 960,000 options } 
+& \multirow{3}{*}{ $7.7\times 10^4$ }
+                                                                & SDAccel         & 175   & 363368      & 550  & 290 & 6.18 \\
+                                              &&                & Spatial         & 93    & 698885      & 493  & 945 & 3.79 \\
+                                              &                 &                 & \ml{Improvement} & \mc{46.8\%} & \mc{0.52$\times$} & \mc{1.12$\times$} & \mc{0.31$\times$} & \mc{1.63$\times$} \\ \midrule
+
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+\bf{GDA} \\
+Gaussian discriminant \\
+analysis \\
+\end{tabular}
+}                                                               &
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+1024 rows \\
+96 dimensions \\
+\end{tabular}
+} & \multirow{3}{*}{ $3.0\times 10^{10}$ }
+                                                                & SDAccel          & 73    & 356857      & 594   & 108   & 10.75 \\
+                                              &&                 & Spatial          & 64    & 378130      & 858   & 216   & 1.27  \\
+                                              &&                 & \ml{Improvement} & \mc{12.3\%} & \mc{0.94$\times$} & \mc{0.69$\times$} & \mc{0.50$\times$} & \mc{8.48$\times$} \\ \midrule
+
+
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+\bf{GEMM} \\
+Matrix multiply \\
+\end{tabular}
+}                                                               &
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+A: 1024$\times$1024 \\
+B: 1024$\times$1024 \\
+\end{tabular}
+} 
+& \multirow{3}{*}{ $2.6\times 10^8$ }
+                                                                & SDAccel          & 110         & 341894            & 674               & 206                & 1207.26 \\
+                                              &&                 & Spatial          & 44          & 426295            & 500               & 798               & 878.45 \\
+                                              &&                 & \ml{Improvement} & \mc{60.0\%} & \mc{0.80$\times$} & \mc{1.35$\times$} & \mc{0.26$\times$} & \mc{1.37$\times$} \\ \midrule
+
+
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+\bf{KMeans} \\
+K-Means clustering\\
+\end{tabular}
+}                                                               &
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+200 iterations \\
+320$\times$32-element points \\
+\end{tabular}
+}
+& \multirow{3}{*}{ $2.1\times 10^6$ }
+                                                                & SDAccel          & 146         & 356382            & 657               & 539               & 73.04 \\
+                                              &&                 & Spatial          & 81          & 369348            & 453               & 105                & 53.25 \\
+                                              &&                 & \ml{Improvement} & \mc{44.5\%} & \mc{0.96$\times$} & \mc{1.45$\times$} & \mc{5.13$\times$} & \mc{1.37$\times$} \\ \midrule
+
+
+
+
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+\bf{PageRank} \\
+Node ranking algorithm \\
+\end{tabular}
+}                                                               &
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+DIMACS10 Chesapeake \\
+10000 iterations \\
+\end{tabular}
+}
+& \multirow{3}{*}{ $4.1\times 10^3$ }
+                                                                & SDAccel          & 112         & 337102            & 549               & 17                & 2041.62 \\
+                                              &&                 & Spatial          & 77          & 418128            & 862               & 81                & 587.35 \\
+                                              &&                 & \ml{Improvement} & \mc{31.2\%} & \mc{0.81$\times$} & \mc{0.64$\times$} & \mc{0.21$\times$} & \mc{3.48$\times$} \\ \midrule
+
+
+% \multirow{3}{*}{
+% \hspace{-8pt}\begin{tabular}{l}
+% \bf{Sobel} \\
+% Image edge detection \\
+% \end{tabular}
+% }                                                               &
+% \multirow{3}{*}{512$\times$512 bmp}
+%                                                                & SDAccel         & 90                   & 341100      & 560               & 0                 & 0.19 \\
+%                                                                &                 & Spatial              & 50          & 514885            & 574               & 177               & 20.74 \\
+%                                                                &                 & \ml{Improvement}        & \mc{44.4\%} & \mc{0.66$\times$} & \mc{0.98$\times$} & \mc{0.07$\times$} & \mc{0.01$\times$} \\ \midrule
+
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+\bf{SW} \\
+Smith-Waterman \\
+DNA alignment \\
+\end{tabular}
+}                                                               &
+\multirow{3}{*}{256 base pairs}
+& \multirow{3}{*}{ $2.1\times 10^6$ }
+                                                                & SDAccel           & 240         & 541617            & 547               & 12                & 8.67 \\
+                                              &&                 & Spatial           & 82          & 330063            & 470               & 9                 & 0.61 \\
+                                              &&                 & \ml{Improvement}  & \mc{65.8\%} & \mc{1.64$\times$} & \mc{1.16$\times$} & \mc{1.33$\times$} & \mc{14.15$\times$} \\ \midrule
+
+
+\multirow{3}{*}{
+\hspace{-8pt}\begin{tabular}{l}
+\bf{TQ6} \\
+TPC-H Q6 \\
+Filter reduction \\
+\end{tabular}
+}                                                               &
+\multirow{3}{*}{6,400,000 records}
+& \multirow{3}{*}{ $3.5\times 10^9$ }
+                                                                & SDAccel          & 74          & 356978            & 548               & 15                & 18.61 \\
+                                              &&                 & Spatial          & 48          & 472868            & 574               & 393               & 13.97 \\
+                                              &&                 & \ml{Improvement} & \mc{35.1\%} & \mc{0.75$\times$} & \mc{0.95$\times$} & \mc{0.04$\times$} & \mc{1.33$\times$} \\
+
+
+\midrule
+\ml{Average}                                  &&                 & \ml{Improvement} & \mc{42.3\%} & \mc{0.87$\times$} & \mc{1.01$\times$} & \mc{0.42$\times$} & \mc{2.90$  \times$} \\
+  
+\bottomrule
+\end{tabular}
+\end{table*}

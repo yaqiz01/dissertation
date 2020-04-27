@@ -1,0 +1,49 @@
+#!/usr/bin/env python2
+
+conf = { "vlink":2, "slink":4, 'net':'static' , 'link-prop':'db', 'psim-q':1, 'proute-q':1}
+conf['nPCU'] = 64
+conf['nPMU'] = 64
+conf['nRouter'] = 0
+conf['nSwitch'] = 17 * 9
+conf["StatHopsScal"] = 10
+conf["StatHopsVec"] =  10
+conf["DynHopsScal"] = 20
+conf["DynHopsVec"] = 20
+conf["cycle"] = 100
+conf["freq"] = 1e9
+
+import sys,os
+sys.path.insert(0, os.environ['PIR_HOME'] + "bin/")
+from plasticine_model import *
+model = PlasticineModel('./data', tech=28)
+area = model.get_area_summary(**conf)
+energy = model.get_net_energy_summary(**conf)
+power = model.get_power_summary(energy, **conf)
+
+def convert_unit(value, unit):
+    scale = 1e6 if '^2' in unit else 1e3
+    while value >= scale:
+        value = value / scale
+        if 'f' in unit:
+            unit = unit.replace('f', 'p')
+        elif 'p' in unit:
+            unit = unit.replace('p', 'n')
+        elif 'n' in unit:
+            unit = unit.replace('n', 'u')
+        elif 'u' in unit:
+            unit = unit.replace('u', 'm')
+        elif 'm' in unit:
+            unit = unit.replace('m', '')
+    return value, unit
+
+for k in area:
+    v,unit = convert_unit(area[k], 'um^2')
+    print('{:30s} {:10.2f} ({})'.format(k, v, unit))
+
+for k in energy:
+    v,unit = convert_unit(energy[k]*1e15, 'fJ')
+    print('{:30s} {:10.2f} ({})'.format(k, v, unit))
+
+for k in power:
+    v,unit = convert_unit(power[k]*1e12, 'pW')
+    print('{:30s} {:10.2f} ({})'.format(k, v, unit))

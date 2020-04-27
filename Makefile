@@ -4,7 +4,7 @@ SIG=text/signature
 
 thesis.pdf: text/*
 	latexmk -pdf $(MAIN).tex
-	latexmk -c
+	latexmk -c thesis.pdf
 
 sig:
 	latexmk -pdf $(SIG).tex

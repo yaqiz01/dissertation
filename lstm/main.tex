@@ -1,0 +1,114 @@
+\documentclass{article}
+
+  % Recommended, but optional, packages for figures and better typesetting:
+  \usepackage{microtype}
+  \usepackage{graphicx}
+  \usepackage{subfigure}
+  \usepackage{booktabs} % for professional tables
+  \usepackage{caption}
+  %\usepackage{hyperref}
+  \usepackage[hyphenbreaks]{breakurl}
+  \usepackage[hyphens]{url}
+
+  % hyperref makes hyperlinks in the resulting PDF.
+  % If your build breaks (sometimes temporarily if a hyperlink spans a page)
+  % please comment out the following usepackage line and replace
+  % \usepackage{sysml2019} with \usepackage[nohyperref]{sysml2019} above.
+
+  % Attempt to make hyperref and algorithmic work together better:
+  \newcommand{\theHalgorithm}{\arabic{algorithm}}
+  \newcommand\TODO[1]{\textcolor{red}{(TODO: #1)}}
+  \newcommand{\gist}[1]{{\color{blue} GIST: #1 \\}}
+  \newcommand\dash{\textnormal{-}}
+
+  % Use the following line for the initial blind version submitted for review:
+  \usepackage[accepted]{sysml2019}
+  %\usepackage[nohyperref]{sysml2019}
+  \usepackage{amsmath}
+  \usepackage{listings}
+  \usepackage{tabularx}
+  \usepackage{multirow}
+  \usepackage{array}
+  \usepackage{mathtools}
+  \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+
+  \newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+  \newcolumntype{L}[1]{>{\raggedright}p{#1}}
+
+  \input{codeformat}
+
+  % If accepted, instead use the following line for the camera-ready submission:
+  %\usepackage[accepted]{sysml2019}
+
+  % The \sysmltitle you define below is probably too long as a header.
+  % Therefore, a short form for the running title is supplied here:
+  \sysmltitlerunning{Serving Recurrent Neural Networks Efficiently with a Spatial Accelerator}
+
+  \begin{document}
+
+  \twocolumn[
+  \sysmltitle{Serving Recurrent Neural Networks Efficiently with a Spatial Accelerator}
+
+  % It is OKAY to include author information, even for blind
+  % submissions: the style file will automatically remove it for you
+  % unless you've provided the [accepted] option to the sysml2019
+  % package.
+
+  % List of affiliations: The first argument should be a (short)
+  % identifier you will use later to specify author affiliations
+  % Academic affiliations should list Department, University, City, Region, Country
+  % Industry affiliations should list Company, City, Region, Country
+
+  % You can specify symbols, otherwise they are numbered in order.
+  % Ideally, you should not use this facility. Affiliations will be numbered
+  % in order of appearance and this is the preferred way.
+  \sysmlsetsymbol{equal}{*}
+
+  \begin{sysmlauthorlist}
+  \sysmlauthor{Tian Zhao}{sf}
+  \sysmlauthor{Yaqi Zhang}{sf}
+  \sysmlauthor{Kunle Olukotun}{s}
+
+  \end{sysmlauthorlist}
+
+  \sysmlaffiliation{sf}{Department of Electrical Engineering, Stanford University, Stanford, USA}
+
+  \sysmlcorrespondingauthor{Tian Zhao}{tianzhao@stanford.edu}
+  \sysmlcorrespondingauthor{Yaqi Zhang}{yaqiz@stanford.edu}
+  \sysmlcorrespondingauthor{Kunle Olukotun}{kunle@stanford.edu}
+
+  % You may provide any keywords that you
+  % find helpful for describing your paper; these are used to populate
+  % the "keywords" metadata in the PDF but will not be shown in the document
+  \sysmlkeywords{Model Serving, Parallel System}
+
+  \vskip 0.3in
+  \input{text/abstract.tex}
+  ]
+
+  % this must go after the closing bracket ] following \twocolumn[ ...
+
+  % This command actually creates the footnote in the first column
+  % listing the affiliations and the copyright notice.
+  % The command takes one argument, which is text to display at the start of the footnote.
+% The \sysmlEqualContribution command is standard text for equal contribution.
+  % Remove it (just {}) if you do not need this facility.
+  % https://github.com/stanford-ppl/papers.git
+  \printAffiliationsAndNotice{}
+  % leave blank if no need to mention equal contribution
+  % \printAffiliationsAndNotice{\sysmlEqualContribution} % otherwise use the standard text.
+
+  \input{text/intro.tex}
+  \input{text/background.tex}
+  \input{text/app.tex}
+  \input{text/lowprec.tex}
+  \input{text/evaluation.tex}
+  \input{text/related.tex}
+  \input{text/conclusion.tex}
+  \input{text/acknowledge.tex}
+
+  \bibliographystyle{sysml2019}
+  \bibliography{references}
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}

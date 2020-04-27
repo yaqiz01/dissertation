@@ -1,0 +1,154 @@
+\section{Related Work}
+\label{relatedWork}
+%\christos{this is quite long. you should trim it a little. First, it is not criteria, it is requirements right? Once you establish the criteria, you should be able to trim the text as you can quickly mention why each architecture fails some criteria. E.g., GPUs are easy to take down in 1-2 sentences (instruction overheads).}
+
+%\christos{One obvious question is how did you pick these archs to list in table 1? Twist a little the first sentence of each paragraph to mention that what class of archs the ones you mention represent (so that the reader can cast similar archs to this paragraph). Also mention somewhere in the text that there are numerous archs and you will discuss representative archs from each major class}
+
+%\christos{At the end of this section I am in page 4 and I still don't ahve an intuition of what is the key to fix to get fast compilation. This is important, bring it up earlier (intro?)}
+
+%
+%We identify the following criteria to achieve the aforementioned goals of flexibility, efficiency,
+%and programmability:
+Table~\ref{t:requirements} introduced key architectural features required to efficiently execute parallel patterns.
+We now discuss the significant related work in light of these features.
+
+{\bf Reconfigurable scratchpads:} Several of the previously proposed reconfigurable fabrics lack support for reconfigurable, distributed scratchpad memories.  Without the ability to reconfigure the on-chip memory system with the different banking and buffering strategies needed to support parallel patterns, the memory system becomes the bottleneck for many workloads.
+
+For example, ADRES~\cite{adres}, DySER~\cite{dyser}, Garp~\cite{garp}, and Tartan~\cite{tartan} closely couple a reconfigurable fabric with a CPU. These architectures access main memory through the cache hierarchy shared with the host CPU. ADRES and DySER tightly integrate the reconfigurable fabric into the execution stage of the processor pipeline, and hence depend on the processor's load/store unit for memory accesses. ADRES consists of a network of functional units, reconfigurable elements with register files, and a shared multi-ported register file.
+%However, exploiting nested parallelism is hard due to memory access serialization at the cache hierarchy.
+DySER is a reconfigurable array with a statically configured interconnect designed to execute innermost loop bodies in a pipelined fashion. However, dataflow graphs with back-edges or feedback paths are not supported, which makes it challenging to execute patterns such as \emph{Fold} and nested parallel patterns.  Garp consists of a MIPS CPU core and an FPGA-like coprocessor. The bit-level static interconnect of the co-processor incurs the same reconfiguration overheads as a traditional FPGA, restricting compute density.
+%the absence of distributed scratchpads makes exploiting nested parallelism difficult.
+Piperench~\cite{piperench} consists of a pipelined sequence of ``stripes'' of functional units (FUs).  A word-level crossbar separates each stripe. Each FU has an associated register file which holds temporary results.  Tartan consists of a RISC core and an asynchronous, coarse-grained reconfigurable fabric (RF).  The RF architecture is hierarchical with a dynamic interconnect at the topmost level, and a static interconnect in the inner level. The architecture of the innermost RF core is modeled after Piperench~\cite{piperench}.
+
+
+%\gist{adres: Network of functional units and reconfigurable elements with a multi-ported register file with a memory hierarchy. The core can be configured
+%  to operate either as a VLIW core or a reconfigurable matrix. Exploits loop-level parallelism but only at innermost level~\cite{dresc}. Exploiting nested
+%  parallelism is hard as access to intermediate data structures will be serialized through the memory hierarchy.}
+
+%\gist{dyser: Array of reconfigurable functional units in a statically programmable interconnect, part of the execute stage of a processor pipeline.
+%  Credit-based flow control presumably uses a separate interconnect path, giving benefit of doubt.
+%  No explicit scratchpads, hence relies on the processor's cache hierarchy to capture locality. Nested parallelism not exploited because
+%DySER does not support executing dataflow graphs with back-edges.}
+
+%\gist{garp: Hybrid architecture with a MIPS CPU and Reconfigurable FPGA-like co-processor with bit-level interconnect. Data locality captured with CPU's cache hierarchy
+%  and memory queues for sequential accesses. With the absence of scratchpad memories, cannot support exploiting nested
+%  parallelism as intermediate data structures have to go to the memory hierarchy.}
+
+%\gist{piperench: Coprocessor with a sequence of pipeline "stripes" of FUs connected with a word-level crossbar. Lack of scratchpad memories
+%and the fact that the compiler unrolls all loops during compilation means that nested parallelism is not exploited.}
+%
+%\gist{tartan: Hybrid architecture with RISC CPU and clockless reconfigurable fabric (RF) as a peer-processor. Aimed to be general purpose.
+%  RF is hierarchical with a Piperench-style core at the innermost level. No scratchpads, locality is captured via a memory hierarchy shared with CPU.
+%  Exploiting nested parallelism is hard because of absence of scratchpads, need to go through top-level dynamic interconnect to access memories.
+%  Successive pipeline stages in a \emph{page} separated a partial crossbar, which provides flexibility but also incurs area
+%and power overhead.}
+{\bf Reconfigurable datapaths} Architectures with reconfigurable functional units consume less power
+    as they do not incur the overheads of traditional instruction pipelines such as instruction fetch, decode, and register file access.
+    These overheads account for about 40\% of the datapath energy on the CPU~\cite{inefficiencies} and about 30\%
+    of the total dynamic power on the GPU~\cite{gpuwattch}. Furthermore, using a reconfigurable datapath in place of a
+    conventional instruction pipeline in a GPU reduces energy consumption by about 57\%~\cite{sgmf}.
+		The Raw microprocessor~\cite{raw} is a tiled architecture where each tile consists of a single-issue in-order processor, a floating point
+		unit, a data cache, and a software-managed instruction cache. Tiles communicate with their nearest neighbors using pipelined, word-level static and dynamic
+		networks. Plasticine does not incur the overheads of dynamic networks and general purpose processors mentioned above. Using hardware managed caches
+		in place of reconfigurable scratchpads reduces power and area efficiency in favor of generality.
+
+{ \bf Dense datapaths and hierarchical pipelines:} Plasticine's hierarchical architecture, with dense pockets of pipelined SIMD functional units and decentralized control,
+enables capturing a substantial amount of data communication within PCUs and efficiently exploiting coarse-grained pipeline parallelism in applications.
+In contrast, architectures that lack hierarchal support for nested pipelining in the architecture use their global interconnect to communicate most results.
+Hence, the interconnect can be a bandwidth, power, or area bottleneck.
+For example, RaPiD~\cite{rapid} is a one-dimensional array of ALUs, registers, and memories with hardware support for static and dynamic control.
+A subsequent research project called Mosaic~\cite{staticVsScheduled} includes a static hybrid interconnect along with hardware support to switch
+between multiple interconnect configurations. RaPiD's linear pipeline enforces a rigid control flow which makes it difficult to exploit nested parallelism.
+HRL~\cite{hrl} combines coarse-grained and fine-grained logic blocks with a hybrid static interconnect. While a centralized scratchpad enables some on-chip buffering,
+the architecture is primarily designed for memory-intensive applications with little locality and nested parallelism.
+Triggered instructions~\cite{ti} is an architecture consisting of coarse-grained processing elements (PEs) of ALUs and registers in a static interconnect.
+Each PE contains a scheduler and a predicate register to implement dataflow execution using triggers and guarded actions. The control flow mechanism used in Plasticine
+has some similarities with Triggered instructions. While this architecture has the flexibility to exploit nested parallelism and locality, the lack of hierarchy increases
+communication over the global interconnect which can create bottlenecks, and reduces compute density in the datapath.
+
+% \gist{rapid: One-dimensional array of ALUs, registers, and memories with hardware support for static and dynamic control.  The linear pipeline makes it hard to exploit nested parallelism. Applications written in RaPiD's programming environment, RaPiD-C, are not completely abstracted away from low-level hardware details as the RaPiD-C specification close to the structural description of the algorithm~\cite{rapidc}.}
+
+%\gist{hrl: combines coarse-grained and fine-grained logic blocks with a hybrid static interconnect. While a centralized
+% scratchpad enables some on-chip buffering, the architecture is
+% primarily designed for memory-intensive applications with little locality and nested parallelism. Programming HRL leverages
+% Verilog generated from Vivado HLS~\cite{vivadohls} and conventional plas-and-route.}
+%{\bf Support for scatter-gather:} Plasticine uses configurable address generators along with address coalescing that allows for efficient use of off-chip memory bandwidth. 
+%\gist{Triggered instructions: Spatial accelerator with triggers and guarded actions to control execution flow.
+%  The architecture has the flexibility to exploit nested parallelism and provides scratchpads to exploit locality.
+%  However, parallel execution across PEs requires constant communication over interconnect switches which
+%  can be power inefficient. Plasticine has much higher compute density with dense pockets of pipelined SIMD functional units.
+%  Also, the lack of a high-level compiler means that mapping applications is a tedious manual process of speficying all low-level details.}
+
+%\gist{Focus of this paper is spatial architectures, evaluation against GPGPU is out of scope of this paper.
+%  From the architectures in Table~\ref{t-related}, the only
+%  other spatial architecture that supports a high-level programming interface and which is capable of mapping
+%  entire applications with nested parallelism and custom on-chip data structures is the FPGA.
+%  As a result, we evaluate our architecture and compiler against the FPGA in~\ref{evaluation}.
+%}
+
+%
+%\begin{itemize}
+%  \item \emph{Coarse-grained Reconfigurable datapath}: Accelerators designed with a datapath containing reconfigurable functional units consume less power
+%    as they do not incur the overheads of traditional instruction pipelines such as instruction fetch, decode, and register file access.
+%    These overheads account for about 40\% of the datapath energy on the CPU~\cite{inefficiencies} and about 30\%
+%    of the total dynamic power on the GPU~\cite{gpuwattch}. Furthermore, using a reconfigurable datapath in place of a
+%    conventional instruction pipeline in a GPU reduces energy consumption by about 57\%~\cite{sgmf}.
+%    Coarse-grained reconfigurable units provide higher area and power efficiency over fine-grained units
+%    by increasing compute density and amortizing the cost of reconfiguration overheads.
+%  \item \emph{Local, distributed scratchpad memories}: Off-chip DRAM accesses consume a couple of orders of magnitude
+%    more energy compared to on-chip memory accesses~\cite{horowitz_isscc14}. On-chip scratchpad memories provide explicit means
+%    to exploit data locality in applications having different kinds of access patterns. Further, scratchpads need to be distributed to
+%    enable data structure banking and parallel access to independent data structures. Such high bandwidth parallel access is
+%    required to match compute parallelism and sustain high throughput within the compute pipeline.
+%  \item \emph{Exploit nested parallelism}: Applications that benefit from hardware acceleration tend to
+%    exhibit multiple types of data parallelism~\cite{delite-tecs14}, often at multiple levels of nesting~\cite{rodinia}.
+%    Accelerators must support efficient mapping such hierarchically parallel datapaths while incurring minimal overhead.
+%  \item \emph{Static hybrid interconnect}: Static
+%      bit-level interconnect incurs a lot of area overhead and scales poorly with number of bits~\cite{fpgaSurvey, calhoun, bolsens}.
+%      Static interconnect that connects busses of wires improves interconnect area~\cite{busInterconnect}, as the configuration for the
+%      switches can be amortized over the bus width. Additionally, using a bit-level control interconnect to handle control logic greatly
+%      improves interconnect utilization and power consumption~\cite{staticVsScheduled, hrl} as the data and control do not have to be
+%      packed into the same bus.
+%\end{itemize}
+%
+% \begin{table*}[]
+% \centering
+% \caption{Table of previous work in relation to the criteria outlined above.}
+% \label{t-related}
+% \resizebox{\textwidth}{!}{%
+% \begin{tabular}{@{}llccccccccccccc@{}}
+% \bottomrule
+% %                                       & \multicolumn{3}{c}{Instruction Stream} & \multicolumn{5}{c}{Tightly Coupled Configurations}                                                & \multicolumn{4}{c}{Loosely Coupled Configurations} &                    \\
+% Feature                                &\emph{Goal}                                                                   & ADRES~\cite{adres} & DySER~\cite{dyser}   & Garp~\cite{garp}  & PipeRench~\cite{piperench}  & Tartan~\cite{tartan}  & RaPiD~\cite{rapid} & HRL~\cite{hrl} &\begin{tabular}[c]{@{}l@{}}Triggered\\ Instructions\end{tabular}~\cite{ti}  & FPGA      & \textbf{This Work} \\ \midrule
+% Coarse-grained Reconfigurable Datapath &\begin{tabular}[c]{@{}l@{}}\emph{Efficiency}\\\emph{Flexibility}\end{tabular} &\tick               & \tick                &\x                 &  \tick                      &\tick                  & \tick              &\tick           &             \tick                                                          & \x        & \tick              \\ \midrule
+% Exploit nested parallelism             &\emph{Flexibility}                                                            &\x                  & \x                   &\x                 &  \x                         & \x                    & \x                 & \x             &             \tick                                                          & \tick     & \tick              \\ \midrule
+% Local, distributed scratchpad memories &\emph{Efficiency}                                                             &\x                  & \x                   &\x                 &  \x                         &\x                     & \tick              & \x             &             \tick                                                          &\tick      & \tick              \\ \midrule
+% Static hybrid interconnect             &\emph{Efficiency}                                                             &\x                  & \tick                &\x                 &  \x                         & \x                    & \tick              &\tick           &             \tick                                                          &  \x       & \tick              \\ \midrule
+% High-level programming interface       &\emph{Programmability}                                                        &\tick               & \ytick               &\ytick             &  \ytick                     & \ytick                & \x                 & \x             &             \x                                                             &\tick      & \tick              \\ \midrule
+% Fast Compilation                       &\emph{Programmability}                                                        &\tick               & \tick                & \tick             &  \tick                      & \tick                 & ?                  & \x             &             \x                                                             &  \x       & \tick              \\ \bottomrule
+% \end{tabular}
+% }
+% \end{table*}
+
+%One of the most successful accelerator architectures is the GPGPU~\cite{gpu}, which provides massive parallel processing
+%capabilities with thousands of simultaneously active thread contexts. While some form of nested parallelism and locality can be exploited
+%multiple SMs and scratchpads respectively, GPGPUs follow a conventional instruction stream execution model and hence
+%incurs associated overheads~\cite{gpuwattch, sgmf}. Additionally, inter-SM communication can only happen via global memory,
+%which makes it hard to exploit coarse-grained pipeline parallelism across SMs efficiently.
+
+%Wavescalar is a dynamic dataflow architecture with four pipeline stages with broadcast and dynamic
+%interconnects. While nested parallelism can potentially be exploited with multi-threaded support, lack of a distributed scratchpad means
+%that parallel independent memory accesses are serialized at the shared memory interface. A TRIPS core is a grid of execution nodes,
+%where each node has an ALU and a reservation station. Execution of a hyperblock proceeds in dataflow fashion, where the output of one node
+%is directly forwarded to the reservation stations of dependent nodes. However, the inter-node interconnect is not statically reconfigurable.
+%\gist{wavescalar: Dynamic dataflow architecture with five stages: Input, match, dispatch, execute. While execution is dataflow driven, the
+%  datapath is not reconfigurable. Broadcast and dynamic interconnects used. Coarse-grained parallelism can be exploited using multi-threaded
+%  support and barriers. However, lack of a distributed scratchpad means that parallel memory accesses are serialzied at the memory interface.}
+
+%A large body of previous work exists on architectures and tools for coarse-grained reconfigurable architectures~\cite{cgraSurvey1, cgraSurvey2}.
+%We compare and contrast the several related works in relation to the criteria above in Table~\ref{t-related}.
+
+%\gist{trips: Grid of execution cores, where each core has an ALU and a reservation station. Supports different modes to exploit ILP,
+%  DLP, TLP. Dataflow driven execution, but datapath and inter-node interconnect is not statically reconfigurable.}
+
+

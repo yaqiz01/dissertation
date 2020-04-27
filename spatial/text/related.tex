@@ -1,0 +1,99 @@
+\section{Related Work}
+\label{related}
+
+We conclude with a qualitative comparison of Spatial to related work, drawing from the criteria in Section~\ref{background}.
+
+\paragraph{HDLs}
+Hardware description languages like Verilog and VHDL are designed for arbitrary circuit description. In order to achieve maximum generality, they require users to explicitly manage timing, control signals, and local memories. Loops are expressed by state machines in flattened RTL. 
+One exception to this is Bluespec SystemVerilog \cite{bluespec}, which supports state machine inference from nested while loops.
+Recent advancements in HDLs have largely been aimed at meta-programming improvements and increasing the size of hardware module libraries.
+Languages like Chisel~\cite{chisel}, MyHDL~\cite{myhdl} and VeriScala~\cite{veriscala} make procedural generation of circuits simpler by embedding their HDL in a software language (e.g. Scala or Python). Similarly, Genesis2~\cite{genesis2} adds Perl scripting support to SystemVerilog to help drive procedural generation. While these improvements allow for more powerful meta-programming compared to Verilog \texttt{\small{generate}} statements, users still write programs at a timed circuit level.
+%For application accelerators, such a low level of abstraction is often too tedious.
+
+
+\paragraph{Lime}
+Lime is a Java-based programming model and runtime from IBM which aims to provide a single unified language to program heterogeneous architectures. Lime natively supports custom bit precisions and includes collection operations, with parallelism in such operations inferred by the compiler. Coarse-grained pipeline and data parallelism are expressed through ``tasks''. Coarse-grained streaming computation graphs can be constructed using built-in constructs like \texttt{\small{connect}}, \texttt{\small{split}}, and \texttt{\small{join}}. The Lime runtime system handles buffering, partitioning, and scheduling of stream graphs. However, coarse-grained pipelines which deviate from the streaming model are not supported, and the programmer has to use a low-level messaging API to handle coarse-grained graphs with feedback loops. Additionally, the compiler does not perform automatic design tuning. Finally, the compiler's ability to instantiate banked and buffered memories is unclear as details on banking multi-dimensional data structures for arbitrary access patterns are not specified. 
+
+
+\paragraph{HLS}
+High-level synthesis tools such as LegUp~\cite{legup}, Vivado HLS~\cite{vivadohls}, Intel's FPGA SDK for OpenCL~\cite{opencl_sdk}, and SDAccel~\cite{sdaccel} allow users to write FPGA designs in C/C++ and OpenCL.
+Using these tools, applications can be expressed at a high level, in terms of arrays and untimed, nested loops. 
+However, while inner loop pipelining, unrolling, and memory banking and buffering are done by the compiler, they generally require explicit user pragmas.
+While previous work has used polyhedral tools to automate banking decisions for affine accesses within a single loop nest~\cite{Wang_banking}, 
+it does not address non-affine cases or cases where accesses to the same memory occur in multiple loop nests.
+While pragmas like Vivado HLS's \emph{DATAFLOW} enable limited support for pipelining nested loops, pipelining at arbitrary loop nest levels is not yet supported~\cite{vivado_userguide}.
+Tools like Aladdin~\cite{aladdin} have also been created to help automate the process of tuning the pragmas in HLS programs, but designs in HLS still require manual hardware optimization~\cite{nane2016survey}.
+
+%More importantly, users optimizing HLS describe their program in terms of arrays with pragmas. 
+%While these are software constructs, optimizing hardware accelerators in HLS tools is a 
+%Numerous issues, including memory aliasing, and low-level software implementation applications. 
+%While most HLS tools primarily serve as IP core generators, but SDAccel \cite{sdaccel} is a systems-level solution. 
+%Pragmas allow information to be added back to the compiler, but not in a sound way.  }
+
+\paragraph{MaxJ}
+MaxJ is a proprietary language created by Maxeler which allows users to express dataflow algorithms in Java libraries, emphasizing  
+timing at the level of ``ticks`` of valid streaming elements rather than cycles. ~\cite{maxeler}. 
+Users must fall back to flattened, HDL-like syntax for state machines when writing nested loops.
+Memories are inferred based on relative stream offsets, which, while convenient for stream processing, 
+hides hardware implementation details from the user which could otherwise help drive optimization.
+Additionally, MaxJ has limited portability, as it currently can only be used to target supported Maxeler FPGA platforms. 
+
+\paragraph{DHDL}
+The Delite Hardware Definition Language (DHDL) \cite{dhdl} is a precursor to Spatial, in that it allows 
+programmers to describe untimed, nested, parallelizable hardware pipelines and compile these to hardware.
+%It demonstrates how to create an intuitive high-level
+%front end that also serves as a good entry point for driving heavy design space exploration on annotated source code.
+While DHDL supports compiler-aware design parameters and automatic design tuning, it has no support for data-dependent control flow, streaming, or memory controller specialization. 
+DHDL also has no support for generalized memory banking or buffering and relies on its backend, MaxJ, for retiming and initiation interval calculation.
+%Both DHDL and Spatial are built around similar ideas, but diverge in how they handle dynamic control flow, process streaming interfaces, and target devices.
+
+% DHDL is a suitable language for accelerating applications that are composed of fixed, rigid control structures, such as 
+% nested for-loops that comprise algorithms like matrix multiply and neural network training/inference. The language falls short in
+% expressing algorithms that have data-dependent control flow and branching operations, which are common in domains like graph analytics and telecommunications.
+% While these algorithms \textit{can} be expressed in the language, they quickly becomes verbose, cumbersome, and sometimes inefficient as the user tries to 
+% convert dynamic features into static control structures.  In this way, Spatial is an extension of DHDL that resolves these issues
+% by offering more constructs to efficiently handle dynamic operations.
+
+% Because FPGAs are often used in embedded systems for various purposes, the language used to target them should be able to
+% express real-time data handling of peripheral devices that are often on-board.  DHDL did not provide any mechanism for
+% interacting with peripherals, nor did it have the internal infrastructure to support pipelining at the granularity of data.
+% It only supported coarse grain pipelining of control structures, which is explicitly available in the source code.  Spatial
+% provides both the API for handling streams and the control structures equipped to respect data-valid and -ready signals
+% to control their execution.
+
+% Finally, because DHDL generates MaxJ, a language created by Maxeler Technologies optimized for computationally intensive workloads that can only
+%  target specific devices provided by the company.  Spatial generates Chisel as its backend, which is an
+% RTL embedded in Scala for programming at roughly the same abstraction level as Verilog but augmented with metaprogramming framework.
+% This makes it easy necessary to create bitstreams from Spatial code that can target more devices without proprietary licenses and hardware.
+
+
+\paragraph{Image Processing DSLs}
+Recently proposed image processing DSLs provide high-level specifications for targeting various
+accelerator platforms, including GPUs and FPGAs.%~\cite{hegarty2014darkroom, membarth2016hipa, hegarty2016rigel, chugh2016dsl}.
+The narrow domain allows these DSLs to offer more concise abstractions for specifying stencil operations. 
+%Halide~\cite{pldi13halide}, for example, uses a declarative programming model which 
+%entirely hides the loop structure of stencils from the programmer.
+When targeting accelerators, these languages usually rely on source-to-source translation. 
+$HIPA^{CC}$~\cite{membarth2016hipa}, for example, uses a
+source-to-source compiler from a C-like front-end to generate CUDA, OpenCL, and Renderscript for
+targeting GPUs. 
+Recent work on Halide~\cite{pldi13halide} has demonstrated targeting heterogeneous systems, including the Xilinx Zynq's FPGA and ARM cores, by generating intermediate C++ and Vivado HLS~\cite{halidefpga}.
+Rigel~\cite{hegarty2016rigel} and Darkroom~\cite{hegarty2014darkroom} generate Verilog, 
+and PolyMage~\cite{chugh2016dsl} generates OpenMP and C++ for high-level synthesis. 
+Rigel and Darkroom support generation of specialized memory structures on FPGAs, such as line buffers, in order to capture
+reuse. $HIPA^{CC}$ can infer memory hierarchy on GPUs from a fix set of access patterns. 
+These DSLs capture parallelism within a given stencil, typically across image channels 
+and across the image processing pipeline.  
+
+Compared to image processing DSLs, Spatial is more general and provides a 
+lower level of abstraction. Spatial can express pipelining and unrolling for arbitrary loop hierarchies and explicitly exposes the memory hierarchy while automatically banking, buffering, and duplicating structures for arbitrary
+access patterns. These features, along with Spatial's design tuning
+capabilities, make Spatial a natural fit as an optimizing backend target for image processing DSLs.
+
+
+% Compared to image processing DSLs, Spatial is
+% more general but at a lower level of abstraction. Spatial uses a mix of imperative and functional specifications for stencil operations, 
+% but is able to handle pipelining and unrolling for arbitrary loop hierarchies.
+% Spatial requires explicit specification of the memory hierarchy, but is able to automatically bank, buffer, and duplicate for arbitrary access patterns.
+% These features, along with Spatial's design space exploration capabilities, make Spatial a natural fit as an optimizing backend target for 
+% image processing DSLs.

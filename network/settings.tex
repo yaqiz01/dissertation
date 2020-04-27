@@ -1,0 +1,32 @@
+
+\usepackage{booktabs}
+\usepackage{multirow}
+%\usepackage[numbers,sort&compress]{natbib}
+\usepackage[us,12hr]{datetime}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{argmax}
+\usepackage{algpseudocode}
+\usepackage{outlines}
+\usepackage[normalem]{ulem}
+\usepackage{siunitx}
+\usepackage{subfig}
+\usepackage{minted}
+\newcommand\info[1]{\textcolor{red}{(comment: #1)}}
+%\newcommand{\gist}[1]{{\color{blue} GIST: #1 \\}}
+\newcommand\TODO[1]{\textcolor{red}{(TODO: #1)}}
+\newcommand{\yaqi}[1]{{\color{blue} #1}}
+\newcommand\dash{\textnormal{-}}
+\newenvironment{hangingpar}[1]
+  {\begin{list}
+          {}
+          {\setlength{\itemindent}{-#1}%%'
+           \setlength{\leftmargin}{#1}%%'
+           \setlength{\itemsep}{0pt}%%'
+           \setlength{\parsep}{\parskip}%%'
+           \setlength{\topsep}{\parskip}%%'
+           }
+    \setlength{\parindent}{-#1}%%
+    \item[]
+  }
+  {\end{list}}
+\input{codeformat}

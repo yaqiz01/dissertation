@@ -1,4 +1,41 @@
 \chapter{Background}
 
 \section{Plasticine}
+
 \section{Spatial}
+
+\begin{figure}
+\centering
+\newsavebox{\outerProduct}
+\begin{lrbox}{\outerProduct}
+\lstinputlisting[language=Spatial,linewidth=0.91\columnwidth]{code/OuterProduct.scala}
+\end{lrbox}
+\begin{tabular}{m{0.01cm} l} & \usebox{\outerProduct}\\ \end{tabular}
+  %\inputminted[fontsize=\footnotesize]{Scala}{code/OuterProduct.scala}
+  \caption{Example of outer product in Spatial pseudocode.}
+\label{fig:spatial_app}
+\end{figure}
+
+%To target spatial architectures, we use Spatial, an open source domain specific language for reconfigurable accelerators \cite{spatial_koeplinger}.
+We use Spatial, an open source domain specific language for reconfigurable accelerators, to target spatial architectures \cite{spatial_koeplinger}.
+Spatial describes applications with nested loops and an explicit memory hierarchy that captures data movement on-chip and off-chip. 
+This exposes design parameters that are essential for achieving high performance on spatial architectures, including blocking size, loop unrolling factors, inner-loop pipelining, and coarse-grained pipelining of arbitrarily nested loops. 
+To enable loop-level parallelization and pipelining, Spatial automatically banks and buffers intermediate memories between loops. 
+An example of outer product---element-wise multiplication of two vectors resulting in a matrix---in Spatial is shown in Figure~\ref{fig:spatial_app}.
+%In this example we assume inputs \emph{vecA}, \emph{vecB} and outputs \emph{matC} do not fit on chip.
+%First, \emph{C2} and \emph{C4} load tiles of vectors of size \emph{tsA} and \emph{tsB} to on-chip scratchpads \emph{tileA} and \emph{tileB}. 
+%Next, loop \emph{C5} computes the outer products and store it to scratchpad \emph{tileC}. 
+%Finally, \emph{C6} stores partial results back to DRAM. 
+\if 0
+Spatial enables inner loop pipelining in \emph{C5} and coarse-grained pipelining between stages of the outer loop (e.g. \emph{C4}, \emph{C5}, and \emph{C6} are pipelined across iterations of \emph{C3}). 
+The parallelization factor of the inner most loop (\emph{ip} for \emph{C2}, \emph{C5}, and \emph{C6}) translates to SIMD pipeline and vector network vectorization factor. 
+In \emph{C1} and \emph{C2}, \emph{op1} and \emph{op2} are outer loop parallelization factors that allow the programmer to unroll the outer loops and parallelize compute, which can better saturates DRAM bandwidth or balances compute pipelines. 
+When scratchpad producers or consumers are parallelized, the scratchpad must be banked to sustain the required bandwidth. 
+Scratchpads only contain one level of banking hierarchy. 
+Therefore, when more than one dimension of the scratchpad is banked, the high-dimensional banks are mapped across multiple scratchpads. 
+In this example, if both \emph{ii} and \emph{jj} (used in the write address of \emph{tileC}) on line 31 are parallelized, \emph{tileC} will be mapped to multiple scratchpads. 
+This mapping strategy makes broadcast communication common between producers, banks, and consumers when outer loops are unrolled.
+\fi
+For spatial architectures, Design Space Exploration (DSE) of parameters
+(e.g., \emph{op1}, \emph{op2}, \emph{ip}, \emph{tsA}, \emph{tsB}) is critical to achieve good resource utilization and performance \cite{dse_koeplinger}.
+

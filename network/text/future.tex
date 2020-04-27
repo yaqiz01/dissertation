@@ -1,0 +1,22 @@
+\section{Future Work}
+\label{sec:future}
+\subsection{Multitenancy}
+%\begin{outline}
+%  \1 Do an evaluation of app combinations, and plot the speedup of the combined apps vs. sequential execution
+%\end{outline}
+One promising future direction for this work is enabling fine-grained resource sharing for multitenant CGRAs.
+Because static networks are slow to place, and placement is not guaranteed to succeed, the state of the art presents no compelling options for placing multiple applications onto a single chip.
+One possibility, which is potentially highly inefficient, is to partition the chip and run smaller versions of each application on the partitions. 
+However, this does not account for the significant disparity in resource usage between applications: two applications, one DRAM-bound and one compute-bound, could each only run at half speed with this approach.
+Another possibility is to place both applications together onto the same chip, arbitrarily sharing the same resources. 
+However, as congestion increases, there is no guarantee that this will complete for any given chip---if it does not complete, the system can not run the applications in parallel.
+
+\subsection{Fault Tolerance}
+%\begin{outline}
+%  \1 Do an evaluation of placement with several randomly disabled PCUs for several apps, and show that performance is maintained
+%\end{outline}
+Another promising direction is producing more fault-tolerant CGRAs.
+Many current fault tolerance schemes attempt to replace ``like for like,'' such as swapping in a spare SRAM row to replace a defective one \cite{}.
+However, to reap the benefits of SIMD parallelism, the largest structures in Plasticine are on the order of \SI{1}{mm^2}; it is not possible to swap in another row if one PCU or PMU is defective.
+Therefore, applications for future CGRAs will need to adapt to defects in arbitrary locations on chip whose exact locations become known only at runtime.
+This necessitates a fast placement algorithm that is guaranteed to succeed---impossible with a purely static network.

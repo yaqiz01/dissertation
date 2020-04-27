@@ -1,0 +1,28 @@
+\section{SPATIAL Compiler}
+\label{compiler}
+The SPATIAL compiler transforms SPATIAL programs to PISA in two phases: high-level
+compilation and low-level compilation. The high-level compiler represents applications
+internally using a high-level dataflow IR. After a series of analyses, optimizations, and scheduling, the
+dataflow IR is transformed to a low-level IR called \emph{Plasticine IR},
+or \emph{PIR}. The low-level compiler accepts as input an architecture specification, and
+transforms \emph{PIR} to \emph{PISA} configuration using an iterative mapping algorithm.
+The following sections describe our intermediate
+representations, optimizations, scheduling, placement, and routing.
+
+\subsection{Example}
+Insert picture to show program transformations on example in Section~\ref{spatial} during various
+compiler stages.
+
+\subsection{High-level Dataflow IR}
+We have a high-level dataflow IR.
+
+\subsection{Plasticine IR}
+We have a low-level IR called \emph{Plasticine IR}, or \emph{PIR}.
+
+\subsection{High-level Compilation}
+\subsubsection{Optimizations}
+\subsubsection{Scheduling}
+
+\subsection{Low-level Compilation}
+\subsubsection{Register Allocation}
+\subsubsection{Iterative Place-And-Route}

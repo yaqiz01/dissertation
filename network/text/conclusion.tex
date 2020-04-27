@@ -1,0 +1,45 @@
+%\pagebreak
+\section{Conclusion}
+\label{sec:conclusion}
+In this work, we describe the mapping process from a high-level program to a distributed spatial architecture.
+We show that target application characteristics, compiler optimizations, and the underlying accelerator
+architecture must be considered when selecting a network architecture, and that static network bandwidth scales more efficiently.
+%On deeply pipelined CGRAs, hybrid networks for CGRAs introduce minimal performance and area overhead, while providing escape routes to
+%place and route that improve network energy.
+Overall, hybrid networks tend to provide the best energy efficiency by reducing data movement
+using static place and route, with a 2.3x improvement over the worst configuration. 
+Both hybrid networks and static networks have a performance per area improvement of around 7x
+for pipelined CGRAs and 2x for time-scheduled CGRAs.
+Pure dynamic networks are unsuitable for CGRA architectures due to insufficient bandwidth.
+%We demonstrate that, although a standalone dynamic network alone has a high area penalty due to VC
+%requirements, the area penalty shrinks when using a hybrid dynamic-static configuration. \TODO{do
+%we do this?} Dynamic network has a very small area because it only has one network
+%Furthermore, we show that in time-scheduled CGRA architectures, 
+%performance is improved by using the dynamic network as a fallback for infrequently used routes; this then allows all program nodes to be clustered more tightly.
+%We also show that specialization of static links helps decrease the radix of the vector switches, which decreases the vector energy required.
+
+%Therefore, we conclude that adding a dynamic network and specializing the scalar network is the most area- and energy-efficient way to ensure that all applications can be mapped to a spatial architecture.
+Although it is possible to increase interconnect bandwidth, the resources necessary for each node increase simultaneously.
+When adding nodes, network area increases super-linearly because more network nodes are added, and bandwidth must scale to allow applications to use the larger network.
+%Therefore, although it may seem possible to increase the size of a spatially distributed array by simply increasing the number of compute tiles, there are network-based limitations that stop this.
+Due to these network-based limitations, a spatially distributed array cannot be scaled simply by increasing the number of compute tiles.
+Therefore, CGRAs of the future may need to be spatially distributed across several chips, allowing
+higher-dimensional networks to be used; in the meantime, using static-dynamic hybrid networks can
+alleviate some of the challenges involved in building larger arrays on-chip.
+\if 0
+These these network optimizations arise from the ability to perform detailed compile-time analyses.
+We describe the compiler flow we use to target a hierarchical CGRA, including compiler-driven
+placement and routing algorithms that is communication pattern aware.
+We consider several dimensions for network architectures, including combinations of static and dynamic
+networks at different granularity, and flow-control in static network.
+%We use a set of benchmarks that intensely stress the network to maximize compute density on nested
+%parallel applications to evaluate the performance of these
+%design, as well as synthesized and simulated their area and power on 28nm technology. 
+
+%We found the
+%most important metric to evaluate the network is performance, due to network only compose a small
+%area of the overall architecture. Consequentialy, static network are important for performance,
+%while additional dynamic network improves the routability of the network at a low area cost and
+  %energy benefit. 
+%We demonstrate that moving from a fully static to a hybrid static-dynamic network saves XXX\% of network power, at the cost of an XXX\% increase in network area and XXX\% in runtime.
+\fi

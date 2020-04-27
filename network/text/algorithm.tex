@@ -1,0 +1,24 @@
+\section{Algorithmic Improvements}
+\label{sec:algo}
+To fix these deadlock problems, we use a conflict set of edges that result in possible deadlocks and reduce the problem to graph coloring.
+When we color the conflict graph, we use the following correspondences:
+\begin{itemize}
+  \item Routes in the program graph become nodes in the conflict graph.
+  \item Edges are added to the conflict graph to break cycles.
+  \item Nodes in the conflict graph are colored by assigning VCs.
+\end{itemize}
+
+The deadlock avoidance algorithm proceeds as follows:
+\begin{enumerate}
+  \item For all nodes, find the set of routes arriving at the node.
+  \item Add a fully connected set of edges to ensure that those routes are placed in different VCs.
+  \item Use graph coloring to allocate VCs.
+  \item Produce the full holds/waits graph, including dependences through nodes and static links.
+  \item Reduce the holds/waits graph to the cyclic subgraph.
+  \item If there are no cycles, terminate.
+  \item If all cycles are ``program cycles,'' terminate. A program cycle is a set of dependences between nodes that is present in the original program, which is assumed to be deadlock-free. 
+        If there are any cycles in the network graph that don't include nodes, there are non-program cycles.
+        Otherwise, the check is done by building the set of direct node dependences using BFS, which are dependences that can be constructed between nodes without traversing other nodes.
+        Then, this list is checked against the input program. 
+  \item Otherwise, find a possible conflicting pair of holds/waits dependences. This is a pair of routes, where one route waits on a resource that another holds. This is guaranteed to be possible, because if all routes were assigned to different VCs, there would be no non-program cycles. Add this pair as an edge to the conflict graph, and go to step 3.
+\end{enumerate}

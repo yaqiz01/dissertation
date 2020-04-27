@@ -1,0 +1,52 @@
+\begin{figure}
+\centering
+
+\newsavebox{\sortMerge}
+\begin{lrbox}{\sortMerge}
+\begin{lstlisting}[language=Spatial,linewidth=0.88\columnwidth]
+def Merge_Sort(offchip: DRAM[Int], offset: Int) {
+  val N = 1024  // Static size of chunk to sort
+  Accel {
+    val data  = SRAM[Int](N)
+    data load offchip(offset::N+offset)
+
+    FSM(1){m => m < N}{ m =>
+      Foreach(0 until N by 2*m){ i =>
+        val lower = FIFO[Int](N/2).reset()
+        val upper = FIFO[Int](N/2).reset()
+        val from  = i
+        val end   = min(i + 2*m - 1, N) + 1
+
+        // Split data into lower and upper FIFOs
+        Foreach(from until i + m){ x => 
+          lower.enq(data(x)) 
+        }
+        Foreach(i + m until end){ y => 
+          upper.enq(data(y)) 
+        }
+
+        // Merge of the two FIFOs back into data
+        Foreach(from until end){ k =>
+          val low  = lower.peek() // Garbage if empty
+          val high = upper.peek() // Garbage if empty
+          data(k) = {
+            if      (lower.empty) { upper.deq() }
+            else if (upper.empty) { lower.deq() }
+            else if (low < high)  { lower.deq() }
+            else                  { upper.deq() }
+          }
+        }
+      }
+    }{ m => 2*m /* Next state logic */ }
+
+    offchip(offset::offset+N) store data
+  }
+}
+\end{lstlisting}
+\end{lrbox}
+
+\hspace{-15pt}\usebox{\sortMerge}
+\vspace{-10pt}
+\caption{Part of a design for in-place merge sort. \vspace{-15pt}}
+\label{fig:sortMerge}
+\end{figure}

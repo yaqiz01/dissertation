@@ -1,0 +1,44 @@
+\begin{abstract}
+%  In this work, we discuss the techniques necessary for using dynamic networks with Coarse Grained Reconfigurable Arrays (CGRAs). We implemented a simulator based around booksim and a place and routing tool to evaluate the impact of different routing algorithms. Our place and routing tool also attempts to allocate VCs such that it makes deadlocks impossible, but this function currently appears to be broken---we continue to experience deadlocks when running our applications in the simulator. Still, by using a set of heuristic metrics, we are able to evaluate the performance of our place and route tool on benchmark applications with a variety of routing algorithms. We show that we are able to alleviate the congestion on the worst links with our adaptive routing algorithms, but that this is at the cost of a large increase in the total number of hops taken. This suggests that a CGRA router may want to typically implement a minimal routing heuristic (such as DOR) for the majority of routes, and only switch to an adapative routing heuristic when worst-link congestion exceeds a large threshold.
+Recent years have seen the increased adoption of Coarse-Grained Reconfigurable Architectures (CGRAs) as flexible, energy-efficient compute accelerators.
+  Obtaining performance using spatial architectures while supporting diverse applications requires a flexible, high-bandwidth interconnect.
+  %Unfortunately, bandwidth and flexibility are often conflicting goals; static interconnects guarantee bandwidth but lack flexibility due to poor sharing.
+  %Dynamic interconnects provide flexibility with better resource sharing, but can cause bandwidth bottlenecks due to congestion, while requiring more area and power.
+ Because modern CGRAs support vector units with wide datapaths, designing an interconnect that balances dynamism, communication granularity, and programmability is a challenging task.
+  %Interconnection resources such as links and buffers
+  %can either be statically allocated at compile time, or dynamically managed at run-time.
+%  While static interconnects result in simpler hardware and guaranteed bandwidth, the lack of flexibility necessitates over-provisioning hardware resources.
+%  Dynamic interconnects provide flexibility with better resource sharing, but require more complex hardware, area, and power.
+%  In addition, interconnect capabilities directly impacts compiler complexity needed to efficiently map applications and maximize resource utilization.
+
+  In this work, we explore the space of spatial architecture interconnect dynamism, granularity, and programmability.
+  %We highlight the opportunities for dynamic link sharing by showing that for a variety of applications, only a few links carry the majority of network traffic.
+  We start by characterizing several benchmarks' communication patterns and showing links' imbalanced bandwidth requirements, fanout, and data width. 
+  We then describe a compiler stack that maps applications to both static and dynamic networks and performs virtual channel allocation to guarantee deadlock freedom.
+  %We found non uniformly importance of links in the program can be used to guide placement and routing. The program also shows network requirements on high-bandwidth links, efficient broadcast, specialized networks for scalar communication, link sharing opportunities.
+%  Using the above insights, we describe a hybrid network with both static and dynamic capabilities to enable both high bandwidth traffic and high resource sharing.
+  %We identify a space of interconnection networks with static and dynamic capabilities, at multiple granularities. 
+  %We describe several deadlock scenarios with traditionally deadlock-free routing that are unique in the context of statically programmed CGRAs, and our deadlock avoidance solution.
+  Finally, using a cycle-accurate simulator and \SI{28}{nm} ASIC synthesis, we perform a detailed performance, area, and power evaluation across the identified design space for a variety of benchmarks.
+  %Our evaluation results show that a fully static network does not have to be significantly overprovisioned to achieve a good performance; two bi-directional links per switch direction allows
+  %successfully mapping a diverse set of applications. We also show that a hybrid network with an additional dynamic interconnect does not incur significant hardware overheads while providing
+  %additional flexibility for applications that are difficult to map with a fully static network.
+  We show that the best network design depends on both applications and the underlying accelerator architecture.
+  Network performance correlates strongly with bandwidth for streaming accelerators, and scaling raw bandwidth is more area- and energy-efficient with a static network.
+  We show that the application mapping can be optimized to move less data by using a dynamic network as a fallback from a high-bandwidth static network.
+  %this contributes a 6.9x average performance per area and 2.3x average energy-efficiency improvement for a static-dynamic hybrid network.
+  This static-dynamic hybrid network provides a 1.8x energy-efficiency and
+  2.8x performance advantage over the purely static and purely dynamic networks, respectively.
+  %Furthermore, we show that spatial architectures require larger switches as programs get bigger, imposing super-linear scaling of network size with chip area.
+
+  %We demonstrate that halving the bisection bandwidth of the static network while mapping infrequently used routes to a
+  %dynamic network results in negligible performance loss around 1.27x and area overhead around 5.6\% on overall area, while saving 39\% of the network energy.
+%  We demonstrate that adding static network resources to ensure successful application placement incurs a significant network energy overhead of 31\%, even when these resources are not used.
+%%  and that a similar overhead would be incurred by overprovisioning vector resources to route scalar values.
+%  Although a standalone dynamic network has a high area, the area overhead from a hybrid configuration is far lower due to the decreased buffering requirements.
+%  Therefore, we conclude that the optimal design point for a CGRA network includes a static vector network to handle the majority of the traffic, a specialized scalar network, and a dynamic network to handle overprovisioning.
+
+%  Using the increased flexibility of the dynamic network, we also demonstrate a new genetic algorithm based place and route tool---one that can achieve near-optimal placements in seconds.
+%  To conclude, we demonstrate several new applications for CGRAs that could be enabled by having a placement tool that is able to run extremely quickly at runtime.
+
+\end{abstract}

@@ -1,0 +1,69 @@
+\section{Related Work}
+\label{sec:related}
+% RNN models are widely used in various sub-fields of machine learning,
+%   including dynamic sequence modeling \cite{wu2016google},
+%   reinforcement learning \cite{mnih2016asynchronous},
+%   and speech recognition \cite{amodei2016deep}.
+
+% However, the large variation of RNN models poses a challenge for
+%   designing a universal hardware platform that can serve
+%   all kinds of RNN efficiently.
+% We discuss the approaches explored by previous work in this section.
+% \paragraph{Serving RNN Models on Spatial Architecture}
+Previously proposed serving platforms
+  focus on exploiting data locality by mapping RNN cells onto spatial architectures.
+For example, Chang et al presented an FPGA-based implementation of an LSTM network \cite{chang2015recurrent}.
+This approach works well for supporting small RNNs.
+However, for a large RNN, the weights would be too large to fit on-chip.
+As a result, the serving latency would be dominated by DRAM data loading.
+To address the issue of fitting RNN weights on-chip,
+  several previous works \cite{han2016dsd, wang2018c, see2016compression, narang2017exploring}
+  have studied the approaches for compressing RNN weights.
+For example, Han et al presented a compression scheme called DSD \cite{han2016dsd}.
+  It iteratively removes parameters in the weight matrices
+  and retrains the sparse model
+  to minimize the accuracy loss introduced by sparsity \cite{han2016dsd}.
+With this compression scheme,
+  Han et al were able to deploy an LSTM network
+  containing 3.2 million parameters onto a modern FPGA
+  without sacrificing accuracy.
+Compared to serving on CPU and GPU platforms,
+  serving a sparse LSTM network on FPGA provides
+  much lower latency and higher energy efficiency.
+However, we find that it could be hard to generalize
+  this compression scheme for all the RNN tasks.
+RNNs are very flexible in terms of their model structures.
+Applying a DSD-like compression scheme to all the RNN models
+  requires hand-tuning the compression heuristics for every model.
+To avoid hand-tuning,
+  He et al proposed an approach that uses reinforcement learning
+  techniques for automatic compression tuning \cite{he2018amc}.
+However, their approach focuses on compressing CNN tasks on edge devices,
+  which may not be transferrable to the case of serving RNN tasks in datacenter.
+Observing that the sparsity-based compression schemes are still under active development,
+  we choose to support compression schemes that focus on representing RNN weights
+  using low-precision data format.
+Commercially available platforms
+  such as Google TPU \cite{jouppi2017datacenter}
+  and Microsoft BrainWave \cite{fowers2018configurable}
+  support these schemes.
+
+% \paragraph{BLAS-based Neural Network Model Serving}
+% Besides model compression, some serving platforms work on optimizing BLAS-3 routines.
+% Chen et al \cite{chen2017eyeriss} proposed a dataflow-driven spatial architecture called EyeRiss
+%   that can support CNN tasks efficiently.
+% EyeRiss could potentially be repurposed to execute RNN tasks;
+%   however, EyeRiss uses a systolic array to accelerate MVM executions,
+%   which could also suffer from underutilization when the application size changes.
+% Similarly, 
+
+
+% In this work, we explored serving RNN applications using low-precision data format \cite{wu2016google, fowers2018configurable}.
+% \cite{han2016dsd, wang2018}.
+% \paragraph{Spatial Architecture Implementation}
+%   \paragraph{TPU}
+%   \paragraph{DaDianNao}
+%   \paragraph{EyeRiss}
+%   \paragraph{Compression-Based Sparse}
+%     \paragraph{C-LSTM}
+%     \paragraph{ESE}

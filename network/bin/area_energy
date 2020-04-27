@@ -1,0 +1,93 @@
+#!env/bin/python
+
+import os
+import csv
+import shutil
+import pandas as pd
+
+from util import *
+from plasticine_model import *
+
+def main():
+    model = PlasticineModel()
+    global summary
+    summary = None
+    merge()
+    summarize()
+    summarizeBest()
+
+def merge():
+    global summary
+    summary = loadSimData('isca2019/data/sims')
+    summary = summary.reset_index()
+    model = PlasticineModel()
+    rows = []
+    for idx, row in summary.iterrows():
+        conf = row.to_dict()
+        model.get_net_area_summary(conf)
+        model.get_net_energy_summary(conf)
+        model.get_power_summary(conf)
+        rows.append(conf)
+
+    summary = pd.DataFrame.from_dict(rows, orient='columns')
+    summary.to_csv('data/summary.csv')
+
+def summarize():
+    global summary
+    if summary is None:
+        summary = pd.read_csv(
+            'data/summary.csv', 
+            header=0, # row for header file
+            encoding="utf-8-sig",
+        )
+
+    # cu_area = 135.338 * 1e6 # um^2
+    # cu_power = max(summary[summary['app']==app]['total_net_power']) / 0.2
+
+    backends = summary.backend.unique()
+    backends = [back for back in backends if not back.startswith("T") and not back.startswith("L")]
+    summary = summary[summary['backend'].isin(backends)]
+    summary = summary[(summary.asic==True) | (summary.p2p==True) | (summary.NetVC <=
+        summary.vcLimit)].copy()
+
+    cond = ~summary.cycle.isna()
+    summary.loc[cond, 'perf'] = 1.0 / summary[cond]['cycle']
+    cond = (~summary.p2p) & (~summary.asic) & (~summary.cycle.isna())
+    summary.loc[cond, 'perfarea'] = 1.0 / (summary[cond].cycle * summary[cond].total_net_area)
+    summary.loc[cond, 'perfwatt'] = 1.0 / summary[cond].total_net_energy
+    summary.loc[cond, 'powereff'] = 1.0 / summary[cond].total_net_power
+    cond = (~summary.total_net_area.isna()) | (summary.total_net_area != 0)
+    summary.loc[cond, 'areaeff'] = 1.0 / summary[cond].total_net_area
+
+    cond = (~summary.PCU.isna()) & (~summary.PMU.isna())
+    summary.loc[cond, 'cuUtil'] = (summary[cond].PCU + summary[cond].PMU) / 2
+    summary.to_csv('data/summary.csv')
+
+def summarizeBest():
+    global summary
+    if summary is None:
+        summary = pd.read_csv(
+            'data/summary.csv', 
+            header=0, # row for header file
+            encoding="utf-8-sig",
+        )
+
+    # cond = (~summary.asic) & (~summary.p2p) & (~summary.cycle.isna())
+    cond = (~summary.cycle.isna())
+    appnames = summary[cond].app.unique()
+
+    backends = summary[cond].backend.unique()
+    for b,back in enumerate(backends):
+        for a, app in enumerate(appnames):
+            appcond = cond & (summary.backend==back) & (summary.app==app)
+            appcond = appcond & (summary.p2p | summary.asic | (summary.param != 'LogReg_9'))
+            if summary[appcond].shape[0] != 0:
+                # incomplete exp for all backends
+                param = summary[appcond].sort_values(by=['cycle'], ascending=True).iloc[0].param
+                summary.loc[appcond & (summary.param == param), 'best_param'] = True
+    summary.to_csv('data/summary.csv')
+
+if __name__ == "__main__":
+    main()
+
+

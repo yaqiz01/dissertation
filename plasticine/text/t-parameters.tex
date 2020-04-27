@@ -1,0 +1,34 @@
+	%                   & \multicolumn{3}{c}{\textbf{Pattern Memory Unit}}  \\ \midrule
+	%                   & \multicolumn{3}{c}{\textbf{Pattern Compute Unit}} \\ \midrule
+	%                   & \multicolumn{3}{c}{\textbf{Architecture}}         \\ \midrule
+\begin{table}[]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcc}
+\toprule
+	                    & \textbf{Component}      & \textbf{Range}             & \textbf{Final Value} \\ \midrule
+	                    & Lanes                   & 4, 8, 16, 32               & 16                   \\
+	                    & Stages                  & 1 -- 16                    & 6                    \\
+	\textbf{Pattern}    & Registers/Stage         & 2 -- 16                    & 6                    \\
+	\textbf{Compute}    & Scalar Inputs           & 1 -- 16                    & 6                    \\
+	\textbf{Unit}       & Scalar Outputs          & 1 -- 6                     & 5                    \\
+	                    & Vector Inputs           & 1 -- 10                    & 3                    \\
+	                    & Vector Outputs          & 1 -- 6                     & 3                    \\ \midrule
+	                    & Bank Size               & 4, 8, 16, 32, 64KB         & 16KB                  \\
+	                    & \emph{Scratchpad Banks} & \emph{Number of PCU Lanes} & 16                   \\
+	                    & \emph{Total Scratchpad} & \emph{Bank size * banks}   & 256KB                \\
+	                    & Stages                  & 1 -- 16                    & 4                    \\
+	\textbf{Pattern}    & Registers/Stage         & 2 -- 16                    & 6                    \\
+	\textbf{Memory}     & Scalar Inputs           & 1 -- 16                    & 4                    \\
+	\textbf{Unit}       & Scalar Outputs          & 0 -- 6                     & 0                    \\
+	                    & Vector Inputs           & 1 -- 10                    & 3                    \\
+	                    & Vector Outputs          & 1 -- 6                     & 1                    \\ \midrule
+\textbf{Architecture} & PCUs                    & ---                        & 64                   \\
+	                    & PMUs                    & ---                        & 64                   \\
+\bottomrule
+\end{tabular}
+}
+\caption{Design space and final selected parameters.}
+\label{t-parameters}
+\vspace{-20pt}
+\end{table}

@@ -1,0 +1,67 @@
+\begin{figure}
+
+\begin{lstlisting}[language=Pseudo]
+function Banking-Buffering: 
+  input: List of memories *@\emph{M}@*,
+         mapping from memory to accesses *@\emph{A}@*,
+         mapping from read to reaching writes *@\emph{W}@*
+         mapping from loop iterator to 
+                 unrolling factor *@\emph{P}@*,
+         mapping from node to total unrolling factors *@\emph{U}@*.     
+
+  output: map of memory to physical instances *@\emph{I}@*.
+
+  for each memory *@\emph{m}@* in *@\emph{M}@*:
+    let *@\emph{banks}@* be an instance*@'@*s list of banks
+    let *@\emph{strides}@* be an instance*@'@*s banking strides
+    let *@\emph{remain}@* be an instance*@'@*s number of unbanked channels
+    let *@\emph{depth}@* be an instance*@'@*s buffer depth
+
+    *@\emph{bank each access independently}@*
+    for each access *@\emph{a}@* in A[m]:  
+      let *@\emph{seen}@* be a set of iterators
+      remain[a] <- U[a] / U[m]
+
+      for each dimension *@\emph{d}@* in dims(*@\emph{a}@*): 
+        banks[i][d] <- 1
+        strides[i][d] <- 1
+        
+        *@\emph{a[d] is the address in dimension d}@*
+        if *@\emph{a[d]}@* is an affine *@function@* of iterators
+           with statically known multipliers
+           and *@\emph{a[d]}@* is provably distinct after unrolling:
+
+          strides[i][d] <- stride(a[0])
+          for each loop iterator *@\emph{i}@* in *@\emph{a[d]}@*:
+            if *@\emph{seen}@* does not contain i: 
+              *@\emph{banks[a][d]}@* <- *@\emph{banks[a][d]}@* * *@\emph{P[i]}@* 
+              *@\emph{remain[a]}@* <- *@\emph{remain[a]}@* / *@\emph{P[i]}@*
+              seen <- seen + i
+
+    *@\emph{combine banking of reads and reaching writes}@*
+    for each read *@\emph{a}@* in A[m]:  
+      for each write *@\emph{w}@* in *@\emph{W[a]}@*:
+
+        if lca(a,w) is an outer pipeline:
+          depth[a] <- dataflow distance between *@\emph{a}@* and *@\emph{w}@*
+
+        for each dimension *@\emph{d}@* in dims(*@\emph{a}@*): 
+          mergedBank = min(dims(m), lcm(banks[a][d], banks[w][d])) 
+          banks[a][d] <- bank
+
+        mergedBanks <- product(banks[a])
+        mergedChannels <- max(U[w], U[a]) / U[m]
+        mergedPar <- ceiling(mergedChannels / mergedBanks)
+        remain[a] <- max(mergedChannels, neededRemain)
+        remain[w] <- remain[a]
+
+    
+    for each read in 
+          
+
+
+\end{lstlisting}
+
+\caption{Pseudocode for the banking and buffering algorithm used in the Spatial compiler.}
+\label{fig:banking}
+\end{figure}

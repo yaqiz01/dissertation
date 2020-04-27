@@ -1,0 +1,22 @@
+\section{Discussion \& Future Work}
+\label{sec:discussion}
+
+Currently our compiler map the entire program graph onto the accelerator spatially.
+If the program graph cannot fit on the hardware, the programmer needs to break the applications
+into multiple kernels, materialize intermediate results into DRAM, and reconfiguring the accelerator.
+The partitioning algorithm described in \Cref{sec:splitmerge} can be used to find region of the program 
+to partition within minimum live out variables. Doing this automatically can also enable overlapping
+of reconfiguration with materializing and prefetching of the data.
+The same algorithm can be used to partition the program on multiple chips. Since the control-flow
+is completely distributed, the program tolerant arbitrary amount of delay from PCI links between
+accelerators.
+There is also the opportunity of mapping multiple logical memories with the same on-chip scratchpad. 
+This can be achieved in pure software without hardware support. Compiler can perform live range analysis
+on the memories and map logical memories with no overlapping live range on the same scratchpad. 
+The last actor that access the old memory can pass the token to the first actor that accesses the new memory
+to override previous data.
+Fine-grain reconfiguration of the compute would requires hardware supports to load multiple configurations in PB.
+In order to time-multiplex the computation hardware, such as using the same actor for different
+layers of a DNN, currently the user need to write a loop around the reusable section and change dimension
+of the kernel based on loop iterator. 
+Finally, the distributed control-flow can be also applied on FPGAs to improve clock frequency on large designs.

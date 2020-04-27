@@ -1,0 +1,89 @@
+\section{Language Criteria}
+\label{background}
+
+It is critical for a language with the purpose of abstracting hardware design to strike the right
+balance between high-level constructs for improving programmer productivity and low-level syntax for tuning performance. Here, we motivate our discussion of Spatial by outlining requirements for achieving a good balance between productivity and achievable performance.
+%\todo{In such a language, common tasks like communicating with the host, interfacing with external I/O, transferring memory, and specifying state machines should be simple.
+%At the same time, the language should also give the user the ability to optimize their code. 
+%Users should have an explicit view of the memory hierarchy and be able to concisely segment accelerator code from CPU code.}
+
+\subsection{Control}
+For most applications, control flow can be expressed in abstract terms. Data-dependent branching (e.g. if-statements) 
+and nested loops are found in almost all applications, and in the common case these loops have a statically calculable
+initiation interval. These loops correspond to hierarchical pipelines which can be automatically optimized by the 
+compiler in the majority of cases. The burden for specifying these control structures should therefore fall on the 
+compiler, with the user intervening only when the compiler lacks information to optimize the loop schedule.
+
+\subsection{Memory Hierarchy}
+On most reconfigurable architectures, there are at least three levels of memory hierarchy: off-chip (DRAM),
+on-chip scratchpad (e.g. ``block RAM'' on FPGAs), and registers. 
+Unlike CPUs, which present their memory as a uniformly accessible address space,
+reconfigurable architectures require programmers to explicitly manage the memory hierarchy.
+Previous languages like Sequoia~\cite{sequoia} have demonstrated the benefits of explicit notions of memory hierarchy
+to programming language design. Moreover, loop unrolling and pipelining are essential for performance and area utilization, but these optimizations
+require on-chip memories to be partitioned, banked, and buffered to supply the bandwidth necessary for concurrent accesses.
+These decisions are made by statically analyzing memory access patterns with respect to loop iterators.
+The accelerator design language should therefore give the user a view of the target memory 
+hierarchy and should include notions of loop iterators to enable automatic memory partitioning, banking, and buffering optimizations for on-chip bandwidth.
+
+%This means that spatial architectures require users to partition data structures and to manage concurrent accesses with memory banking and buffering.
+%However, in most cases, partitioning, banking, and buffering can be determined based on statically analyzable access patterns.
+In addition to on-chip memory management, accelerator designs must also explicitly administer transfers between off-chip and on-chip memories.
+This entails creating a soft memory controller which manages the off-chip memory.
+These memory controller implementations vary widely across different target architectures and vendors.
+However, common across these architectures is the need to optimize the memory controller based on access pattern.
+Unpredictable, data-dependent requests require more specialized memory controller logic than predictable, linear accesses.
+Instead of focusing on target-specific details, the language should allow users to focus on optimizing each
+transfer based on its access pattern. 
+The accelerator language should therefore abstract these transfers as much as possible, while also giving constructs which specialize based on access patterns.
+
+\subsection{Host Interfaces}
+Spatial architectures are commonly used as offload application accelerators.
+In this execution model, the host generally allocates memory, prepares data structures, and interfaces with larger heterogeneous networks to receive and send data.  
+Once data is prepared, the host invokes the accelerator and either waits for completion (``blocking'' execution)
+or interacts with the perpetually running accelerator in a polling or interrupt manner (``non-blocking'' execution).  
+%Manual administration of communication between the CPU and the host is generally not difficult, but it can be tedious and daunting for new users of spatial architectures. 
+While management of communication and accelerator execution are commonly supported, the associated libraries and function calls vary widely across platforms and vendors, making code difficult to port or compare.
+For communication with the CPU host, a higher level language for accelerator design should provide constructs which abstract away the target architecture as much as possible.
+
+
+\subsection{Design Space Exploration}
+As with any hardware design, accelerator design spaces can be extremely large and cumbersome to explore. 
+While making optimizations like loop pipelining and memory banking automatic help to improve productivity, these transformations leave the compiler with numerous choices about how to allocate resources.
+These decisions can accumulate large performance/area tradeoff spaces which combine exponentially with application complexity. In a fixed implementation
+of general matrix multiplication, there is a large design space that includes the dimensions of on-chip tiles that hold portions of the full matrices and decisions
+about the parallelizations of loops that iterate over tiles as well as loops that iterate within these tiles.  The parameters shown in lines 17 -- 21 of Figure~\ref{fig:matmult} expose just a few of these many design space parameters.
+Previous work~\cite{dhdl} has shown how making the compiler aware of design parameters like pipelining, unrolling factors, and tile sizes can be used to speed up and automate parameter space exploration. Abstract hardware languages should therefore include both language and compiler support for design space parameters.
+
+%In hardware design, scheduling of operations in terms of pipelining and parallelizing various parts of a program, can be challenging. Programmers attempting to optimize an application's performance must account for memory access hazards and complicated design space tradeoffs between scheduling choices.
+
+
+% Notes
+% HIPACC:
+% * source - to - source C like compiler
+% * generate CUDA, openCL, Renderscripts target GPU
+% * make use of different memory hierarchy based on limit set of access pattern
+% * support fix set of reduction function
+% * unroll only if kernel size is known
+% * heuristic pick best configuration (similar to our DSE)
+% 
+% Rigel:
+% * Generate verilog 
+% * Coarse-grain pipeline
+% * very similar control semantics to plasticine. Use
+% tokens/back pressure to allow each pipeline stage to fire at their perspective rate
+% * Multi-rate line buffer template 
+% 
+% Darkroom 
+% * target ASIC, FPGA, fast CPU
+% * generate structured verilog
+% * line buffer
+% * scheduling for inner loop pipeline. Use ILP to improve pipeline delay
+% 
+% PolyMage
+% * point=wise, stencil, sampling, operation
+% * functional (in a kind of awkward way)
+% * python
+% * generate openMP/C++
+% * generate high-level synthesis tool
+% * line buffer

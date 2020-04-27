@@ -1,0 +1,49 @@
+
+\begin{figure}
+\centering
+
+\newsavebox{\firFilter}
+\begin{lrbox}{\firFilter}
+\begin{lstlisting}[language=Spatial,linewidth=0.88\columnwidth]
+def FIR_Filter(args: Array[String]) {
+  val input   = StreamIn[Int](target.In)
+  val output  = StreamOut[Int](target.Out)
+  val weights = DRAM[Int](32)
+  val width   = ArgIn[Int]
+  val P = 16 (1,1,32)
+  // Initialize width with the first console argument
+  setArg(width, min(32, args(0).to[Int]) )
+  // Transfer weights from the host to accelerator
+  sendArray(weights, loadData[Int]("weights.csv"))
+
+  Accel {
+    val wts = RegFile[Int](32)
+    val ins = RegFile[Int](32)
+    val sum = Reg[Int]
+    // Load weights from DRAM into local registers
+    wts load weights(0::width)
+
+    Stream(*) {  // Stream continuously
+      // Shift in the most recent input
+      ins <<= input
+
+      // Create a reduce-accumulate tree with P inputs
+      Reduce(sum)(0 until width par P){i => 
+        wts(i) * ins(i)
+      }{(a,b) => a + b }
+
+      // Stream out the computed average 
+      output := sum / width
+    }
+  }
+}
+\end{lstlisting}
+\end{lrbox}
+
+\hspace{-15pt}\usebox{\firFilter}
+\vspace{-10pt}
+\caption{A finite impulse response (FIR) filter. \vspace{-10pt}}
+\label{fig:firfilter}
+
+
+\end{figure}

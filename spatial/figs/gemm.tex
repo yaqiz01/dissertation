@@ -1,0 +1,76 @@
+\begin{figure}
+\centering
+
+\newsavebox{\gemm}
+\begin{lrbox}{\gemm}
+\begin{lstlisting}[language=Spatial,linewidth=0.88\columnwidth]
+// Custom floating point format
+// 11 mantissa, 5 exponent bits
+type Half = FltPt[11,5]
+
+def main(args: Array[String]) {
+
+  // Load data from files
+  val a: Matrix[Half] = loadMatrix[Half](args(0))
+  val b: Matrix[Half] = loadMatrix[Half](args(1))
+
+  // Allocate space on accelerator DRAM
+  val A = DRAM[Half](a.rows,a.cols)
+  val B = DRAM[Half](b.rows,b.cols)
+  val C = DRAM[Half](a.rows,b.cols)
+
+  // Create explicit design parameters
+  val M = 128 (64, 1024)  // Tile size for output rows
+  val N = 128 (64, 1024)  // Tile size for output cols
+  val P = 128 (64, 1024)  // Tile size for common
+  val PAR_K  = 2 (1, 8)   // Unroll factor of k 
+  val PAR_J  = 2 (1, 16)  // Unroll factor of j
+
+  // Transfer data to accelerator DRAM
+  sendMatrix(A, a)
+  sendMatrix(B, b)
+
+  // Specify the accelerator design
+  Accel {
+    // Produce C in M x N tiles
+    Foreach(A.rows by M, B.cols by N){ (ii,jj) =>
+      val tileC = SRAM[Half](M, N)
+      
+      // Combine intermediates across common dimension
+      MemReduce(tileC)(A.cols by P){ kk =>
+        // Allocate on-chip scratchpads
+        val tileA = SRAM[Half](M, P) 
+        val tileB = SRAM[Half](P, N)
+        val accum = SRAM[Half](M, N)
+          
+        // Load tiles of A and B from DRAM
+        tileA load A(ii::ii+M, kk::kk+P)  // M x P
+        tileB load B(kk::kk+P, jj::jj+N)  // P x N
+        
+        // Combine intermediates across a chunk of P
+        MemReduce(accum)(P by 1 par PAR_K){ k =>
+          val partC = SRAM[Half](M, N)
+          Foreach(M by 1, N by 1 par PAR_J){ (i,j) =>
+            partC(i,j) = tileA(i,k) * tileB(k,j)
+          }
+          partC
+        // Combine intermediates with element-wise add
+        }{(a,b) => a + b }
+      }{(a,b) => a + b }
+
+      // Store the tile of C to DRAM
+      C(ii::ii+M, jj::jj+N) store tileC
+    }
+  }
+
+  // Save the result to another file
+  saveMatrix(args(2), getMatrix(C))
+}
+\end{lstlisting}
+\end{lrbox}
+
+\hspace{-15pt}\usebox{\gemm}
+\caption{Basic parameterized matrix-matrix multiplication ($C$~=~$A~\cdot~B$) implemented in Spatial.
+\vspace{-10pt}}
+\label{fig:matmult}
+\end{figure}  

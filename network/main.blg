@@ -1,0 +1,117 @@
+This is BibTeX, Version 0.99d (TeX Live 2019/MacPorts 2019.50896_2)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: main.aux
+The style file: ACM-Reference-Format.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Database file #1: references.bib
+Warning--I'm ignoring dse-kressarray's extra "doi" field
+--line 516 of file references.bib
+Warning--I'm ignoring ppa's extra "doi" field
+--line 565 of file references.bib
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
+Reallocated global_strs (elt_size=20001) to 20 items from 10.
+Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Warning--empty publisher in ababei2011energy
+Warning--empty address in ababei2011energy
+Warning--empty year in aws
+Warning--empty publisher in dse-date
+Warning--empty address in dse-date
+Warning--empty publisher in dadiannao
+Warning--empty address in dadiannao
+Warning--empty address in dallytowles
+Warning--empty publisher in dimitroulakos2006exploring
+Warning--empty address in dimitroulakos2006exploring
+Warning--empty publisher in brainwave
+Warning--empty address in brainwave
+Warning--empty publisher in hrl
+Warning--empty address in hrl
+Warning--empty publisher in garcia2009lattice
+Warning--empty address in garcia2009lattice
+Warning--empty publisher in turnModel
+Warning--empty address in turnModel
+Warning--empty publisher in piperench
+Warning--empty address in piperench
+Warning--empty publisher in deephi
+Warning--empty address in deephi
+Warning--page numbers missing in both pages and numpages fields in hansson2007avoiding
+Warning--empty publisher in dse-kressarray
+Warning--empty address in dse-kressarray
+Warning--empty publisher in jiang2013detailed
+Warning--empty address in jiang2013detailed
+Warning--page numbers missing in both pages and numpages fields in kapre2011noc
+Warning--empty publisher in dse_koeplinger
+Warning--empty address in dse_koeplinger
+Warning--empty booktitle in kress
+Warning--empty publisher in kress
+Warning--empty address in kress
+Warning--page numbers missing in both pages and numpages fields in kress
+Warning--empty publisher in dse-raw
+Warning--empty address in dse-raw
+Warning--empty publisher in sunmap
+Warning--empty address in sunmap
+Warning--empty year in wave
+Warning--empty booktitle in xilinx-acap
+Warning--empty publisher in xilinx-acap
+Warning--empty address in xilinx-acap
+Warning--page numbers missing in both pages and numpages fields in xilinx-acap
+Warning--empty publisher in streamdataflow
+Warning--empty address in streamdataflow
+Warning--empty booktitle in baidu
+Warning--empty publisher in baidu
+Warning--empty address in baidu
+Warning--page numbers missing in both pages and numpages fields in baidu
+Warning--empty publisher in ppa
+Warning--empty address in ppa
+Warning--empty publisher in plasticine
+Warning--empty address in plasticine
+Warning--empty publisher in trips
+Warning--empty address in trips
+Warning--empty publisher in staticVC-nocs
+Warning--empty address in staticVC-nocs
+Warning--empty publisher in van2009static
+Warning--empty address in van2009static
+You've used 60 entries,
+            5719 wiz_defined-function locations,
+            1754 strings with 31438 characters,
+and the built_in function-call counts, 81538 in all, are:
+= -- 9409
+> -- 4067
+< -- 0
++ -- 1391
+- -- 1367
+* -- 6718
+:= -- 8858
+add.period$ -- 299
+call.type$ -- 60
+change.case$ -- 557
+chr.to.int$ -- 60
+cite$ -- 119
+duplicate$ -- 6603
+empty$ -- 4590
+format.name$ -- 1575
+if$ -- 18937
+int.to.chr$ -- 2
+int.to.str$ -- 1
+missing$ -- 254
+newline$ -- 673
+num.names$ -- 484
+pop$ -- 2535
+preamble$ -- 1
+purify$ -- 1085
+quote$ -- 0
+skip$ -- 2340
+stack$ -- 0
+substring$ -- 5624
+swap$ -- 694
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 1505
+warning$ -- 59
+while$ -- 425
+width$ -- 0
+write$ -- 1246
+(There were 61 warnings)

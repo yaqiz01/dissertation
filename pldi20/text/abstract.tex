@@ -1,0 +1,15 @@
+\begin{abstract}
+The \emph{need for speed} in modern data-intensive workloads and \emph{the rise of ``dark silicon''} in the semiconductor industry are pushing for larger, faster, and more energy-efficient Reconfigurable Dataflow Accelerators (RDAs).
+However, scaling performance at large chip sizes demands new mechanisms of managing and utilizing these accelerators to saturate
+their compute throughputs.
+
+To address this challenge, we present \name{}, a compiler for efficient mapping of large-scale RDAs. 
+\name converts applications' complex control hierarchies, such as nested loops and branch conditions, into a streaming dataflow representation that can be efficiently executed by an RDA with distributed on-chip resources.
+\name implements (a) a peer-to-peer (p2p) control paradigm inferred from an imperative programming style that minimizes synchronization overhead, and (b) a mapping strategy that decomposes the computation and memory in a program across a hierarchy of heterogeneous resources in a large-size RDA.
+Our evaluation shows that, by eliminating synchronization overhead with a distributed control-flow and improving 
+resource utilization with a composable mapping strategy, \name dramatically enhances RDAs' scaling rate on performance
+to the allocated resource.
+Over a mix of deep learning, graph processing, and streaming applications, 
+\name achieves a 4x speedup over a Tesla V100 GPU (with equal resource as the targeted RDA) by efficiently
+utilizing the accelerator. 
+\end{abstract}

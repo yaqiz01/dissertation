@@ -1,0 +1,109 @@
+\subsection{Memory Banking and Buffering}
+\label{banking-appendix}
+
+\begin{figure}
+\hspace{5pt}
+\begin{tabular}{l}
+\hline\hline
+% function ReachingWrites: 
+%   input: $I_w$ $\rightarrow$ set of sets of writes
+%   input: $I_r$ $\rightarrow$ set of sets of reads
+%   $I'_w$ = $\emptyset$
+%   $R$ = Flatten($I_r$)
+%   for all $W$ in $I_w$:
+%     $W'$ = {$w~\forall~w \in W$ s.t. 
+%             $\exists~r \in R$ s.t. MayPrecede($w$,$r$) $\vee~w \cap r \neq \emptyset$}
+%     if $W' \neq \emptyset$: add $W'$ to $I'_w$
+%   return $I_w'$
+% end function
+
+{\begin{lstlisting}[language=Pseudo,linewidth=0.98\columnwidth, mathescape=true]
+function GroupAccesses:
+   input: $A$ $\rightarrow$ set of reads or writes to $m$
+   
+   $G$ = $\emptyset$ set of sets of compatible accesses
+   
+   for all accesses $a$ in $A$:
+      for all sets of accesses $g$ in $G$:
+       if IComp($a$, $a'$) for all $a'$ in $g$ then
+          add $a$ to $g$
+          break
+       else add {$a$} to $G$
+   
+   return $G$
+end function
+
+function ConfigureMemory:
+   input: $A_r$ $\rightarrow$ set of reads of $m$
+   input: $A_w$ $\rightarrow$ set of writes to $m$
+   
+   $G_r$ = GroupAccesses($A_r$)
+   $G_w$ = GroupAccesses($A_w$)
+   
+   $I$ = $\emptyset$ set of memory instances
+   
+   for all read sets $R$ in $G_r$: 
+      $I_r$ = {$R$}
+      $I_w$ = ReachingWrites($G_w$, $I_r$)
+      $i$ = BankAndBuffer($I_r$, $I_w$)
+      for each $inst$ in $I$:
+         $I'_r$ = ReadSets[$inst$] + $R$
+         $I'_w$ = ReachingWrites($G_w$, $I'_r$)
+         if OComp($A_1$,$A_2$) $\forall A_1 \neq A_2 \in (G_w \cup I'_r)$ then:
+            $i'$ = BankAndBuffer($I'_r$, $I'_w$)
+            if Cost($i'$) < Cost($i$) + Cost($inst$) then:
+               remove $inst$ from $I$
+               add $i'$ to $I$
+               break
+
+      if $i$ has not been merged then add $i$ to $I$ 
+
+   return I
+end function
+\end{lstlisting}}\\
+\hline
+\end{tabular}
+\vspace{-10pt}
+\caption{Banking and buffering algorithm for calculating instances of on-chip memory $m$.
+\vspace{-10pt}
+}
+\label{fig:bank_alg}
+\end{figure}
+
+Figure~\ref{fig:bank_alg} gives pseudocode for Spatial's algorithm to bank and buffer accesses to a given memory \emph{m} across loop nests. For each access $a$ to $m$, we first define an iteration domain $D$ for that access. This domain is the multi-dimensional space of possible values of all loop iterators for all loops which contain $a$ but which do not contain $m$. 
+
+We then group read and write accesses on $m$ into ``compatible'' sets which occur in parallel to the same physical port but which can be banked together (lines 1 -- 14). 
+Two accesses $a_1$ and $a_2$ within iteration domains $D_1$ and $D_2$
+are banking compatible ($IComp$) if
+\[ IComp(a_1,a_2) = \nexists~\vec{i} \in (D_1 \cup D_2) ~s.t.~a_1(\vec{i}) = r_2(\vec{i}) \]
+where $a(i)$ is the multi-dimensional address corresponding to access $a$ for some vector of iterator values $i$.
+This check can be implemented using a polytope emptiness test.
+
+After grouping, each group could be directly mapped to a coherent ``instance'', or copy, of $m$. 
+However, this approach would typically use more resources than required. To minimize the total number of memory instances, we next greedily merge groups together (lines 25 -- 39). Merging is done when the cost of a merged instance is less than the cost of adding a separate, coherent instance for that group.
+Two sets of accesses $A_1$ and $A_2$ allow merging ($OComp$) if 
+\[ OComp(A_1, A_2) = \nexists~ (a_1 \in A_1, a_2 \in A_2) ~s.t. \]
+\[  LCA(a_1, a_2) \in Parallel \cup (Pipe \cap Inner) \]
+where \emph{Parallel}, \emph{Pipe}, and \emph{Inner} are the set of Parallel, pipelined, and inner controllers in the program, respectively.
+If this condition holds, all accesses between the two instances either occur sequentially or occur as part of a coarse-grain pipeline. Sequential accesses can be time multiplexed, while pipelined accesses are buffered.
+
+\emph{ReachingWrites} returns all writes in each set which may be visible to any read in the given sets of reads. Visibility is possible if the write may be executed before the read and may have an overlapping address space.
+
+The \emph{BankAndBuffer} function produces a single memory instance from memory reads and writes.
+Here, each set of accesses is a set of parallel reads or writes to a single port of the memory instance.
+Accesses in different sets are guaranteed not to occur to the same port at the same time.
+Therefore, a common banking strategy is found which has no bank conflicts for any set of accesses. 
+This banking strategy is found using iterative polytope emptiness testing as described by Wang et. al.~\cite{Wang_banking}. 
+A separate emptiness test is run for each set of parallel accesses for each proposed strategy.
+
+The required buffer depth \emph{d} for a pair of accesses $a_1$ and $a_2$ to $m$ is computed as
+\[
+d(a_1, a_2) = \left\{\begin{matrix} 1 & LCA(a_1, a_2) \in Seq \cup Stream \\ dist(a_1,a_2) & LCA(a_1,a_2) \in Pipe\end{matrix}\right.
+\]
+where \emph{dist} is the minimum of the depth of the LCA and the dataflow distance of the two direct children of the LCA which contain $a_1$ and $a_2$. \emph{Seq}, \emph{Stream}, and \emph{Pipe} are the set of sequential, streaming, and pipelined controllers, respectively. Buffering addressable memories across streaming accesses is currently unsupported.
+The depth of a set of reads $R$ and writes $W$ is then
+\[ Depth(R,W) = max\{ d(w,a)~\forall ~(w,a) \in W \times (W\cup R) \} \]
+
+The port of each access within a buffer is determined from the relative distances between all buffered accesses.
+Spatial requires that no more than one coarse-grained controller or streaming controller is part of a merged instance.
+The final output of the greedy search is a set of required physical memory instances for memory \emph{m}.

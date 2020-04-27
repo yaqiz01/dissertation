@@ -1,0 +1,179 @@
+%5 Table commands
+\newcommand{\mrow}[1]{\multirow{2}{*}{#1}}
+\newcommand{\mrowx}[1]{\multirow{3}{*}{#1}}
+
+%\begin{table}[t]
+  %\centering
+    %\footnotesize
+    %\begin{tabular}{llrr}
+    %\toprule
+      %\mrow{\bf Benchmark} & \mrow{\bf Compiler} & {\bf Latency } & {\bf Throughput} \\
+                           %&                     & {\bf (ms)}     & {\bf (Inputs/s)} \\
+      %\midrule
+        %SqueezeNet (batch-1) & SARA                & 49.13          & 1.1        \\
+        %{\em kFrames}      & TensorFlow          & 70.10          & 0.4        \\ \addlinespace
+        %LSTM (batch-1)       & SARA                & 3.61           & 79.2       \\
+        %{\em kSamples}     & TensorFlow          & 6.81           & 4.7        \\ \addlinespace
+        %PageRank           & SARA                & 128.27         & 49         \\
+        %{\em MEdges}       & GunRock             & 829.39         & 7.5        \\ \addlinespace
+        %BlackScholes       & SARA                & 0.09           & 88.88      \\
+        %{\em GOptions}     & CUDA                & 0.10           & 80.02      \\ \addlinespace
+        %Random Forest      & SARA                & 0.10           & 1.04       \\
+        %{\em MSamples}     & CUDA                & 0.32           & 0.32       \\ \addlinespace
+        %Merge Sort         & SARA                & 0.63           & 6.65       \\
+        %{\em GElements}    & CUDA                & 2.14           & 1.96       \\
+      %\midrule
+      %Speedup (Geo-Mean)  & & \textbf{2.44x} & \textbf{3.93x} \\
+      %\bottomrule
+    %\end{tabular}
+  %\caption{Performance comparison of Plasticine (using the \name{} compiler) with Tesla's V100 GPU (using TensorFlow, GunRock, and CUDA compilers).}
+  %\label{tab:gpu-comparison}
+%\end{table}
+
+\begin{table}[t]
+  \centering
+    \footnotesize
+    \begin{tabular}{llcc}
+    \toprule
+      \textbf{Benchmark}       & \mrow{\bf Compiler} & {\bf Latency } & {\bf Throughput}     \\
+       (Unit)                  &                     & {\bf (ms)}     & {\bf (Unit/s)}       \\
+      \midrule
+        SqueezeNet (batch-1)   & SARA                & 49.13          & 0.12 (1.1)           \\
+        {\em (kFrames)}        & TensorFlow          & 70.10          & 0.4                  \\
+                               & Speedup             & 1.43x          & 0.31x (2.75x)          \\ \addlinespace
+        LSTM (batch-32)         & SARA                & 3.61           & 8.8 (79.2)           \\
+        {\em (kSamples)}       & TensorFlow          & 6.81           & 4.7                  \\
+                               & Speedup             & 1.89x          & 1.87x (16.85x)         \\ \addlinespace
+        PageRank               & SARA                & 128.27         & 49                   \\
+        {\em (MEdges)}         & GunRock             & 829.39         & 7.5                  \\
+                               & Speedup             & 6.47x          & 6.5x                  \\ \addlinespace
+        BlackScholes           & SARA                & 0.09           & 88.88                \\
+        {\em (GOptions)}       & CUDA                & 0.10           & 80.02                \\
+                               & Speedup             & 1.11x          & 1.11x                 \\ \addlinespace
+        Random Forest          & SARA                & 0.10           & 1.04                 \\
+        {\em (MSamples)}       & CUDA                & 0.32           & 0.32                 \\
+                               & Speedup             & 3.25x          & 3.25x                 \\ \addlinespace
+        Merge Sort             & SARA                & 0.63           & 6.65                 \\
+        {\em (GElements)}      & CUDA                & 2.14           & 1.96                 \\
+                               & Speedup             & 3.4x           & 3.4x                 \\
+      \midrule
+      Geo-mean Speedup         &                     & \textbf{2.44x} & \textbf{1.89x (3.93x)} \\
+      \bottomrule
+    \end{tabular}
+  \caption{Performance comparison of Plasticine with Tesla's V100 GPU (Normalized throughput to transistor count in parentheses).}
+  \label{tab:gpu-comparison}
+\end{table}
+  % lat_speendup = [70.1 / 49.13, 6.81 / 3.61, 829.39 / 128.27, 0.1 / 0.9, 0.32 / 0.1, 2.14 / 0.63]
+  % thr_speedup = [1.1 * 1000 / 877.98, 79.2 * 1000 / 4.7 * 1000, 49 / 7.5, 88.88 / 80.02, 1.04 / 0.32, 6.65 / 1.96]
+  
+      %   \mrow{SqueezeNet}     & SARA    & 49.13   & 124.8 Frames/s  &  \mrow{0.14}    & \mrow{1.28}       \\
+      %                         & TF      & 70.10   & 877.98 Frames/s                                       \\ \addlinespace
+      %   \mrow{LSTM}           & SARA    & 3.61    & 8.8k sample/s   &  \mrow{1.87}    & \mrow{16.83}      \\
+      %                         & TF      & 187.52  & 4.7k sample/s                                         \\ \addlinespace
+      %   \mrow{PageRank}       & SARA    & 128.27  & 49M edge/s      &  \mrow{6.5}     & \mrow{6.5}        \\
+      %                         & Gunrock & 829.39  & 7.5 M edge/s                                          \\ \addlinespace
+      %   \mrow{Black Scholes}  & SARA    & 0.09    & 88.88 GOptions/s&  \mrow{1.11}    & \mrow{1.11}       \\
+      %                         & Cuda    & 0.10    & 80.02 GOptions/s                                      \\ \addlinespace
+      %   \mrow{Random Forest}  & SARA    & 0.10    & 1.04 Msample/s  &  \mrow{3.25}    & \mrow{3.25}       \\
+      %                         & Cuda    & 0.32    & 0.32 MSamples/s                                       \\ \addlinespace
+      %   \mrow{Merge Sort}     & SARA    & 0.63    & 6.65 GElements/s&  \mrow{3.39}    & \mrow{3.39}       \\
+      %                         & Cuda    & 2.14    & 1.96 GElements/s                      \\
+      % %   Radix Sort            & Cuda    & 1.42    & 2.96 GElements/s       \\ \addlinespace
+      % %   Radix Sort            & Cuda    & 1.27    & 3.29 GElements/s       \\ \addlinespace
+      % \midrule
+      %   Geo-mean     & & & &     & 3.45      \\
+  
+  % \mrow{Local Graph Clustering, ISTA, 20 iters}                  & Plasticine & PIR     & n/a    & n/a                  &         \\
+  %                                                                & V100       & Gunrock & 787.94 & n/a                  &         \\ \addlinespace
+  % \mrow{SqueezeNet v1.0}
+  % \mrow{LSTM, 512 units, 1 layers, 8 steps, 32 samples}, latency = 6.81ms, throughput = 4698 samples
+  % \mrow{PageRank, 50 iters, delaunay\_n20 dataset}
+  % \mrow{Black Scholes, 8M options}
+  % \mrow{Random Forest, 102400 samples, 128 features, tree depth and number of nodes
+  % \mrow{Merge Sort, 4Mi elements}
+  % Radix Sort, float key, 4Mi elements
+  % Radix Sort, int key, 4Mi elements
+  %\begin{table*}[ht]
+  %\centering
+    %\small
+    %\begin{tabular}{@{} llllrr *{2}{r} @{}}
+    %\toprule
+      %\multirow{2}{*}{\textbf{Benchmark}} & \textbf{Compiler} & \textbf{Latency (ms)} & \textbf{Throughput} &\textbf{Speedup(x)} &\textbf{Speedup, normalized (x)}\\
+      %\midrule
+        %\mrow{SqueezeNet}     & SARA    & 49.13   & 124.8 Frames/s  &  \mrow{0.14}    & \mrow{1.28}       \\
+                              %& TF      & 70.10   & 877.98 Frames/s                                        \\ \addlinespace
+        %\mrow{LSTM}           & SARA    & 3.61    & 8.8k sample/s   &  \mrow{51.76}   & \mrow{465.84}       \\
+                              %& TF      & 187.52  & 170 sample/s                                           \\ \addlinespace
+        %\mrow{PageRank}       & SARA    & 128.27  & 49M edge/s      &  \mrow{6.5}     & \mrow{6.5}        \\
+                              %& Gunrock & 829.39  & 7.5 M edge/s                                           \\ \addlinespace
+        %\mrow{Black Scholes}  & SARA    & 0.09    & 88.88 GOptions/s&  \mrow{1.11}    & \mrow{1.11}        \\
+                              %& Cuda    & 0.10    & 80.02 GOptions/s                                       \\ \addlinespace
+        %\mrow{Random Forest}  & SARA    & 0.10    & 1.04 Msample/s  &  \mrow{3.25}    & \mrow{3.25}       \\
+                              %& Cuda    & 0.32    & 0.32 MSamples/s                                        \\ \addlinespace
+        %\mrow{Merge Sort}     & SARA    & 0.63    & 6.65 GElements/s&  \mrow{3.39}    & \mrow{3.39}       \\
+                              %& Cuda    & 2.14    & 1.96 GElements/s                      \\
+      %\midrule
+        %Geo-mean     & & & &  5.54    & 49.86      \\
+      %\bottomrule
+      %\addlinespace
+    %\end{tabular}
+  %\caption{Performance of Plasticine and Tesla V100 GPU}\label{tab:eval}
+  %\end{table*}
+  %\label{evaluations}
+
+  %\begin{table*}[ht]
+  %\centering
+    %\small
+    %\begin{tabular}{llccc}
+    %\toprule
+      %\textbf{Benchmark}              & \textbf{Compiler} & \textbf{Latency (ms)} & \textbf{Throughput} & \textbf{Speedup (x)}\\
+      %\midrule
+        %\mrow{SqueezeNet (batch-1)}   & SARA              & 49.13                 & 124.8 (1.1k) Frames/s      & \mrow{0.31 (2.75)}    \\
+                                      %& TF                & 70.10                 & 400 Frames/s        &                       \\ \addlinespace
+        %\mrow{LSTM (batch-32)}        & SARA              & 3.61                  & 8.8 (79.2) ksample/s       & \mrow{1.87 (16.85)} \\
+                                      %& TF                & 6.81                  & 4.7 ksample/s        &                       \\ \addlinespace
+        %\mrow{PageRank}               & SARA              & 128.27                & 49M edge/s          & \mrow{6.5}            \\
+                                      %& Gunrock           & 829.39                & 7.5 M edge/s        &                       \\ \addlinespace
+        %\mrow{Black Scholes}          & SARA              & 0.09                  & 88.88 GOptions/s    & \mrow{1.11}           \\
+                                      %& Cuda              & 0.10                  & 80.02 GOptions/s    &                       \\ \addlinespace
+        %\mrow{Random Forest}          & SARA              & 0.10                  & 1.04 Msample/s      & \mrow{3.25}           \\
+                                      %& Cuda              & 0.32                  & 0.32 MSamples/s     &                       \\ \addlinespace
+        %\mrow{Merge Sort}             & SARA              & 0.63                  & 6.65 GElements/s    & \mrow{3.39}           \\
+                                      %& Cuda              & 2.14                  & 1.96 GElements/s    &                       \\
+      %\midrule
+        %Geo-mean                      &                   &                       &                     & 1.89 (3.93)          \\
+      %\bottomrule
+      %\addlinespace
+    %\end{tabular}
+  %\caption{Performance of Plasticine and Tesla V100 GPU}\label{tab:eval}
+  %\end{table*}
+  %\label{evaluations}
+
+  %\begin{table*}[ht]
+  %\centering
+    %\small
+    %\begin{tabular}{llccc}
+    %\toprule
+      %\textbf{Benchmark}              & \textbf{Compiler} & \textbf{Latency (ms)} & \textbf{Throughput} & \textbf{Speedup (x)}\\
+      %\midrule
+        %\mrow{SqueezeNet (batch-1)}   & SARA              & 49.13                 & 124.8 (1.1k) Frames/s      & \mrow{0.31 (2.75)}    \\
+                                      %& TF                & 70.10                 & 400 Frames/s        &                       \\ \addlinespace
+        %\mrow{LSTM (batch-32)}        & SARA              & 3.61                  & 8.8 (79.2) ksample/s       & \mrow{1.87 (16.85)} \\
+                                      %& TF                & 6.81                  & 4.7 ksample/s        &                       \\ \addlinespace
+        %\mrow{PageRank}               & SARA              & 128.27                & 49M edge/s          & \mrow{6.5}            \\
+                                      %& Gunrock           & 829.39                & 7.5 M edge/s        &                       \\ \addlinespace
+        %\mrow{Black Scholes}          & SARA              & 0.09                  & 88.88 GOptions/s    & \mrow{1.11}           \\
+                                      %& Cuda              & 0.10                  & 80.02 GOptions/s    &                       \\ \addlinespace
+        %\mrow{Random Forest}          & SARA              & 0.10                  & 1.04 Msample/s      & \mrow{3.25}           \\
+                                      %& Cuda              & 0.32                  & 0.32 MSamples/s     &                       \\ \addlinespace
+        %\mrow{Merge Sort}             & SARA              & 0.63                  & 6.65 GElements/s    & \mrow{3.39}           \\
+                                      %& Cuda              & 2.14                  & 1.96 GElements/s    &                       \\
+      %\midrule
+        %Geo-mean                      &                   &                       &                     & 1.89 (3.93)          \\
+      %\bottomrule
+      %\addlinespace
+    %\end{tabular}
+  %\caption{Performance of Plasticine and Tesla V100 GPU}\label{tab:eval}
+  %\end{table*}
+  %\label{evaluations}
+

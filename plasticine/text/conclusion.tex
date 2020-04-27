@@ -1,0 +1,34 @@
+%We also showed that Plasticine provides a high-level programming model,
+%allowing applications to be rapidly expressed as parallel patterns while still enjoying the energy and
+%performance benefits of reconfigurable architectures.
+
+%\section{Discussion}
+%\label{discussion}
+%
+%\paragraph{Modern FPGA Devices}
+%As the body of research on CGRAs has been growing, commercial FPGA architectures have also been evolving.
+%FPGAs have seen the addition of increasing numbers of coarse-grained blocks, including integer
+%multiply-accumulators (``DSPs'') and DRAM memory controllers. 
+%Most recently, Intel's Arria 10 and Stratix 10 device families introduced hardened, single precision floating point adder and multiplier units.
+%The largest Stratix 10, for example, has a peak performance of 9.2 TFLOPS from its coarse floating point units alone (11,520 multipliers and adders at 800MHz), 
+%\todo{roughly the same as} Plasticine's peak (4,608 multiply-accumulates at 1GHz). 
+%The interconnect in these FPGAs, however, largely remains faithful to the original purpose of the devices as prototyping fabrics for arbitrary digital logic. 
+%Modern FPGAs are therefore an architecture with two extremes: efficient, hardened compute units in a sea of bit-level interconnect and logic. 
+%While continued support for bit-level reconfigurability is certainly the most general route, and thus likely the best for supporting existing FPGA customers, 
+%it also means that modern FPGAs will remain limited by the area, energy, and compile time inefficiencies that come with it.
+%\todo{Concluding sentence that makes this sound not quite as harsh?}
+%
+%\paragraph{Low Precision Workloads}
+
+\section{Conclusion}
+\label{conclusion}
+In this paper we describe Plasticine, a novel reconfigurable architecture for efficiently executing both sparse
+and dense applications composed of parallel patterns. We identify the key computational patterns
+needed to capture sparse and dense algorithms and describe coarse-grained Pattern and Memory Compute Units capable of executing parallel patterns
+in a pipelined, vectorized fashion. These units exploit information about hierarchical parallelism, locality and
+memory access patterns within our programming model.
+We then use design-space exploration to guide the design of the Plasticine
+architecture and create a full software-hardware programming stack to map applications to an
+intermediate representation, which is then executed on Plasticine.
+We show that, for an area budget of 113~$mm^2$, Plasticine provides up to 95$\times$ improvement in performance and 
+up to 77$\times$ improvement in performance-per-Watt compared to an FPGA in a similar process technology.

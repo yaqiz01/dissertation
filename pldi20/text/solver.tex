@@ -1,0 +1,123 @@
+\paragraph{Solver-based Solution}
+\newcommand{\projb}[1]{\text{proj}_\mathbf{B}(#1)}
+\newcommand{\nnint}{\mathbb{Z}_{\ge 0}}
+\newcommand{\ind}[1]{\mathbb{1}[#1]}
+
+In order to construct an assignment from nodes to partitions, 
+we convert the allocation problem into an integer convex optimization problem. 
+Let $N$ be the number of operations we wish to arrange, and number the operations $n_{i}, i \in {0 ... N-1}$. Let $\vec{p}$ be the vector of non-negative integers corresponding to the partition of each operation, such that $p_i = \text{partition of}(n_i)$. Additionally, let $P$ be an upper-bound on the number of partitions necessary. Additionally, in the following sections, let $\projb{v}$ denote the boolean projection procedure detailed in section \ref{sec:bool_proj}.
+
+\begin{figure*}
+	\begin{tabular}{c | c | c | c}
+		Name & Type & Description & Definition\\\hline
+		$\mathcal{N}$ & Constant & Enumeration of nodes to partition, numbered $\mathcal{N}_i$ & \\
+		N & Constant, $\nnint$ & Number of operations to partition & $N = |\mathcal{N}|$\\
+		P & Constant, $\nnint$ & Number of partitions to consider &\\
+		$\mathcal{E}$ & Constant, $\{n_i \to n_j\}$& Directed edges representing data transfer & \\
+		C & Constant, $\nnint$ & An appropriately large constant & $C = N \times P$\\
+		B & Variable, $\{0, 1\}^{N \times P}$ & Boolean Partitioning Matrix&\\
+    p & Variable, $\nnint^N$ & Vector of mappings from node to assigned partition& $p = B \begin{bmatrix} 0 & 1 & \cdots & P-1\end{bmatrix}^T$\\
+		$\projb{\cdot}$ & $\nnint \to \mathbb{B}$ & Function to convert a positive integer into a boolean& Section \ref{sec:bool_proj}\\
+		$d_p$ & Variable, $\nnint^P$ & Vector of partition delays & \\
+		$\dest(n)$ & $\mathcal{N} \to \mathcal{P}(\mathcal{N})$& The set of nodes which depend on $n$& $\{n' | n' \in \mathcal{N}\ s.t.\ (n \to n') \in \mathcal{E}\}$
+	\end{tabular}
+	\caption{Names and definitions used in the solver-based partitioning.}
+	\label{fig:solver-variables}
+\end{figure*}
+
+Spatial architectures consist of a distributed set of memories and compute, such as the checkerboard pattern in Plasticine. In order to construct an assignment from operations to PCUs, we convert the allocation problem into an integer convex optimization problem. Variables involved in the process are described in figure \ref{fig:solver-variables}.
+
+\begin{align}
+    \arg \min_{p \in \nnint^N} \left( \max_{i \in [0 ... N-1]}p_i \right) \label{eq:objective}\\
+    \text{Operations per Partition constraints} \label{eq:op-per-part}\\
+    \text{Dependency Constraints}\label{eq:dep-con}\\
+    \text{Partition in-degree constraints}\label{eq:in-deg}\\
+    \text{Partition out-degree constraints}\label{eq:out-deg}
+\end{align}
+
+This representation is particularly convenient for computing partition-wise results, such as the aforementioned constraints, as it makes computing histograms over the partitions easy.
+
+\nz{In the evaluation section for this we might want to say that we repeat the in/out-degree constraints for each type of edge since Plasticine has both scalar and vector.}
+
+\subparagraph{Operations per Partition Constraints}
+Using the boolean partitioning matrix, constraint \ref{eq:op-per-part} can be encoded as the following:
+
+\begin{align}
+    \vec{\mathbf{1}} B \le \vec{\mathbf{1}} \times \text{Maximum ops per partition}
+\end{align}
+
+Note that $\vec{\mathbf{1}}B$ computes the column-wise sum of $B$, which results in the number of nodes assigned to each partition.
+
+\subparagraph{Dependency Constraints}
+Let $E$ be the set of edges $n_i \leadsto n_j$, where node $j$ depends on node $i$. We can encode these constraints as
+
+\label{sec:dep-constraint}
+Let $E$ be the set of edges $n_i \to n_j$, where node $j$ depends on node $i$. We can encode these constraints as
+
+\begin{align}
+    \forall n \to n' \in \mathcal{E}:\ p_{n} \le p_{n'}
+\end{align}
+
+\nz{explain intuition behind why this formulation of the constraint actually works}
+
+\subparagraph{Partition in-degree constraints}
+Consider the vector $\vec{in} \in \nnint^{P}$, the vector of in-degrees of each partition. In order to satisfy the in-degree constraints imposed by the hardware, we note that $\vec{in} \le \text{maximum-in-degree}$.
+
+On the evaluation system, the hardware is able to perform broadcast-like operations within each partition; multiple operations which require the same value in the same partition only occupy a single input slot.
+\begin{align}
+\vec{in} &= \Sigma_{n \in N} \andf(\projb{\Sigma_{n' \in \dest(n)} B_{n', :}}, B_{n, :})\\
+\vec{in} &\le \textrm{input-constraint}
+\end{align}
+
+\subparagraph{Partition out-degree constraints}
+
+\begin{align}
+\vec{out} &= \Sigma_{n \in \mathcal{N}} \underbrace{\left[ \andf ( \overbrace{\projb{\Sigma_{n' \in \dest(n)} p_{n'}  - p_{n}}}^{\textrm{Indicator for operation }n}, B_{n, :} ) \right]}_{\textrm{Output from operation } n \textrm{ (One-hot vector)}}\\
+\vec{out}&\le \textrm{output-constraint}
+\end{align}
+
+
+
+\subparagraph{Delay-Based Partitioning}
+Minimizing purely for the number of allocated partitions results in a sub-optimal solution due to imbalanced path lengths, necessitating large numbers of retiming operations. For each node $n$, let $d(n)$ be the delay on node $n$ relative to outside nodes. As the delays of nodes leading into to the partition are unknown, we simply set them to $0$. Similarly, external nodes which depend on the partition have delay $d$.
+
+\begin{align}
+	\forall n_1 \to n_2 \in \mathcal{E}:\ d(n_2) \ge d(n_2) + (\underbrace{\ind{p(n_1) \ne p(n_2)]}- 1}_{\text{Constraint Activation}}) \times D
+\end{align}
+
+Additionally, nodes within the same partition must have the same delay. This is achieved by constraining that $d(n_i) = d_p(p(n_i))$. We set $maxdelay = 2 \times P \times \text{delay-per-partition}$, an upper bound on the largest possible delay, and is used to selectively activate components of a vector.
+
+\begin{align}
+	\forall n_i \in \mathbf{N}&:\\
+	&d(n_i) \ge \underbrace{\max_j(B_{i, j} \times - maxdelay + maxdelay + p_d(j))}_{\text{Convex forumlation for partition delay}}\\
+	&d(n_i) \le \underbrace{\min_j(B_{i, j} \times maxdelay - maxdelay + p_d(j))}_{\text{Concave forumlation for partition delay}}
+\end{align}
+
+
+Finally, edges with length longer than the network buffer depth incur a retiming cost, which is added to the objective \ref{eq:objective}.\\
+\begin{align}
+	\Sigma_{n_1 \to n_2 \in \mathcal{E}} \projb{\max(d(n_2) - d(n_1) - \text{buffer-depth}, 0)}
+\end{align}
+
+\subparagraph{Utility Constructs}
+\subparagraph{Boolean Projection}
+
+\label{sec:bool_proj}
+Throughout the previous formulations, we wish to convert a positive integer value $v$ into a boolean variable $b$ such that $b = \ind{v > 0}$, that is, $b = 1$ if $v > 0$.  Note that $b$ is unconstrained when $v = 0$. However, this does not affect the validity of the algorithm as any case where $b = 1, v = 0$ can be replaced with $b = 0, v = 0$.
+
+\begin{align*}
+	b&: \mathbb{B}\\
+	v&\le b \times C
+\end{align*}
+
+\subparagraph{Boolean And}
+Consider boolean variables $a, b \in \mathbb{B}$. Then let $\and(a, b) \coloneq a \land b \equiv \max(a + b - 1, 0)$.
+
+\subparagraph{$\ind{p(n_1) = p(n_2)}$}
+$\sum(\max(B_{n_1} + B_{n_2} - 1, 0))$
+
+\subparagraph{$\ind{p(n_1) \ne p(n_2)}$}
+If we know that $p_1 \to p_2 \in \mathbf{E}$, then $\projb{p(n_2) - p(n_1)}$ suffices for monotonically increasing constraints. Alternatively, a more expensive general solution is $\sum(\max((B_{n_1, :} - B_{n_2, :}, 0))$.
+
+\subparagraph{$\ind{d(n_1) \ne d(n_2)}$}
+If we know that $d(n_2) \ge d(n_1)$ then $\projb{d(n_2) - d(n_1)}$ suffices for monotonically increasing constraints in $d(n_2) - d(n_1)$. Alternatively, $|\projb{d(n_2) - d(n_1)}|$ may be used at additional expense.

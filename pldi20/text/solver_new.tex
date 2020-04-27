@@ -1,0 +1,80 @@
+\subsection{Solver-based Solution}
+\newcommand{\projb}[1]{\text{proj}_\mathbf{B}(#1)}
+\newcommand{\nnint}{\mathbb{Z}_{\ge 0}}
+\newcommand{\ind}[1]{\mathbb{1}[#1]}
+
+\begin{figure*}
+	\begin{tabular}{c | c | c | c}
+		Name & Type & Description & Definition\\\hline
+		$\mathcal{N}$ & Constant & Enumeration of nodes to partition, numbered $\{n_i\}_i$ & \\
+		N & Constant, $\nnint$ & Number of operations to partition & $N = |\mathcal{N}|$\\
+		P & Constant, $\nnint$ & Number of partitions to consider &\\
+		$\mathcal{E}$ & Constant, $\{n_i \to n_j\}$& Directed edges representing dependence & \\
+		K & Constant, $\nnint$ & An appropriately large constant & $K = N \times P$\\
+		B & Variable, $\{0, 1\}^{N \times P}$ & Boolean Partitioning Matrix&\\
+		p & Variable, $\nnint^N$ & Vector of mappings from node to assigned partition& $p = B \begin{bmatrix} 0 & 1 & \cdots & P-1\end{bmatrix}^T$\\
+		$\projb{\cdot}$ & $\nnint \to \mathbb{B}$ & Function to convert a positive integer into a boolean& Section \ref{sec:bool_proj}\\
+		$d_p$ & Variable, $\nnint^P$ & Vector of partition delays & \\
+		$d_n$ & Variable, $\nnint^N$ & Vector of node delays & \\
+		$\dest(n)$ & $\mathcal{N} \to \mathcal{P}(\mathcal{N})$& The set of nodes which depend on $n$& $\{n' | n' \in \mathcal{N}\ s.t.\ (n \to n') \in \mathcal{E}\}$
+	\end{tabular}
+	\caption{Names and definitions used in the solver-based partitioning.}
+	\label{fig:solver-variables}
+\end{figure*}
+
+We additionally present a solver-based method. Table \ref{fig:solver-variables} contains the variables used in this section. These constraints are presented using the Disciplined Convex Programming ruleset \cite{DCP, DCP-online}.
+
+\subsubsection{Objective}
+
+\subsubsection{Reducible Constraints}
+Convex reducible constraints such as sums or maximums can be managed in a programmatic manner. Consider a constraint $C$ with reduce function $R_C: [\nnint^{P}] \to \nnint^P$, and a per-partition constraint vector $P_C \in \nnint^P$ and a per-node value $C(n_i) \in \nnint$.
+\begin{align}
+	R_C\left([C(n_i) \times B_{i, :}]_{n_i \in \mathbb{N}} \right) \le P_C
+\end{align}
+
+\subsubsection{Capability Constraints}
+In order to handle capability-based constraints, such as operations which require arithmetic units, may be simply formulated as $B_{i, j} \le \mathbb{1}[\text{supports}(p_j, n_i)]$, where $ \mathbb{1}[\text{supports}(p_j, n_i)]$ whether the partition $p_j$ has the capability to support the node $n_i$.
+
+\subsubsection{Partition in-degree constraints}
+Consider the vector $\vec{in} \in \nnint^{P}$, the vector of in-degrees of each partition. In order to satisfy the in-degree constraints imposed by the hardware, we note that $\vec{in} \le \text{maximum-in-degree}$.
+
+On the evaluation system, the hardware is able to perform broadcast-like operations within each partition; multiple operations which require the same value in the same partition only occupy a single input slot.
+\begin{align*}
+\vec{in} &= \Sigma_{n \in N} \andf(\projb{\Sigma_{n' \in \dest(n)} B_{n', :}}, B_{n, :})\\
+\vec{in} &\le \textrm{input-constraint}
+\end{align*}
+
+\subsubsection{Partition out-degree constraints}
+
+\begin{align*}
+\vec{out}_p &= \Sigma_{n_s \in \mathcal{N}} \andf(B_{s, p}, \projb{\maximum([\Sigma_{n_d \in \dest(n_s)} B_{d, p}] - KB_{s, p}, 0)}) \\
+\vec{out}&\le \textrm{output-constraint}
+\end{align*}
+
+\subsubsection{Edge Dependencies}
+Edge dependencies are naturally expressed as a constraint on the relative timings between the source and destination nodes.
+\begin{align*}
+	\forall n_i \to n_j \in \mathcal{E}:\\
+	d_n(i) + \underbrace{\mathbf{1}[p(n_1) \ne p(n_2)]}_{\text{prevents nodes from all having the same delay}} \le d_n(j)
+\end{align*}
+
+Additionally, nodes within the same partition must have the same delay. This is achieved by constraining that $d(n_i) = d_p(p(n_i))$. We set $maxdelay = 2 \times P \times \text{delay-per-partition}$, an upper bound on the largest possible delay, and is used to selectively activate components of a vector.
+
+\begin{align*}
+\forall n_i \in \mathbf{N}&:\\
+&d_n(i) \ge \underbrace{\max_j(B_{i, j} \times - maxdelay + maxdelay + d_p(j))}_{\text{Convex forumlation for partition delay}}\\
+&d_n(i) \le \underbrace{\min_j(B_{i, j} \times maxdelay - maxdelay + d_p(j))}_{\text{Concave forumlation for partition delay}}
+\end{align*}
+
+\subsubsection{Utility Constructs}
+\paragraph{Boolean Projection}
+\label{sec:bool_proj}
+One common construct that the previous formulations use is a pseudo-projection to boolean; that is, function $\projb{v} \coloneq \{ 1\ \text{if}\ v \ge 0 \ \text{otherwise either 0 or 1}\}$, where $v$ is convex. Note that the additional constraint to exclude the $b = 1, v = 1$ case is unnecessary for the purposes of this section.
+
+\begin{align*}
+	b&: \mathbb{B}\\
+	v&\le b \times K
+\end{align*}
+
+\paragraph{Boolean And}
+Consider boolean variables $a, b \in \mathbb{B}$. Then let $\andf(a, b) \coloneq a \land b \equiv \max(a + b - 1, 0)$.
