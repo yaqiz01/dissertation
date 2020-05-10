@@ -1,1 +1,97 @@
-\chapter{Compiler}
+\chapter{Compiler} \label{sec:compiler}
+
+In this section, we introduce the compiler framework---\name---that targets Plasticine
+architecture from high-level programs described in the Spatial language. 
+
+ 
+\paragraph{Front-end Selection} 
+Although \name takes Spatial as front-end, the compilation techniques in \name can be equally
+applied to other imperative langauges with nested loop constructs, such as C-based high-level
+syntehsis language, the backend of Halide IR, and other DSLs at the similar abstraction level. 
+Using Spatial as our front-end language has the advantage that the language is designed for
+reconfigurable hardware, such that it can express valid execution schedule that can be exploit by
+spatial architectures natively in the language.
+
+%% Memory model
+The data structure reprsented most exisitng imperative languages IR often marries to the
+CPU's virtual memory model. LLVM-based compilers, for example, treats data collections as pointers to a shared
+global address space, without distinguising what data are stored on-chip vs. off-chip.
+This is CPU provides the memory abstraction that any data within the global address space 
+can be equally accessed and the hardware implicitly manage the data movement between on and off-chip 
+access by brining
+Accelerators on the other hand, has explicitly managed on-chip scratchpads, that is not a cached
+version of main memory data implicitly managed by the hardware.
+The idea is to have the algorithm, which has better understanding of the data characteristics, to
+explicitly control what data gets moved on and off-chip to maximize locality.
+Other important static analysis in synthesis compilers, such as banking analysis, requires the
+compiler to have the global view all access patterns on a data structure.
+Therefore, modeling the data structures as disjoint memory space is much more suitable 
+than pointers to a shared memory for reconfigurable architectures.
+
+Without lost of generality, we use python-style pseudo code to represents the front-end programming
+abstraction the the rest of our discussion.
+
+\subsection{Native Programming Abstraction of Plasticine}
+Similar to FPGA high-level synthesis tools, \name provides a high-level imperative programming abstration
+and synthesizes the program to execute on a reconfigurable accelerator. Targeting an \rda, however,
+is much more challenging than targeting FPAGs due to \rda's stringent mapping constraints. 
+Unlike FPGAs, \rdas cannot map arbitrary RTL functionality. 
+Taking Plasticine as an example, 
+the hardware has collection of memory tiles (PMUs) and compute tiles (PCUs). 
+The mesh global network can be statically configured to connect any tiles with garanteed in-order 
+transmission of packets over arbitrary network latency.
+As the major compute work horse of the architecture, PCU contains a 6 stage SIMD pipeline with 16 SIMD lanes. 
+Unlike a processor core, the PCU can only statically configure six instructions throughout the
+entire execution.
+Additionally, the six instructions must be branch-free in order to be fully pipelined across stages.
+At runtime, the SIMD pipeline executes the same set of instructions over different input data.
+Software can configure the SIMD pipeline to depend on a set of input streams and
+produce a set of output streams. 
+Execution of the PCU is triggered by the arrival of its input dependency and  back pressured by
+the output streams.
+The PCU also contains configurable counters, that can be chained to produce iterator values used in
+the data pipeline. The control signals of these counters, such as counter saturation or the done
+signal, can be used to dequeue and enqueue the input and output streams, respectively.
+The counter bounds can also be data-dependent from scalar input streams.
+We refer to the compute graph that can be executed by a SIMD pipeline as a context. A context includes
+the branch-free instructions mapped across SIMD stages, the input and output stream, and associated
+counter and control states.
+Compare to most other data-flow engines, the PCU is more flexible in that it allows dynamic enqueue
+and dequeue rates on its input and output streams.
+This feature enable Plasticine to support complex control hierarchy, such as nested loops and
+branches, across tiles even though individual tile can only executes instructions that are
+control-free. \todo{} shows example pseudo assembly code to program a PCU.
+
+%% TODO: move this somewhere else
+There is no global scheduler to orchestrate the execution among PCUs---the execution is pure
+streaming and data-flow driven. This restriction dramatically eliminates communication hot spot and
+long travelling wires, which improves the clock frequency and scalability of the architecture.
+%%
+
+%% TODO: present pseudo code on the assembler and overview the hardware constarints
+
+\section{Compiler Overview}
+In this section, we describe a systematic approach to compile applications with a centralized control hierarchy 
+into a distributed dataflow graph that can run on an RDA.
+\Cref{fig:flow} shows our compilation flow.
+First, \name{} takes the input graph and performs a {\em virtual block allocation}.
+A virtual block (VB) is our intermediate representation that eventually gets assigned to a PB.
+Communication across VB tolerates an arbitrary amount of network latency.
+The {\em VB allocation} phase allocates compute, memory, and necessary synchronization across VBs to produce the correct result.
+The output of the {\em VB allocation} is a VB dataflow graph (VBDFG) that can be executed on an RDA with infinite-sized PBs.
+
+The next phase is the {\em PB allocation} phase that assigns each VB to execute on a PB. 
+This step addresses VBs that do not satisfy PB constraints by decomposing them into multiple VBs.
+After all VB fits in at least one PB, we perform a global optimization that merges 
+small VBs into a larger VB to reduce fragmentation in mapping.
+The output of the {\em PB allocation} phase assigns a PB type to each VB, which is input to a {\em placement and routing (PaR)} phase.
+
+The PaR phase maps the VBDFG graph on the accelerator array.
+PaR on RDA is similar to PaR on an FPGA as studied in many previous works~\cite{network}, which we do not discuss further in this paper. 
+After PaR, \name{} generates configuration for PBs which executes on the RDA.
+
+In the following sections, \Cref{sec:control} describes the major challenge addressed during {\em VB allocation}, which is converting the centralized control hierarchy into distributed control-flow.
+\Cref{sec:decompose} details program-partitioning passes that decompose program over distributed resources.
+%Distributed control and program partitioning are the minimum efforts to target an RDA.
+In \Cref{sec:opt}, we talk about optional optimizations that either improves the runtime or reduces resource usages for an application.
+

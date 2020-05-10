@@ -10,7 +10,7 @@
 
 % copy this file and call it something like mythesis.tex
 
-\documentclass[12pt]{report}
+\documentclass[11pt]{report}
 % note that the documentclass can take other option such as
 % twoside - for double sided printing
 % openright - if double side  chapters always start on odd pages
@@ -83,10 +83,15 @@
 \include{text/background}
 
 \include{text/arch}
+\include{text/banking_arch}
 \include{text/rnn_arch}
 \include{text/network}
 
 \include{text/compiler}
+\include{text/controlflow}
+\include{text/partitioning}
+\include{text/regalloc}
+\include{text/instrumentation}
 \include{text/conclusion}
 
 % now for the body of the thesis, modify the number of these lines as needed
@@ -105,7 +110,7 @@
 % \bibliography{mythesis}
 % or some other way of doing the bibliography
 \bibliographystyle{ieeetr}
-\bibliographystyle{references}
+\bibliography{text/references}
 
 \end{document}
 

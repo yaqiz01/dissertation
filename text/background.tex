@@ -1,5 +1,61 @@
 \chapter{Background}
 
+\section{Execution Schedule of Spatial Architectures} 
+\begin{figure*}
+\centering
+\includegraphics[width=1.0\textwidth]{figs/pipeexec.pdf}
+\caption[Hiearchical pipelining and parallelization on spatial architecture]{
+Hiearchical pipelining and parallelization in spatial architecture.
+(a) illustrates the runtime and throughput of a hiearchically pipelined and parallelized program on
+a reconfigurable spatial architecture. 
+At inner level, instructions within each basic
+block are fine-grained pipelined across iterations of the inner most loop. 
+At outer level, the inner loops are coarse-grained pipeliend across the outer loop iterations.
+Exploting multiple levels of pipeline parallelism gives a total throughput of $x+y$ operations per cycle.
+(b) Vectorizing the inner most loops B and C by \texttt{n} increases the throughput to $(x+y)n$.
+(c) Parallelizing the outer loop A by \texttt{m} furhter increases the throughput to $(x+y)mn$.
+}
+\label{fig:pipeexec}
+
+\end{figure*}
+\begin{figure*}
+\centering
+\includegraphics[width=0.6\textwidth]{figs/peakutil.pdf}
+\caption[Average utilization vs. peak compute density tradeoff]{
+ Average utilization vs. peak compute density tradeoff among different architectures.
+}
+\label{fig:peakutil}
+\end{figure*}
+
+The biggest advantage of reconfigurable accelerators, compared to processor-based architectures 
+such as CPUs and GPUs, is the ability to explore pipeline parallelism at multiple granularity. 
+
+In traditional Von Neumann architectures, a computer consists of a processing unit that performs
+computation, a memory unit that stores the program states, and a control unit that tracks execution
+states and fetch the instruction to execute. This computing model inheritely assumes that
+instructions with in a program are executed in time. 
+
+Unlike traditional Von Neumann architectures, which inheritely assumes program is executed in time, 
+reconfigurable data-flow architecutes can statically program 
+
+
+\Cref{fig:pipeexec} shows an example program executed on the 
+
+\begin{table*}
+  \centering
+\begin{tabular}{lccc}
+  \toprule
+ Concurrency Level & Instruction & Data & Task/Kernel  \\ \midrule
+ Parallelsim & CPU,\rda & CPU,GPU,\rda & CPU,\rda  \\
+ Pipelining & \rda & \rda & \rda \\
+ \bottomrule
+\end{tabular}
+\caption[Concurrency level explored by different architectures]{
+  Concurrency level explored by different architectures
+}
+\label{tab:conclevel}
+\end{table*}
+
 \section{Plasticine}
 
 \section{Spatial}

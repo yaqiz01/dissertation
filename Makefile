@@ -2,7 +2,7 @@
 MAIN=text/thesis
 SIG=text/signature
 
-thesis.pdf: text/*
+thesis.pdf: text/* figs/*
 	latexmk -pdf $(MAIN).tex
 	latexmk -c thesis.pdf
 

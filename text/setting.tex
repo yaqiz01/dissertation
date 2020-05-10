@@ -1,3 +1,11 @@
+\usepackage[T1]{fontenc}
+
+%% Font of document
+\usepackage{tgpagella}
+%\usepackage{tgbonum} %% no good
+%\usepackage{bookman} %% no good
+%\usepackage{charter} 
+
 \usepackage{graphicx}
 
 \input{text/codeformat}
@@ -6,5 +14,29 @@
 \usepackage{multirow}
 %\usepackage[numbers,sort&compress]{natbib}
 \usepackage{amsmath}
+\usepackage{amsfonts}
 \usepackage{siunitx}
 %\usepackage{minted}
+
+\usepackage[hidelinks]{hyperref}
+
+\usepackage[capitalise]{cleveref}
+\usepackage{xspace} 
+
+\newcommand{\name}{SARA\xspace}
+\newcommand{\rda}{RDA\xspace}
+\newcommand{\rdas}{RDAs\xspace}
+\newcommand{\gist}[1]{{\color{blue} #1}}
+\newcommand{\todo}[1]{{\color{red} TODO: #1}}
+
+%%
+%% Math operators
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\elmax}{elmax} % Elementwise maximum
+\DeclareMathOperator*{\dest}{dest} % Destinations for an operator (its consumers)
+\DeclareMathOperator*{\andf}{and}
+\DeclareMathOperator*{\maximum}{maximum}
+
+\newcommand{\projb}[1]{\text{proj}_\mathbf{B}(#1)}
+\newcommand{\nnint}{\mathbb{Z}_{\ge 0}}
+\newcommand{\ind}[1]{\mathbb{1}[#1]}
