@@ -96,8 +96,12 @@ In the following sections, we present a traversal-based solution that provides a
 
 \begin{figure}
   \centering
-  \includegraphics[width=1\columnwidth]{figs/partition_example.pdf}
-  \caption{(a) An example of an illegal partition. (b) The cost of a partition.}
+  %\includegraphics[width=1\columnwidth]{figs/partition_example.pdf}
+  \includegraphics[width=1\columnwidth]{figs/parteg.pdf}
+  \caption[Compute partitioning example]{
+    \todo{}
+    %(a) An example of an illegal partition. (b) The cost of a partition.
+  }
   \label{fig:parteg}
 \end{figure}
 
@@ -149,6 +153,15 @@ When BI is a constant, \name{} can use this information to intelligently assign 
 \subparagraph{Read request duplication (dupra).} During memory partitioning (\Cref{sec:memsplit}), instead of forwarding BI from the requester to receiver, \name{} can also duplicate the BI with local state on receiver side, which
 eliminates the unbalanced data path at the cost of extra computation.
 
+\begin{figure*}
+\centering
+\includegraphics[width=0.6\textwidth]{figs/mlp.pdf}
+\caption[MLP case study]{
+  MLP case study
+}
+\label{fig:mlp}
+\end{figure*}
+
 \subparagraph{Global Merging (merge).}
 After all VBs satisfy the hardware constraint, we perform a global optimization to compact small VBs into  larger VBs. 
 Merging has very similar problem statement as compute partitioning (\Cref{sec:compsplit}) except with more constraints.
@@ -158,6 +171,7 @@ The caveat is that even with a non-empty intersection, the bipartite graph might
 Therefore, we perform a heuristic checking on feasibility of the bipartite assignment at each step of merging.
 The solver-based solution combines partition assignment with PB type assignment as a joint problem. 
 The output of merging gives both partition assignment as well as a PB type assignment, which eliminates the risk of un-mappable bipartite graph due to merging in the traversal-based solution.
+
 
 %Many of the optimizations we perform are similar to standard compiler optimizations, such as Dead Code Elimination and
 %Constant Propagation.
