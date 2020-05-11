@@ -1,3 +1,21 @@
 \prefacesection{Abstract}
-This thesis tells you all you need to know about life, the
-universe, and everything.
+
+The rise of ``dark silicon'' in the semiconductor industry due to the end of Dennard scaling 
+started the multicore era in processor design since 2005.
+Nonetheless, the performance scaling in multicores is soon coming to a limit, which motivates a new
+class of spatial architecture--reconfigurable dataflow accelerators (RDAs)--that delivers high throughput 
+and energy efficiency in computation to keep up with the performance demand.
+To adapt to the compute intensity in modern data-analytic workloads, particularly in deep learning, RDAs are increasing to a scale
+that was unprecedented before.
+The increase in scale introduces new challenges in on-chip network design to maintain the energy efficiency and scalability of RDAs.
+Furthermore, managing and using RDAs at this scale also require new strategies in mapping, memory management, and flexible control
+to saturate compute throughput of the accelerator. 
+
+In this talk, I will talk about architectural design and compilation techinques that improves the scaling efficiency of a RDA developed 
+at Stanford--Plasticine.
+Staring with a static-dynamic hybrid network, we show that the hybrid network can improves energy efficiency while providing
+guaranteed success in placement and routing.
+Next, I will talk about compiler techinques that convert applications' complex control hierarchies, such as nested loops and branch conditions, into a streaming dataflow representation that can be efficiently executed by Plasticine with distributed on-chip resources.
+The compiler implements (a) a peer-to-peer (p2p) control paradigm inferred from an imperative programming style that minimizes synchronization overhead, and (b) a mapping strategy that decomposes the computation and memory in a program across a distributed heterogeneous resources.
+By applying these techniques, we show that Plasticine is able to outperform state of art accelerators, such as GPUs and FPGAs, in
+both performance and performance/Watt in various dense, sparse, and streaming applications.

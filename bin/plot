@@ -1,0 +1,90 @@
+#!env/bin/python
+
+import numpy as np
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import pandas as pd
+from cycler import cycler
+
+def savefig(fig, plot_path, **kws):
+    if 'size' in kws:
+        w,h, = kws['size']
+        fig.set_size_inches(w,h)
+    print("Generate {}".format(plot_path))
+    plt.savefig(plot_path, format='pdf', dpi=900)
+
+W = 10000
+spct = 0.3
+def plot_proc(ax):
+    par = np.linspace(1,100,100)
+    Ws = W * spct
+    Wp = W - Ws
+    runtime = Ws + Wp / par
+    perf = 1 / runtime
+    ax.plot(par, perf)
+
+def plot_spat(ax):
+    par = np.linspace(1,10,100)
+    Ws = W * spct
+    Wp = W - Ws
+    runtime = np.maximum(Ws,Wp / par)
+    perf = 1 / runtime
+    ax.plot(par, perf)
+
+def plot_mlp():
+    tab = pd.read_csv(
+        'data/191119_145543_0800_Tst_sim_ef6cf6af_10f10351_4132476.csv',
+        header=0, # row for header file
+        encoding="utf-8-sig",
+    )
+    print(tab[['VPCU','VPMU']])
+    pcu = tab.VPCU
+    pmu = tab.VPMU
+    ops = tab['param'].apply(lambda x: int(x.split('ops=List(')[1].split(",")[0]))
+    fig, ax = plt.subplots()
+    ax2 = ax.twinx()
+
+    bar_width = 0.15
+    opacity = 0.8
+    index = np.arange(len(ops))
+
+    colors = ['#003f5c', '#bc5090', '#ffa600']
+
+    ax.bar(index, pcu, bar_width,
+    alpha=opacity,
+    color=colors[0],
+    label='PCU')
+
+    ax.bar(index, pmu, bar_width, bottom=pcu,
+    alpha=opacity,
+    color=colors[1],
+    label='PMU')
+
+    thrpt = 1.0 / (4 / ops)
+    ax2.plot(index, thrpt,
+    color=colors[2],
+    label='Throughput',
+    marker='d',
+    )
+    fig.legend(loc='upper left', bbox_to_anchor=(0.2,0.88))
+
+    ax.set_xticks(index)
+    ax.set_xticklabels(ops)
+    ax.set_xlabel("Output Channel Parallelization")
+    ax.set_ylabel("Number of CU")
+    ax2.set_ylabel("Throughput (Gsample/s)",rotation=-90, labelpad=20)
+    fig.subplots_adjust(left=0.2,right=0.8,bottom=0.2)
+    savefig(fig, 'figs/mlp.pdf', size=(4,4))
+
+def main():
+
+    # fig, ax = plt.subplots()
+    # plot_proc(ax)
+    # savefig(fig, 'figs/proc.pdf')
+    # fig, ax = plt.subplots()
+    # plot_spat(ax)
+    # savefig(fig, 'figs/spat.pdf')
+    plot_mlp()
+
+main()
