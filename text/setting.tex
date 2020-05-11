@@ -1,15 +1,19 @@
 \usepackage[T1]{fontenc}
 
 %% Font of document
-\usepackage{tgpagella}
+%\usepackage{tgpagella}
 %\usepackage{tgbonum} %% no good
 %\usepackage{bookman} %% no good
 %\usepackage{charter} 
+%\usepackage{courier} 
+%\usepackage{mathptmx}
+\renewcommand{\baselinestretch}{1.5}
 
 \usepackage{graphicx}
 
 \input{text/codeformat}
 
+\usepackage{outlines}
 \usepackage{booktabs}
 \usepackage{multirow}
 %\usepackage[numbers,sort&compress]{natbib}
@@ -28,6 +32,7 @@
 \newcommand{\rdas}{RDAs\xspace}
 \newcommand{\gist}[1]{{\color{blue} #1}}
 \newcommand{\todo}[1]{{\color{red} TODO: #1}}
+\newcommand{\term}[1]{\textbf{#1}}
 
 %%
 %% Math operators

@@ -31,44 +31,92 @@ than pointers to a shared memory for reconfigurable architectures.
 Without lost of generality, we use python-style pseudo code to represents the front-end programming
 abstraction the the rest of our discussion.
 
-\subsection{Native Programming Abstraction of Plasticine}
+\subsection{Native Low-level Programming Interface of Plasticine}
 Similar to FPGA high-level synthesis tools, \name provides a high-level imperative programming abstration
 and synthesizes the program to execute on a reconfigurable accelerator. Targeting an \rda, however,
 is much more challenging than targeting FPAGs due to \rda's stringent mapping constraints. 
 Unlike FPGAs, \rdas cannot map arbitrary RTL functionality. 
+
 Taking Plasticine as an example, 
 the hardware has collection of memory tiles (PMUs) and compute tiles (PCUs). 
-The mesh global network can be statically configured to connect any tiles with garanteed in-order 
+The mesh global network can be statically configured to connect any tiles with guaranteed in-order 
 transmission of packets over arbitrary network latency.
-As the major compute work horse of the architecture, PCU contains a 6 stage SIMD pipeline with 16 SIMD lanes. 
-Unlike a processor core, the PCU can only statically configure six instructions throughout the
+
+\subsubsection{Pattern Compute Unit (PCU)}
+As the major compute work horse of the architecture, a PCU contains a 6-stage SIMD pipeline with 16 SIMD lanes. 
+Unlike a processor core, the PCU can only statically configure six vector instructions throughout the
 entire execution.
 Additionally, the six instructions must be branch-free in order to be fully pipelined across stages.
 At runtime, the SIMD pipeline executes the same set of instructions over different input data.
 Software can configure the SIMD pipeline to depend on a set of input streams and
 produce a set of output streams. 
-Execution of the PCU is triggered by the arrival of its input dependency and  back pressured by
-the output streams.
-The PCU also contains configurable counters, that can be chained to produce iterator values used in
-the data pipeline. The control signals of these counters, such as counter saturation or the done
-signal, can be used to dequeue and enqueue the input and output streams, respectively.
-The counter bounds can also be data-dependent from scalar input streams.
-We refer to the compute graph that can be executed by a SIMD pipeline as a context. A context includes
-the branch-free instructions mapped across SIMD stages, the input and output stream, and associated
-counter and control states.
-Compare to most other data-flow engines, the PCU is more flexible in that it allows dynamic enqueue
-and dequeue rates on its input and output streams.
-This feature enable Plasticine to support complex control hierarchy, such as nested loops and
-branches, across tiles even though individual tile can only executes instructions that are
-control-free. \todo{} shows example pseudo assembly code to program a PCU.
+There are three types of streams--single-bit control streams, 32-bit word scalar streams, and
+16-word vector streams--corresponding to three types of global networks.
+Execution of the PCU is triggered by the arrival of its input dependencies and back pressured by
+the downstream buffers.
+The PCU also contains configurable counters, which can be chained to produce the values of nested
+loop iterators used in the datapath. 
 
-%% TODO: move this somewhere else
-There is no global scheduler to orchestrate the execution among PCUs---the execution is pure
-streaming and data-flow driven. This restriction dramatically eliminates communication hot spot and
-long travelling wires, which improves the clock frequency and scalability of the architecture.
-%%
+We refer to the program graph that can be executed by the SIMD pipeline as a \term{compute context} or
+simply \term{context}. 
+A context includes the branch-free instructions mapped across SIMD stages, the input and output 
+streams, and associated counter states and control configurations.
+\todo{} shows example of simplified pseudo assembly code to program a PCU context.
+The control signals of the configurable counters, such as counter saturation or \term{counter done}
+signals, can be used to dequeue and enqueue the input and output streams, respectively.
+The counter bounds (i.e. min, max, and stride) can also be data-dependent using values from the 
+scalar input streams. Compared to other data-flow architectures, the data-flow engine in Plasticine 
+is more flexible in that it allows dynamic enqueue and dequeue window for its input and output streams.
+\emph{This feature enable Plasticine to support complex control hierarchy, such as nested loops and
+branch statements, across contexts even though individual contexts can only executes instructions that are
+control-free}. 
 
-%% TODO: present pseudo code on the assembler and overview the hardware constarints
+There is no global scheduler to orchestrate the execution order among contexts---the execution is purely
+streaming and data-flow driven. 
+The only way to order the execution of two contexts without a data-dependency is to 
+introduce a control \term{token} between two contexts acting like a dummy data-dependency.
+This restriction eliminates the need of long-travelling wires and communication hot spot caused by a
+centralized scheduler, which  again improves the clock frequency and scalability of the architecture.
+
+\subsubsection{Pattern Memory Unit (PMU)}
+PMUs hold all distributed scratchpads available on-chip. 
+Each PMU contains 16 SRAM banks with
+32-word access granularity. The PMU also contains pipeline stages specialized for address
+computation. Unlike SIMD pipelines in PCUs, these pipeline stages are non-vectorized and can only 
+perform integer arithmetics. 
+The address produced by the address pipeline is broadcasted to 16 banks with a configurable offset added to each bank.
+In contrast to PCU SIMD pipeline that has to be programmed atomically, the address pipeline stages 
+within PMUs can be sliced into a write and a read context, triggered independently.
+In addition to compute stages, resources such as I/O ports, buffers, and counters are also shared across contexts.
+It is the software's responsibility to make sure total resources consumed by all
+contexts does not exceed resource limits of the PMU.
+All contexts within PMU have access to the scratchpads with unprotected order. For instance, to
+restrict a read context to access the scratchpad after the write context, the software must explicitly allocate
+a token from the write context to the read context.
+\name automatically generates required control tokens across context such that the memory access order is
+consistent to the one from high-level program order.
+
+Unlike most accelerators at this scale, Plasticine does not have any shared global on-chip memory. 
+This design dramatically improve the memory density and scalability of the architecture 
+by eliminating hardware complexity and overhead to support complex cache coherence protocol.
+%% TODO: add a sentence commenting on the network bandwidth
+On the other hand, however, the burden of maintaining consistent view of a logical memory mapped
+across distributed scratchpads is left to the software.
+The software must explicitly configure synchronizations across PCUs and PMUs, taking into account
+that the network can introduce variable latency on both control and data path.
+One of the major contribution of \name is to hide these synchronization burden from the programmer
+and still provide a programming abstraction of logical memories with variable bandwidth and 
+arbitrary capacity that fits on-chip.
+
+\subsubsection{DRAM Interface}
+The Plasticine architecture provides access to four channels of the DDR4 off-chip memory on two sides of the
+unit array. Each side has a column of DRAM address generator (DAG) specialied to generate off-chip
+requests. Like compute pipeline in PMUs, the pipeline in DAG is also non-vectorized with integer
+arithmetics. Each DAG can generates a load or a store request streams to the off-chip memory. All
+streams can access the entire address space of the DRAM, with in-order response within each stream
+and no ordering across streams.
+
+\subsubsection{Abstract Programming Model}
 
 \section{Compiler Overview}
 In this section, we describe a systematic approach to compile applications with a centralized control hierarchy 
@@ -95,3 +143,19 @@ In the following sections, \Cref{sec:control} describes the major challenge addr
 %Distributed control and program partitioning are the minimum efforts to target an RDA.
 In \Cref{sec:opt}, we talk about optional optimizations that either improves the runtime or reduces resource usages for an application.
 
+
+\begin{figure*}
+\centering
+\includegraphics[width=1\textwidth]{figs/slide_gpu.pdf}
+\caption[Performance comparison with V100 GPU]{
+  Plasticine's latency and throughout improvement over V100 GPU.
+  The evaluated Plasticine architecture has area footprint of 352$mm^2$ at 28nm.
+  V100 GPU has area footprint of 815$mm^2$ at 12nm.
+  Both platforms have the same off-chip bandwidth at 1TB/s with HBM technology.
+  Yellow and blue bars show the raw measured speedup in throughput and latency, respectively.
+  To account for the resource discrepancy, the pink bar shows the normalized throughput
+  for compute-bound application--SqueezeNet and LSTM, which scales performance with additionally
+  on-chip resources.
+}
+\label{fig:peakutil}
+\end{figure*}

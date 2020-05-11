@@ -1,0 +1,13 @@
+Benchmark            , Unit      , Compiler   , Latency , Throughput 
+SqueezeNet (batch-1) , kFrames   , SARA       , 49.13   , 0.12
+SqueezeNet (batch-1) , kFrames   , TensorFlow , 70.10   , 0.4        
+LSTM (batch-32)      , kSamples  , SARA       , 3.61    , 8.8
+LSTM (batch-32)      , kSamples  , TensorFlow , 6.81    , 4.7        
+PageRank             , MEdges    , SARA       , 128.27  , 49         
+PageRank             , MEdges    , GunRock    , 829.39  , 7.5        
+BlackScholes         , GOptions  , SARA       , 0.09    , 88.88      
+BlackScholes         , GOptions  , CUDA       , 0.10    , 80.02      
+Random Forest        , MSamples  , SARA       , 0.10    , 1.04       
+Random Forest        , MSamples  , CUDA       , 0.32    , 0.32       
+Merge Sort           , GElements , SARA       , 0.63    , 6.65       
+Merge Sort           , GElements , CUDA       , 2.14    , 1.96       
