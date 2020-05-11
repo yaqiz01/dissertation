@@ -6,3 +6,4 @@
 *.bbl
 env/
 ~*.pptx
+*__pycache__
