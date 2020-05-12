@@ -69,9 +69,18 @@ The PCU also contains configurable counters, which can be chained to produce the
 loop iterators used in the datapath. 
 
 \begin{figure}
-\inputminted{python}{code/context.py}
-\caption[Example context configuration]{Simplified pseudo context configuration}
-\label{fig:context}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \inputminted{python}{code/contextfull.py}
+    \caption{Declarative configuration}
+    \label{fig:context}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.4\textwidth}
+    \inputminted{python}{code/context.py}
+    \caption{Equivalent imperative configuration}
+    \label{fig:context}
+  \end{subfigure}
+  \caption[Example context configuration]{Simplified pseudo context configuration}
 \end{figure}
 
 We refer to the program graph that can be executed by the SIMD pipeline as a \term{compute context} or
