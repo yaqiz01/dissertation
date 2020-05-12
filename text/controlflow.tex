@@ -24,6 +24,8 @@ and memory accesses to user declared data-structures.
 \label{fig:contextalloc}
 \end{figure*}
 
+\inputminted{python}{code/spatialir.py}
+
 As a start, \name allocates one virtual memory to hold each on-chip data structure, and 
 one context to execute each basic block within the inner most controllers. 
 A basic block maps naturally to a context, as instructions within a basic block are control-free. 

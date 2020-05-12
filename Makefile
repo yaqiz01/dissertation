@@ -3,7 +3,7 @@ MAIN=text/thesis
 SIG=text/signature
 
 thesis.pdf: text/* figs/*
-	latexmk -pdf $(MAIN).tex
+	latexmk -shell-escape -pdf $(MAIN).tex
 	latexmk -c thesis.pdf
 
 sig:
