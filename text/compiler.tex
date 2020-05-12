@@ -61,8 +61,8 @@ Additionally, the six instructions must be branch-free in order to be fully pipe
 At runtime, the SIMD pipeline executes the same set of instructions over different input data.
 Software can configure the SIMD pipeline to depend on a set of input streams and
 produce a set of output streams. 
-There are three types of streams--single-bit control streams, 32-bit word scalar streams, and
-16-word vector streams--corresponding to three types of global networks.
+There are three types of streams---single-bit control streams, 32-bit word scalar streams, and
+16-word vector streams---corresponding to three types of global networks.
 Execution of the PCU is triggered by the arrival of its input dependencies and back pressured by
 the downstream buffers.
 The PCU also contains configurable counters, which can be chained to produce the values of nested
@@ -72,15 +72,27 @@ loop iterators used in the datapath.
   \begin{subfigure}[b]{0.5\textwidth}
     \inputminted{python}{code/contextfull.py}
     \caption{Declarative configuration}
-    \label{fig:context}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.4\textwidth}
     \inputminted{python}{code/context.py}
     \caption{Equivalent imperative configuration}
-    \label{fig:context}
   \end{subfigure}
-  \caption[Example context configuration]{Simplified pseudo context configuration}
+  \caption[Example context configuration]{
+    Pseudo context configuration.
+    (a) shows the simplified declarative-style configuration for the SIMD pipeline in a PCU.
+    (b) shows the equivalent configuration in a imperative-style.
+    By configuring when each stream is enqueued and dequeued using signals from the chained counters, 
+    these streams are effectively read and written in different loops, whose iterator values are
+    tracked by the counters.
+    The \texttt{valid} signal of the inner most counter \texttt{j} is high whenever the context is
+    enabled. The context is implicitly triggered whenever its input streams \texttt{streamA},
+    \texttt{streamB}, and \texttt{streamC} are non-empty and output stream \texttt{outputD} is ready.
+    The configuration also needs to specify a pipeline register (PR) to holds output of each stage
+    and explicitly forward live variables across stages.
+    For simplicity, we will use the imperative-style configuration in the later discussion.
+  }
+  \label{fig:context}
 \end{figure}
 
 We refer to the program graph that can be executed by the SIMD pipeline as a \term{compute context} or
@@ -131,12 +143,13 @@ across distributed scratchpads is left to the software.
 The software must explicitly configure synchronizations across PCUs and PMUs, taking into account
 that the network can introduce variable latency on both control and data path.
 One of the major contribution of \name is to hide these synchronization burden from the programmer
-and still provide a programming abstraction of logical memories with variable bandwidth and 
+and still provide a programming abstraction of logical memories with configurable bandwidth and 
 arbitrary capacity that fits on-chip.
 
 \subsubsection{DRAM Interface}
 The Plasticine architecture provides access to four DDR channels on the two sides of the
-unit array. Each side has a column of DRAM address generator (DAG) specialized to generate off-chip
+tiled array, as shown in \Cref{fig:plasticine}. 
+Each side has a column of DRAM address generator (DAG) specialized to generate off-chip
 requests. Like compute pipeline in PMUs, the pipeline in DAG is also non-vectorized with integer
 arithmetics. Each DAG can generates a load or a store request streams to the off-chip memory. All
 streams can access the entire address space of the DRAM, with in-order response within each stream

@@ -8,3 +8,4 @@ env/
 ~*.pptx
 *__pycache__
 _minted-thesis/
+*.out
