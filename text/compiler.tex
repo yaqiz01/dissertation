@@ -3,20 +3,15 @@
 In this section, we introduce the compiler framework---\name---that targets Plasticine
 architecture from high-level programs described in the Spatial language. 
 
+\paragraph{Front-end Selection} 
+
 \begin{figure*}
 \centering
 \includegraphics[width=1\textwidth]{figs/spatialstack.pdf}
 \caption[Spatial Stack]{Spatial Stack}
 \label{fig:spatialstack}
 \end{figure*}
-\begin{figure*}
-\centering
-\includegraphics[width=1\textwidth]{figs/sarastack.pdf}
-\caption[\name Stack]{\name Stack}
-\label{fig:sarastack}
-\end{figure*}
- 
-\paragraph{Front-end Selection} 
+
 Although \name takes Spatial as front-end, the compilation techniques in \name can be equally
 applied to other imperative langauges with nested loop constructs, such as C-based high-level
 syntehsis language, the backend of Halide IR, and other DSLs at the similar abstraction level. 
@@ -39,6 +34,10 @@ Other important static analysis in synthesis compilers, such as banking analysis
 compiler to have the global view all access patterns on a data structure.
 Therefore, modeling the data structures as disjoint memory space is much more suitable 
 than pointers to a shared memory for reconfigurable architectures.
+
+Spatial currently does not capture procedure calls in the IR; all functions are inlined and does not
+share resources. A future work is to use synchronization mechanism in \name to implement true procedure
+call on a spatial architecture.
 
 Without lost of generality, we use python-style pseudo code to represents the front-end programming
 abstraction the the rest of our discussion.
@@ -121,40 +120,73 @@ and still provide a programming abstraction of logical memories with variable ba
 arbitrary capacity that fits on-chip.
 
 \subsubsection{DRAM Interface}
-The Plasticine architecture provides access to four channels of the DDR4 off-chip memory on two sides of the
-unit array. Each side has a column of DRAM address generator (DAG) specialied to generate off-chip
+The Plasticine architecture provides access to four DDR channels on the two sides of the
+unit array. Each side has a column of DRAM address generator (DAG) specialized to generate off-chip
 requests. Like compute pipeline in PMUs, the pipeline in DAG is also non-vectorized with integer
 arithmetics. Each DAG can generates a load or a store request streams to the off-chip memory. All
 streams can access the entire address space of the DRAM, with in-order response within each stream
-and no ordering across streams.
+and no ordering guaranteed across streams. To provide off-chip memory consistency, \name allocates
+synchronizations across request generator and response receiver contexts to preserve memory ordering
+specified in the program.
 
 \subsubsection{Abstract Programming Model}
 
 \section{Compiler Overview}
-In this section, we describe a systematic approach to compile applications with a centralized control hierarchy 
-into a distributed dataflow graph that can run on an RDA.
-\Cref{fig:flow} shows our compilation flow.
-First, \name{} takes the input graph and performs a {\em virtual block allocation}.
-A virtual block (VB) is our intermediate representation that eventually gets assigned to a PB.
-Communication across VB tolerates an arbitrary amount of network latency.
-The {\em VB allocation} phase allocates compute, memory, and necessary synchronization across VBs to produce the correct result.
-The output of the {\em VB allocation} is a VB dataflow graph (VBDFG) that can be executed on an RDA with infinite-sized PBs.
 
-The next phase is the {\em PB allocation} phase that assigns each VB to execute on a PB. 
-This step addresses VBs that do not satisfy PB constraints by decomposing them into multiple VBs.
-After all VB fits in at least one PB, we perform a global optimization that merges 
-small VBs into a larger VB to reduce fragmentation in mapping.
-The output of the {\em PB allocation} phase assigns a PB type to each VB, which is input to a {\em placement and routing (PaR)} phase.
+\begin{figure*}
+\centering
+\includegraphics[width=1\textwidth]{figs/sarastack.pdf}
+\caption[\name Compiler Flow]{\name Compiler Flow}
+\label{fig:flow}
+\end{figure*}
+ 
+In this section, we describe a systematic approach to compile applications described in an
+imperative front-end language with into a purely declarative and distributed dataflow graph that can
+run on Plasticine.
+\Cref{fig:flow} shows the compilation flow to perform this translation between the two paradigms.
+At high-level, \name allocates distributed on-chip resources to execute the program in spatially parallelized and
+pipelined fashion.
+\name automatically generates synchronization across distributed units to provide strong 
+memory consistency for a imperative program, on an architecture that does not guarantee memory
+ordering across multiple access streams.
+This synchronization is purely point-to-point that introduces minimum performance overhead, which
+maximizes scalability of the architecture.
+\name further virtualizes resources allocation and hides the underlying resource constrains on
+this hierarchical architecture from the programmers.
 
-The PaR phase maps the VBDFG graph on the accelerator array.
-PaR on RDA is similar to PaR on an FPGA as studied in many previous works~\cite{network}, which we do not discuss further in this paper. 
-After PaR, \name{} generates configuration for PBs which executes on the RDA.
+First, \name takes the input Spatial IR and performs the \term{virtual allocation}.
+A virtual unit (VU) is our intermediate representation that captures computations that will be
+mapped onto a physical unit (PB), such as a PCU and PMU.
+The compiler can allocate multiple contexts within a virtual unit. However, messages across 
+VUs must tolerate arbitrary amount of network latencies, whereas messages across contexts within a single VB
+takes a single cycle.
+In this phase, \name generates p2p message passing as if there are centrolized scheduler scheduling
+the execution at each level of the nested control hierarchy in the original program.
+The allocation phase generates a virtual unit data-flow graph (VUDFG) with appropriate
+synchronizations, such that the on-chip distributed execution produces the same result as if the program is
+sequentially executed.
 
-In the following sections, \Cref{sec:control} describes the major challenge addressed during {\em VB allocation}, which is converting the centralized control hierarchy into distributed control-flow.
+At the end of the allocation phase, a virtual unit can consume as much resource as the program
+requires. The second phase is \term{physical allocation}, where \name assign each VU to a
+PU that processes the required resources. If no PU can execute a VU, \name tries to partition the
+VU into multiple VUs to eliminate constraint violation. If there is insufficient PU or the
+VU cannot be partitioned, the mapping process fails.
+
+Throughout the first two phases, \name introduces various \term{optimizations} that either reduce the
+resource cost of the VUDFG, or alleviates potential performance bottleneck in streaming pipelined execution.
+After all VU fits in at least one type of PU, \name performs a global optimization that merges 
+small VUs into a larger VU to reduce resource fragmentation.
+
+At the end the previous phase, each VB is tagged with a PB type that can fit the VB, and it is up to the
+\term{placement and routing (PaR)} phase to determine where the VB will be finally placed.
+\name can perform static analysis on the communication traffic and generate heuristics for PaR to
+reduce runtime congestion.
+
+In the following sections, \Cref{sec:control} describes conversion from imperative paradigm with
+nested control hierarchy to the distributed streaming data-flow execution.
 \Cref{sec:decompose} details program-partitioning passes that decompose program over distributed resources.
-%Distributed control and program partitioning are the minimum efforts to target an RDA.
-In \Cref{sec:opt}, we talk about optional optimizations that either improves the runtime or reduces resource usages for an application.
-
+\Cref{sec:opt} enumerates several optimizations in \name, and \Cref{sec:par} discuss about PaR and
+heuristic generation.
 
 \begin{figure*}
 \centering

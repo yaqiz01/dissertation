@@ -1,37 +1,66 @@
 \section{Distributed Control Flow}
 \label{sec:control}
 
-In this section, we detail how \name{} converts the control-input graph (\Cref{fig:controller}) into a distributed VBDFG.
+The input to \name is the backend of the Spatial IR, which is an control hierarchy after loop
+unrolling.
+The controller at each level of the hierarchy corresponds to a control primitive, such as a loop, or
+a branch statement. A basic block is attached to each \emph{inner most} controller including instructions
+and memory accesses to user declared data-structures.
+\Cref{fig:spatialir} shows an example of a program and simplified output Spatial IR.
 
-In a na\"ive approach, we can map each controller in the hierarchy into a VB (\Cref{fig:centralctrl}).
-This strategy suffers from expensive network round-trip delays between the parent and child controllers.
-If the parent controller is an unrolled loop, the parent needs to synchronize with all child controllers, which creates an undesired communication hot spot.
-\Cref{fig:centralctrl}(a) shows an example where synchronization {\em just} between parent and child controllers can produce an incorrect result due to unpredictable network latency.
+\begin{figure*}
+\centering
+%\includegraphics[width=1\textwidth]{figs/sarastack.pdf}
+\missingfigure[figwidth=1\textwidth]{Spatial IR}
+\caption[Spatial IR example]{Spatial IR Example. The input to \name compiler}
+\label{fig:spatialir}
+\end{figure*}
 
-The alternative approach explores a different way to execute the expected control schedule correctly. 
-The minimum required synchronization to produce the correct result is to ensure that the computations access the intermediate results in a consistent matter as if the control schedule is strictly enforced. 
-This can be achieved via p2p synchronizations \emph{only} between computations that access a particular shared memory.
-The execution order of computations that access different memories does not need to be enforced, as they do not impact the program outcome.
-Therefore, as long as the compututation is executed with the expected number of iterations and the memories are updated consistently, there is no need for any extra synchronization.
-Next, we walk through how \name{} achieves this in more concrete detail.
+\begin{figure*}
+\centering
+%\includegraphics[width=1\textwidth]{figs/sarastack.pdf}
+\missingfigure[figwidth=1\textwidth]{Controller duplication}
+\caption[Context allocation]{Context allocation}
+\label{fig:contextalloc}
+\end{figure*}
 
-\paragraph{Virtual Compute Allocation.}
-As a start, \name{} allocates workers to execute the dataflow graph within the \emph{innermost} controllers of the input graph.
-We refer to our workers as {\em actors}. 
-An actor can consume a set of input streams produced by other actors, perform operations, and send the output streams to other actors. 
-The operations are from a basic block. Hence, they are \emph{branch-free} and can be pipelined.
-The actor waits for all of its input dependencies before execution and stalls on downstream backpressure.
-A VB can contain one or multiple actors, as long as the total resource consumption of all actors satisfy the hardware constraint at the end.
-\name assumes single cycle latency between actors within a single VB and variable latency for actors across VBs.
-\name duplicates and distributes the outer controllers for each leaf controller to their corresponding actors, \Cref{fig:actor}(b).
-At this point, all actors have the local state to repeat their computation for expected iterations, completely asynchronously.
+As a start, \name allocates one virtual memory to hold each on-chip data structure, and 
+one context to execute each basic block within the inner most controllers. 
+A basic block maps naturally to a context, as instructions within a basic block are control-free. 
+Next, \name makes a copy of all controllers enclosing the basic block in the corresponding context, as
+shown in \Cref{fig:contextalloc};
+these controllers are later converted to counters and control configurations supported by the
+hardware. 
+With these controllers, contexts can repeat execution for expected number iterations. However,
+data-structures written and read by different contexts are accessed in random order.
+The insight is that \emph{as long as all contexts accessing a shared memory with expected program order,
+the final result is identical to a sequentially executed program}.
+Unlike traditional out-of-order execution, where hardware or compiler look for independent instructions to
+execute concurrently, \name starts with all basic blocks executing in concurrent contexts.
+\name then introduces synchronizations to maintain consistent access order as expected by the 
+program \emph{only} among contexts accessing a shared memory. 
+This way, \name introduces minimum p2p synchronizations among small groups of contexts; contexts
+accessing different memories are naturally parallelized without impacting the final output.
+\todo{walk through an example here}.
 
-\paragraph{Virtual Memory Allocation.}
-Next, \name{} examines the intermediate results in the control hierarchy and allocates corresponding virtual memories.
-For each virtual memory, \name{} generates synchronization between actors whose inner controllers read or write the memory within the input graph.
-\name{} allocates a single-bit control token as an access grant to the shared memory and passes it between actors. 
-The control token is no different from a regular boolean data-dependency.
-By controlling {\em where}, {\em how}, and {\em when} to pass the token, \name{} is able to maintain a consistent update ordering between the pipelined and parallelized actors that access the shared memory.
+To order the execution order or two contexts, \name allocates a single-bit \term{control token} as 
+an access grant to the shared memory and passes it between contexts. 
+This control token is no different from a regular data-dependency.
+By controlling {\em where}, {\em how}, and {\em when} to pass the token, \name 
+is able to maintain a consistent update ordering between the pipelined and parallelized actors that access the shared memory.
+
+%In a na\"ive approach, we can map each controller in the hierarchy into a VB (\Cref{fig:centralctrl}).
+%This strategy suffers from expensive network round-trip delays between the parent and child controllers.
+%If the parent controller is an unrolled loop, the parent needs to synchronize with all child controllers, which creates an undesired communication hot spot.
+%\Cref{fig:centralctrl}(a) shows an example where synchronization {\em just} between parent and child controllers can produce an incorrect result due to unpredictable network latency.
+
+%The alternative approach explores a different way to execute the expected control schedule correctly. 
+%The minimum required synchronization to produce the correct result is to ensure that the computations access the intermediate results in a consistent matter as if the control schedule is strictly enforced. 
+%This can be achieved via p2p synchronizations \emph{only} between computations that access a particular shared memory.
+%The execution order of computations that access different memories does not need to be enforced, as they do not impact the program outcome.
+%Therefore, as long as the compututation is executed with the expected number of iterations and the memories are updated consistently, there is no need for any extra synchronization.
+%Next, we walk through how \name{} achieves this in more concrete detail.
+
 
 \subsection{Synchronization} 
 \label{sec:sync}
