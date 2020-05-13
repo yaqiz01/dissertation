@@ -172,6 +172,35 @@ at any point in time for correctness.
 \Cref{tab:interferetab} shows the interference relation between different types of memory across
 accesses.
 
+\begin{figure*}
+\centering
+
+\begin{subfigure}[b]{0.5\textwidth}
+\inputminted{python}{code/dep1.py}
+\caption{Pseudo example}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+  \centering
+\includegraphics[width=0.8\textwidth]{figs/dep1.pdf}
+\caption{Dependency Graph}
+\end{subfigure}
+\\
+\begin{subfigure}[b]{0.5\textwidth}
+\inputminted{python}{code/dep3.py}
+\caption{Pseudo example}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+  \centering
+\includegraphics[width=0.8\textwidth]{figs/dep3.pdf}
+\caption{Dependency Graph}
+\end{subfigure}
+
+\caption[Dep Graph]{
+    Dep Graph
+}
+\label{fig:depexp}
+\end{figure*}
+
 For every declared access, \name{} checks on other accesses appeared earlier in the program order
 for a possible forward dependency, and later in the program order for a possible loop-carried dependency (LCD). 
 In the example in \Cref{fig:contexteg}, there is a forward data dependency between \texttt{W1} and
