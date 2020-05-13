@@ -6,14 +6,22 @@ unrolling.
 The controller at each level of the hierarchy corresponds to a control primitive, such as a loop, or
 a branch statement. A basic block is attached to each \emph{inner most} controller including instructions
 and memory accesses to user declared data-structures.
-\Cref{fig:spatialir} shows an example of a program and simplified output Spatial IR.
+\Cref{fig:spatialir} shows an example of a program and a schematic Spatial output IR.
 
 \begin{figure*}
 \centering
-%\includegraphics[width=1\textwidth]{figs/sarastack.pdf}
-\missingfigure[figwidth=1\textwidth]{Spatial IR}
-\caption[Spatial IR example]{Spatial IR Example. The input to \name compiler}
+\begin{subfigure}[b]{0.4\textwidth}
+\inputminted{python}{code/spatialeg.py}
+\caption{Pseudo Spatial Example}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.58\textwidth}
+\includegraphics[width=1\textwidth]{figs/spatialir.pdf}
+%\missingfigure[figwidth=1\textwidth]{Spatial IR}
+\caption{Schematic Spatial IR}
 \label{fig:spatialir}
+\end{subfigure}
+\caption[Spatial Example]{Pseudo example of \name's front-end language}
 \end{figure*}
 
 \begin{figure*}
@@ -24,7 +32,11 @@ and memory accesses to user declared data-structures.
 \label{fig:contextalloc}
 \end{figure*}
 
-\inputminted{python}{code/spatialir.py}
+%\begin{figure*}
+%\centering
+%\caption[Spatial IR]{Spatial IR}
+%\label{fig:spatialir}
+%\end{figure*}
 
 As a start, \name allocates one virtual memory to hold each on-chip data structure, and 
 one context to execute each basic block within the inner most controllers. 
@@ -37,7 +49,7 @@ With these controllers, contexts can repeat execution for expected number iterat
 data-structures written and read by different contexts are accessed in random order.
 The insight is that \emph{as long as all contexts accessing a shared memory with expected program order,
 the final result is identical to a sequentially executed program}.
-Unlike traditional out-of-order execution, where hardware or compiler look for independent instructions to
+Unlike traditional out-of-order execution, where hardware and compiler look for independent instructions to
 execute concurrently, \name starts with all basic blocks executing in concurrent contexts.
 \name then introduces synchronizations to maintain consistent access order as expected by the 
 program \emph{only} among contexts accessing a shared memory. 

@@ -3,7 +3,7 @@
 In this section, we introduce the compiler framework---\name---that targets Plasticine
 architecture from high-level programs described in the Spatial language. 
 
-\paragraph{Front-end Selection} 
+\section{High-Level Compiler} 
 
 \begin{figure*}
 \centering
@@ -76,7 +76,7 @@ loop iterators used in the datapath.
   \hfill
   \begin{subfigure}[b]{0.4\textwidth}
     \inputminted{python}{code/context.py}
-    \caption{Equivalent imperative configuration}
+    \caption{Imperative configuration}
   \end{subfigure}
   \caption[Example context configuration]{
     Pseudo context configuration.
@@ -157,8 +157,6 @@ and no ordering guaranteed across streams. To provide off-chip memory consistenc
 synchronizations across request generator and response receiver contexts to preserve memory ordering
 specified in the program.
 
-\subsubsection{Abstract Programming Model}
-
 \section{Compiler Overview}
 
 \begin{figure*}
@@ -177,7 +175,7 @@ pipelined fashion.
 \name automatically generates synchronization across distributed units to provide strong 
 memory consistency for a imperative program, on an architecture that does not guarantee memory
 ordering across multiple access streams.
-This synchronization is purely point-to-point that introduces minimum performance overhead, which
+This synchronization is purely point-to-point introducing minimum performance overhead, which
 maximizes scalability of the architecture.
 \name further virtualizes resources allocation and hides the underlying resource constrains on
 this hierarchical architecture from the programmers.
@@ -185,11 +183,14 @@ this hierarchical architecture from the programmers.
 First, \name takes the input Spatial IR and performs the \term{virtual allocation}.
 A virtual unit (VU) is our intermediate representation that captures computations that will be
 mapped onto a physical unit (PB), such as a PCU and PMU.
-The compiler can allocate multiple contexts within a virtual unit. However, messages across 
-VUs must tolerate arbitrary amount of network latencies, whereas messages across contexts within a single VB
-takes a single cycle.
-In this phase, \name generates p2p message passing as if there are centrolized scheduler scheduling
-the execution at each level of the nested control hierarchy in the original program.
+Each VU can contain multiple contexts. However, a VU can be mapped to a PU only if the aggregated
+resource usage of all contexts in the VU can fit in the PU. The PU can also limits the maximum 
+number of contexts it can support, and has resources that cannot be split across contexts.
+Additionally, messages across VUs are mapped across the global network, and must tolerate arbitrary 
+amount of network latencies; messages within a single VB across contexts takes only a single cycle.
+In the first phase, \name generates p2p synchronizations across contexts such that 
+the execution is the same as if there are centrolized scheduler scheduling each level of the 
+nested control hierarchy in the original program.
 The allocation phase generates a virtual unit data-flow graph (VUDFG) with appropriate
 synchronizations, such that the on-chip distributed execution produces the same result as if the program is
 sequentially executed.
@@ -198,16 +199,17 @@ At the end of the allocation phase, a virtual unit can consume as much resource 
 requires. The second phase is \term{physical allocation}, where \name assign each VU to a
 PU that processes the required resources. If no PU can execute a VU, \name tries to partition the
 VU into multiple VUs to eliminate constraint violation. If there is insufficient PU or the
-VU cannot be partitioned, the mapping process fails.
+VU cannot be partitioned, the mapping process fails with appropriate hint to the programmer for the
+limiting resources.
 
 Throughout the first two phases, \name introduces various \term{optimizations} that either reduce the
 resource cost of the VUDFG, or alleviates potential performance bottleneck in streaming pipelined execution.
 After all VU fits in at least one type of PU, \name performs a global optimization that merges 
-small VUs into a larger VU to reduce resource fragmentation.
+small VUs into a larger VU to reduce resource fragmentations.
 
 At the end the previous phase, each VB is tagged with a PB type that can fit the VB, and it is up to the
 \term{placement and routing (PaR)} phase to determine where the VB will be finally placed.
-\name can perform static analysis on the communication traffic and generate heuristics for PaR to
+\name can perform static analysis on the traffic pattern and generate heuristics for PaR to
 reduce runtime congestion.
 
 In the following sections, \Cref{sec:control} describes conversion from imperative paradigm with
