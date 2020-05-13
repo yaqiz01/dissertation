@@ -6,45 +6,69 @@ unrolling.
 The controller at each level of the hierarchy corresponds to a control primitive, such as a loop, or
 a branch statement. A basic block is attached to each \emph{inner most} controller including instructions
 and memory accesses to user declared data-structures.
-\Cref{fig:spatialir} shows an example of a program and a schematic Spatial output IR.
+\Cref{fig:spatialegpar} shows an example of a program and a schematic Spatial output IR.
+If the program has instructions outside a outer loop, Spatial automatically inserts a \emph{unit}
+controller that wraps the floating instructions.
 
 \begin{figure*}
 \centering
 \begin{subfigure}[b]{0.4\textwidth}
-\inputminted{python}{code/spatialeg.py}
-\caption{Pseudo Spatial Example}
+\inputminted{python}{code/spatialegpar.py}
+\caption{Pseudo Spatial example}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.58\textwidth}
 \includegraphics[width=1\textwidth]{figs/spatialir.pdf}
 %\missingfigure[figwidth=1\textwidth]{Spatial IR}
 \caption{Schematic Spatial IR}
-\label{fig:spatialir}
 \end{subfigure}
-\caption[Spatial Example]{Pseudo example of \name's front-end language}
+\caption[Spatial Example]{
+  Pseudo example of \name's front-end language.
+  (a) shows the an example of \name's front-end language. The actual front-end Spatial is a
+  Scala-embeded DSL. For simplicity and generality, we use a python style pseudo code to show an
+  language with similar abstraction. The `par` keyword indicates outer loop unrolling factor, and
+  the `vec` keyword is followed by a inner-loop vectorization factor.
+  When an iterator is vectorized, instructions using the vectorized iterator is automatically
+  vectorized as well. When unrolling the outer loop \texttt{A}, the enclosed loop body and
+  next-level control hierarchy are duplicated, as suggested in (b).
+  Each loop in (a) corresponds to a controller in (b). The inner most controllers \texttt{B} and
+  \texttt{C} each contain a basic block within instructions within the inner most loops.
+}
+\label{fig:spatialegpar}
 \end{figure*}
+
+\subsection{Virtual Context Allocation} 
 
 \begin{figure*}
 \centering
-%\includegraphics[width=1\textwidth]{figs/sarastack.pdf}
-\missingfigure[figwidth=1\textwidth]{Controller duplication}
-\caption[Context allocation]{Context allocation}
+\begin{subfigure}[b]{0.4\textwidth}
+\inputminted{python}{code/spatialeg.py}
+\caption{Pseudo input example}
+\label{fig:contexteg}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.5\textwidth}
+\inputminted{python}{code/contextalloc.py}
+%\missingfigure[figwidth=1\textwidth]{Spatial IR}
+\caption{Context allocation}
+\end{subfigure}
+  \caption[Context allocation]{Same example as \Cref{fig:spatialegpar} without outer loop
+  unrolling factor equals to 1.
+  (a) has two basic blocks within the inner most controllers \texttt{B} and \texttt{C}.
+  \name allocates one context per basic block, shown in (b). Outer controller \texttt{A} is
+  duplicated in both \texttt{ctxA} and \texttt{ctxB}.
+}
 \label{fig:contextalloc}
 \end{figure*}
-
-%\begin{figure*}
-%\centering
-%\caption[Spatial IR]{Spatial IR}
-%\label{fig:spatialir}
-%\end{figure*}
 
 As a start, \name allocates one virtual memory to hold each on-chip data structure, and 
 one context to execute each basic block within the inner most controllers. 
 A basic block maps naturally to a context, as instructions within a basic block are control-free. 
-Next, \name makes a copy of all controllers enclosing the basic block in the corresponding context, as
-shown in \Cref{fig:contextalloc};
+Next, \name makes a copy of all controllers enclosing the basic block in the corresponding context;
 these controllers are later converted to counters and control configurations supported by the
 hardware. 
+\Cref{fig:contextalloc} shows an example of the context allocation. For simplicity, we use the same
+example as \Cref{fig:spatialegpar} without outer loop parallelization on loop \texttt{A}.
 With these controllers, contexts can repeat execution for expected number iterations. However,
 data-structures written and read by different contexts are accessed in random order.
 The insight is that \emph{as long as all contexts accessing a shared memory with expected program order,
@@ -55,7 +79,6 @@ execute concurrently, \name starts with all basic blocks executing in concurrent
 program \emph{only} among contexts accessing a shared memory. 
 This way, \name introduces minimum p2p synchronizations among small groups of contexts; contexts
 accessing different memories are naturally parallelized without impacting the final output.
-\todo{walk through an example here}.
 
 To order the execution order or two contexts, \name allocates a single-bit \term{control token} as 
 an access grant to the shared memory and passes it between contexts. 
@@ -76,14 +99,51 @@ is able to maintain a consistent update ordering between the pipelined and paral
 %Next, we walk through how \name{} achieves this in more concrete detail.
 
 
-\subsection{Synchronization} 
+\subsection{Synchronization Allocation} 
 \label{sec:sync}
 We refer to an access to the memory in the input graph as a \emph{declared access}, as supposed to accesses executed at runtime.
-For example, multiple accesses across loop iterations are counted as a single declared access.
+\texttt{W1} and \texttt{R1} are examples of two declared accesses in \Cref{fig:contexteg}
+In the rest of this section, we will walk through the detail on how \name allocates control tokens
+to maintain sequential consistency on Plasticine.
 
+\begin{table*}
+  \centering
+\begin{tabular}{lccc}
+  \toprule
+ Data structure & Memory type \\ \midrule
+  array (fit on-chip) & SRAM \\
+  array (not fit on-chip) & DRAM \\
+  scalar variable & register \\
+  queue & FIFO \\
+ \bottomrule
+\end{tabular}
+\caption[Mapping between data-structure to hardware memories]{
+  Mapping between user declared data-structure to underlying hardware memories. 
+  Programmers explicitly specify the desired hardware type inside Spatial. 
+  In other languages, this table specifies a mapping between software data-structures 
+  and hardware memory types on Plasticine.
+}
+\label{tab:memtype}
+\end{table*}
 \paragraph{Where.}
-\name only allocate resource to synchronize actors if their declared accesses can potentially interfere.
-Whether two declared accesses interfere depends on the type of accesses, the type of the memory, and location of the accesses in the control hierarchy.
+\name only allocate resource to synchronize contexts if they contain declared accesses on the same
+memory that can potentially interfere.
+Whether two declared accesses interfere depends on 
+\begin{outline}
+  \1 the type of accesses (read vs. write)
+  \1 the type of the memory (e.g. SRAM, DRAM)
+  \1 and location of the declared accesses in the control hierarchy.
+\end{outline}
+
+\Cref{tab:memtype} lists hardware memories available on reconfigurable architectures and software
+data-structures providing similar program semantics.
+The type of the memory matters because they have different programming interface in the hardware.
+For instance, two read accesses does not interfere for DRAM because the DRAM interface permits
+multiple concurrent access streams through multiple DAGs. From the programmer perspective, users do not need
+to serialize the two contexts reading the same DRAM address. SRAMs, on the other hand, has a single read 
+and write port. Programmers must guarantee that a PMU receives request from a single context
+at any point for correctness.
+
 For every declared access, \name{} checks other accesses of the same memory appeared earlier in the program order for a possible forward dependency, and later in the program order for a possible loop-carried dependency (LCD). 
 Two declared accesses A and B have no dependency if their least-common ancestor (LCA) controller executes only one of the children at anytime (from a branch), or all children in parallel (from an unrolled loop).
 The LCD exists between B to A, if B occurs later in the program order, and A and B are surrounded by a loop.
