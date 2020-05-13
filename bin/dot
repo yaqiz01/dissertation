@@ -1,0 +1,514 @@
+#!/opt/local/bin/python3
+
+import pydotplus as pydot
+import os
+import numpy as np
+import stanford_style
+
+def color(name):
+    if name in stanford_style.stanford_colors:
+        return stanford_style.stanford_colors[name]
+    else:
+        return name
+
+def node(graph, name, **kws):
+    n  = pydot.Node(name, **kws)
+    graph.add_node(n)
+    return n
+
+def edge(graph, src, dst, **kws):
+    e = pydot.Edge(src, dst, **kws)
+    graph.add_edge(e)
+    return e
+
+def label(txt, color=None, size=None, font=None):
+    label = "<font "
+    if color is not None:
+        label += " color=\"" + color + "\""
+    if size is not None:
+        label += " point-size=\"" + str(size) + "\""
+    if font is not None:
+        label += " face=\"" + font + "\""
+    label += ">" + txt + "</font>"
+    label = "<" + label + ">"
+    return label
+
+# dfcolor = {}
+# dfcolor["A"] = color('Bright Red')
+# dfcolor["B"] = color('Palo Alto')
+# dfcolor["C"] = color('Sky')
+# dfcolor["D"] = color('Sandhill')
+
+# def dfnode(G, name, nodes, dfcolor=dfcolor, **kws):
+    # l = label(name, color=color('White'), font='Source Sans Pro', size=20)
+    # n = node(G, name, label=l, color='none', fillcolor=dfcolor[name], shape='circle',
+            # style='filled', **kws)
+    # nodes[name] = n
+    # return n
+
+def add_edge(G, nodes, edges, sn,dn):
+    src = nodes[sn]
+    dst = nodes[dn]
+    e = edge(G, src, dst, style='bold')
+    edges[(sn,dn)] = e
+
+def plot_dataflow():
+    G = pydot.Dot(graph_type="digraph")
+    nodes = {}
+    edges = {}
+    for name in dfcolor:
+        dfnode(G, name, nodes)
+    add_edge(G, nodes, edges, 'A', 'B')
+    add_edge(G, nodes, edges, 'A', 'C')
+    add_edge(G, nodes, edges, 'A', 'D')
+    add_edge(G, nodes, edges, 'C', 'D')
+    return G, nodes, edges
+
+def plot_split():
+    G = pydot.Dot(graph_type="digraph")
+    nodes = {}
+    edges = {}
+
+    dfcolor = {}
+    dfcolor["A-1"] = color('Bright Red')
+    dfcolor["A-2"] = color('Bright Red')
+    dfcolor["B"] = color('Palo Alto')
+    dfcolor["C"] = color('Sky')
+    dfcolor["D"] = color('Sandhill')
+    pos = {}
+    pos["A-1"] = "{},{}!".format(3,6)
+    pos["A-2"] = "{},{}!".format(3.5,5)
+    pos["B"]   = "{},{}!".format(2.3,4.8)
+    pos["C"]   = "{},{}!".format(3,4)
+    pos["D"]   = "{},{}!".format(3.5,3)
+    for name in dfcolor:
+        dfnode(G, name, nodes, dfcolor=dfcolor, pos=pos[name])
+    add_edge(G, nodes, edges, 'A-1', 'B')
+    add_edge(G, nodes, edges, 'A-1', 'A-2')
+    add_edge(G, nodes, edges, 'A-2', 'C')
+    add_edge(G, nodes, edges, 'A-2', 'D')
+    add_edge(G, nodes, edges, 'C', 'D')
+    G.write_pdf('dotfigs/split.pdf', prog='neato')
+    return
+
+def plot_mapping():
+    G,cus,rout,clinks,rlinks,dlinks = plot_network(col=3, row=2,routtp="S", legend=False)
+    DG,nodes,edges = plot_dataflow()
+
+    def reset_cus():
+        for cu in cus.flatten():
+            cu.set_fillcolor(color('Cloud'))
+            cu.set_label('')
+            cu.set_fixedsize(True)
+            cu.set_width(0.8)
+            cu.set_height(0.8)
+            cu.set_style('rounded, filled')
+            cu.set_color('none')
+    def reset_links():
+        for rs in rout.flatten():
+            for r in rs:
+                r.set_fillcolor(color('Cloud'))
+                r.set_label('')
+                r.set_fixedsize(True)
+                r.set_width(0.5)
+                r.set_height(0.5)
+        for l in np.concatenate([rlinks.flatten(),clinks.flatten(),dlinks.flatten()]):
+            l.set_color(color('Cloud'))
+            l.set_dir('none')
+    def reset_graph():
+        for n in nodes:
+            nodes[n].set_color('none')
+        for k in edges:
+            edges[k].set_color('black')
+
+    DG.write_pdf('dotfigs/dataflow.pdf')
+
+    mapping = {}
+    def set_node(name, cu):
+        cu.set_fillcolor(dfcolor[name])
+        cu.set_color('white')
+        cu.set_label(label(name, color=color('white'), font='Source Sans Pro', size=30))
+        mapping[name] = cu
+
+    reset_cus()
+    reset_links()
+    set_node('D', cus[0][0])
+    set_node('B', cus[1][0])
+    set_node('C', cus[1][2])
+    set_node('A', cus[1][1])
+    G.write_pdf("dotfigs/mapping1.pdf", prog='neato')
+    DG.write_pdf('dotfigs/dataflow1.pdf')
+
+    links = []
+    routs = []
+    def set_link(link, c, dir='none'):
+        link.set_color(color(c))
+        link.set_penwidth(3)
+        link.set_dir(dir)
+        link.set_arrowsize(0.7)
+        links.append(link)
+    def set_rout(r,c):
+        r.set_fillcolor(color(c))
+        routs.append(r)
+
+    set_link(clinks[0][0],'Sun','back')
+    set_link(rlinks[1][0],'Sun','back')
+    set_link(rlinks[1][1],'Sun','forward')
+    set_link(dlinks[0][0],'Sun','back')
+    set_link(dlinks[1][0],'Sun','back')
+    set_link(dlinks[1][1],'Sun','forward')
+    set_link(dlinks[1][2],'Sun','back')
+    set_rout(rout[0][0][0], 'Sun')
+    set_rout(rout[1][0][0], 'Sun')
+    set_rout(rout[1][1][0], 'Sun')
+    set_rout(rout[1][2][0], 'Sun')
+    G.write_pdf("dotfigs/mapping2.pdf", prog='neato')
+    edges[("A","B")].set_color(color('Sun'))
+    edges[("A","C")].set_color(color('Sun'))
+    edges[("A","D")].set_color(color('Sun'))
+    DG.write_pdf('dotfigs/dataflow2.pdf')
+
+    for link in links:
+        link.set_color(color('Mint'))
+    for r in routs:
+        r.set_fillcolor(color('Mint'))
+
+    G.write_pdf("dotfigs/mapping3.pdf", prog='neato')
+    edges[("A","B")].set_color(color('Mint'))
+    edges[("A","C")].set_color(color('Mint'))
+    edges[("A","D")].set_color(color('Mint'))
+    DG.write_pdf('dotfigs/dataflow3.pdf')
+
+    def highlight_cu(name):
+        mapping[name].add_style('setlinewidth(4)')
+        mapping[name].set_color(color('black'))
+        nodes[name].add_style('setlinewidth(4)')
+        nodes[name].set_color(color('black'))
+
+    reset_links()
+    reset_graph()
+    highlight_cu('C')
+    highlight_cu('D')
+    G.write_pdf("dotfigs/mapping4.pdf", prog='neato')
+    DG.write_pdf('dotfigs/dataflow4.pdf')
+
+    reset_cus()
+    set_node('C', cus[0][0])
+    set_node('B', cus[1][0])
+    set_node('D', cus[0][2])
+    set_node('A', cus[1][1])
+    highlight_cu('C')
+    highlight_cu('D')
+    G.write_pdf("dotfigs/mapping5.pdf", prog='neato')
+    DG.write_pdf('dotfigs/dataflow5.pdf')
+
+def plot_network(row=4, col=4, routtp='both',bw=1,legend=True, drawcu=True):
+    G = pydot.Dot(graph_type="digraph")
+
+    scale = 2
+    routsize = 0.6
+    cusize = 0.9
+
+    def add_cu(r,c):
+        return node(G, 'cu_{}{}'.format(r,c), 
+            label=label('PU', color=color('Black'), font='Source Sans Pro', size=30), 
+            style='rounded, filled', color='none',fillcolor=color('Cloud'), 
+            fixedsize='true',width=cusize,hight=cusize,
+            shape='square', pos="{},{}!".format(c*scale,r*scale))
+    def add_rout(r,c,routtp):
+        routcolor = 'Sun' if routtp == 'R' else 'Mint'
+        return node(G, 'rout_{}{}'.format(r,c), 
+            label=label(routtp, color=color('white'), font='Source Sans Pro', size=30), 
+            shape='square',
+            style='rounded, filled', color='none',fillcolor=color(routcolor), 
+            fixedsize='true',width=routsize,hight=routsize,
+            pos="{},{}!".format(c*scale,r*scale)
+            )
+    def add_link(src,dst):
+        return edge(G, src, dst, dir='none', style='bold', color=color('Black'))
+
+    def add_text(r,c,text,**kws):
+        node(G,text,label=label(text,**kws),
+            color='none',
+            pos="{},{}!".format(c*scale,r*scale)
+        )
+
+    cus = np.empty([row, col], dtype=object)
+    rout = np.empty([row, col], dtype=object)
+    clinks = np.empty([row-1, col], dtype=object)
+    rlinks = np.empty([row, col-1], dtype=object)
+    dlinks = np.empty([row, col], dtype=object)
+
+    for r in range(row):
+        for c in range(col):
+            if drawcu:
+                cus[r][c] = add_cu(r,c)
+            rout[r][c] = []
+            if routtp=='R':
+                rout[r][c].append(add_rout(r-0.4,c-0.4,'R'))
+            if routtp=='S':
+                rout[r][c].append(add_rout(r-0.4,c-0.4,'S'))
+            if routtp=='both':
+                rout[r][c].append(add_rout(r-0.4,c-0.4,'R'))
+                rout[r][c].append(add_rout(r-0.45,c-0.35,'S'))
+
+    for r in range(row):
+        for c in range(col):
+            for _ in range(bw):
+                if r != row-1:
+                    clinks[r,c] = add_link(rout[r][c][0], rout[r+1][c][0])
+                if c != col-1:
+                    rlinks[r,c] = add_link(rout[r][c][0], rout[r][c+1][0])
+            if drawcu:
+                dlinks[r,c] = add_link(cus[r][c], rout[r][c][0])
+
+    if legend:
+        add_rout(row/2, col, 'R')
+        add_text(row/2, col+0.6, 'Router', font='Source Sans Pro', size=30)
+        add_rout(row/2-0.5, col, 'S')
+        add_text(row/2-0.5, col+0.6, 'Switch', font='Source Sans Pro', size=30)
+        add_cu(row/2-1, col)
+        add_text(row/2-1, col+0.84, 'Physical Unit', font='Source Sans Pro', size=30)
+
+    return G, cus, rout, clinks, rlinks, dlinks
+
+def plot_networks():
+    G = plot_network(routtp='both', row=3,col=4)[0]
+    G.write_pdf("dotfigs/hybridnet.pdf", prog='neato')
+
+    G = plot_network(routtp='both', row=2,col=3)[0]
+    G.write_pdf("dotfigs/hybridnet_poster.pdf", prog='neato')
+
+    G = plot_network(routtp='R', row=3,col=4)[0]
+    G.write_pdf("dotfigs/dynnet.pdf", prog='neato')
+
+    G = plot_network(routtp='S', row=3,col=4, bw=3)[0]
+    G.write_pdf("dotfigs/statnet.pdf", prog='neato')
+
+    G = plot_network(routtp='S', row=2,col=4, bw=3)[0]
+    G.write_pdf("dotfigs/statnetbw.pdf", prog='neato')
+
+    G = plot_network(routtp='S', row=2,col=2, bw=3, legend=False)[0]
+    G.write_pdf("dotfigs/statnetbw_poster.pdf", prog='neato')
+
+    G = plot_network(routtp='both', row=3,col=3, bw=3, legend=False)[0]
+    G.write_pdf("dotfigs/statnetsmall.pdf", prog='neato')
+
+    G = plot_network(routtp='S', row=1,col=2, bw=3, legend=False, drawcu=False)[0]
+    G.write_pdf("dotfigs/switch.pdf", prog='neato')
+
+def create_part_dfg():
+    graph = pydot.Dot(graph_type="digraph")
+    nodeattr = {}
+    nodeattr['shape']="circle"
+    nodeattr['penwidth']=3
+    nodeattr['fillcolor']="#3f65b8"
+    nodeattr['style']="filled"
+    nodeattr['fontcolor']="white"
+    nodeattr['fontname']="Raleway bold"
+
+    subgraphattr = {}
+    subgraphattr['color'] = 'black'
+    subgraphattr['style'] = 'rounded'
+
+    A = node(graph, "A", **nodeattr)
+    B = node(graph, "B", **nodeattr)
+    C = node(graph, "C", **nodeattr)
+    D = node(graph, "D", **nodeattr)
+    E = node(graph, "E", **nodeattr)
+    F = node(graph, "F", **nodeattr)
+    G = node(graph, "G", **nodeattr)
+    H = node(graph, "H", **nodeattr)
+    edgeattr = {}
+    edgeattr['style'] = 'bold'
+    edge1 = edge(graph,A,B,**edgeattr)
+    edge2 = edge(graph,A,C,**edgeattr)
+    edge3 = edge(graph,B,D,**edgeattr)
+    edge4 = edge(graph,C,D,**edgeattr)
+    edge5 = edge(graph,B,E,**edgeattr)
+    edge6 = edge(graph,E,F,**edgeattr)
+    edge7 = edge(graph,D,F,**edgeattr)
+    edge8 = edge(graph,H,D,**edgeattr)
+    edge9 = edge(graph,H,B,**edgeattr)
+    edge10 = edge(graph,G,C,**edgeattr)
+    edge11 = edge(graph,G,F,**edgeattr)
+    return graph, nodeattr, subgraphattr
+
+def set_enode(graph, name):
+    node = graph.get_node(name)[0]
+    node.set_fillcolor("#ffcc5c")
+    node.set_fontcolor("black")
+
+def plot_part_dfg():
+    graph, nodeattr, subgraphattr = create_part_dfg()
+    graph.write_pdf('figs/part_dfg.pdf')
+
+def plot_part():
+    graph, nodeattr, subgraphattr = create_part_dfg()
+    cu1 = pydot.Subgraph('cluster_a', **subgraphattr)
+    graph.add_subgraph(cu1)
+    cu1.add_node(graph.get_node("A")[0])
+    cu1.add_node(graph.get_node("B")[0])
+    cu1.add_node(graph.get_node("H")[0])
+    cu1.add_node(graph.get_node("G")[0])
+    cu1.add_node(graph.get_node("C")[0])
+    cu2 = pydot.Subgraph('cluster_b', **subgraphattr)
+    graph.add_subgraph(cu2)
+    cu2.add_node(graph.get_node("E")[0])
+    cu2.add_node(graph.get_node("D")[0])
+    cu2.add_node(graph.get_node("F")[0])
+    set_enode(graph, "B")
+    set_enode(graph, "C")
+    set_enode(graph, "G")
+    set_enode(graph, "H")
+    graph.obj_dict['nodes'].clear()
+
+    graph.write_pdf('figs/part.pdf')
+
+def plot_part2():
+    graph, nodeattr, subgraphattr = create_part_dfg()
+    cu1 = pydot.Subgraph('cluster_a', **subgraphattr)
+    graph.add_subgraph(cu1)
+    cu1.add_node(graph.get_node("A")[0])
+    cu1.add_node(graph.get_node("B")[0])
+    cu1.add_node(graph.get_node("H")[0])
+    cu1.add_node(graph.get_node("G")[0])
+    cu1.add_node(graph.get_node("C")[0])
+    cu1.add_node(graph.get_node("D")[0])
+    cu2 = pydot.Subgraph('cluster_b', **subgraphattr)
+    graph.add_subgraph(cu2)
+    cu2.add_node(graph.get_node("E")[0])
+    cu2.add_node(graph.get_node("F")[0])
+    set_enode(graph, "B")
+    set_enode(graph, "D")
+    set_enode(graph, "G")
+    graph.obj_dict['nodes'].clear()
+    graph.write_pdf('figs/part2.pdf')
+
+def plot_part_invalid():
+    graph, nodeattr, subgraphattr = create_part_dfg()
+    cu1 = pydot.Subgraph('cluster_a',**subgraphattr)
+    graph.add_subgraph(cu1)
+    cu1.add_node(graph.get_node("A")[0])
+    cu1.add_node(graph.get_node("B")[0])
+    cu1.add_node(graph.get_node("H")[0])
+    cu1.add_node(graph.get_node("E")[0])
+    cu1.add_node(graph.get_node("F")[0])
+    cu1.add_node(graph.get_node("D")[0])
+    cu2 = pydot.Subgraph('cluster_c', **subgraphattr)
+    graph.add_subgraph(cu2)
+    cu2.add_node(graph.get_node("C")[0])
+    cu2.add_node(graph.get_node("G")[0])
+    set_enode(graph, "A")
+    set_enode(graph, "C")
+    set_enode(graph, "G")
+    graph.obj_dict['nodes'].clear()
+    graph.write_pdf('figs/part_invalid.pdf')
+
+def plot_network(row=4, col=4, routtp='both',bw=1,legend=True, drawcu=True):
+    G = pydot.Dot(graph_type="digraph")
+
+    scale = 2
+    routsize = 0.6
+    cusize = 0.9
+
+    def add_cu(r,c):
+        return node(G, 'cu_{}{}'.format(r,c), 
+            label=label('PU', color=color('Black'), font='Source Sans Pro', size=30), 
+            style='rounded, filled', color='none',fillcolor=color('Cloud'), 
+            fixedsize='true',width=cusize,hight=cusize,
+            shape='square', pos="{},{}!".format(c*scale,r*scale))
+    def add_rout(r,c,routtp):
+        routcolor = 'Sun' if routtp == 'R' else 'Mint'
+        return node(G, 'rout_{}{}'.format(r,c), 
+            label=label(routtp, color=color('white'), font='Source Sans Pro', size=30), 
+            shape='square',
+            style='rounded, filled', color='none',fillcolor=color(routcolor), 
+            fixedsize='true',width=routsize,hight=routsize,
+            pos="{},{}!".format(c*scale,r*scale)
+            )
+    def add_link(src,dst):
+        return edge(G, src, dst, dir='none', style='bold', color=color('Black'))
+
+    def add_text(r,c,text,**kws):
+        node(G,text,label=label(text,**kws),
+            color='none',
+            pos="{},{}!".format(c*scale,r*scale)
+        )
+
+    cus = np.empty([row, col], dtype=object)
+    rout = np.empty([row, col], dtype=object)
+    clinks = np.empty([row-1, col], dtype=object)
+    rlinks = np.empty([row, col-1], dtype=object)
+    dlinks = np.empty([row, col], dtype=object)
+
+    for r in range(row):
+        for c in range(col):
+            if drawcu:
+                cus[r][c] = add_cu(r,c)
+            rout[r][c] = []
+            if routtp=='R':
+                rout[r][c].append(add_rout(r-0.4,c-0.4,'R'))
+            if routtp=='S':
+                rout[r][c].append(add_rout(r-0.4,c-0.4,'S'))
+            if routtp=='both':
+                rout[r][c].append(add_rout(r-0.4,c-0.4,'R'))
+                rout[r][c].append(add_rout(r-0.45,c-0.35,'S'))
+
+    for r in range(row):
+        for c in range(col):
+            for _ in range(bw):
+                if r != row-1:
+                    clinks[r,c] = add_link(rout[r][c][0], rout[r+1][c][0])
+                if c != col-1:
+                    rlinks[r,c] = add_link(rout[r][c][0], rout[r][c+1][0])
+            if drawcu:
+                dlinks[r,c] = add_link(cus[r][c], rout[r][c][0])
+
+    if legend:
+        add_rout(row/2, col, 'R')
+        add_text(row/2, col+0.6, 'Router', font='Source Sans Pro', size=30)
+        add_rout(row/2-0.5, col, 'S')
+        add_text(row/2-0.5, col+0.6, 'Switch', font='Source Sans Pro', size=30)
+        add_cu(row/2-1, col)
+        add_text(row/2-1, col+0.84, 'Physical Unit', font='Source Sans Pro', size=30)
+
+    return G, cus, rout, clinks, rlinks, dlinks
+
+def plot_networks():
+    G = plot_network(routtp='both', row=3,col=4)[0]
+    G.write_pdf("figs/hybridnet.pdf", prog='neato')
+
+    G = plot_network(routtp='both', row=2,col=3)[0]
+    G.write_pdf("figs/hybridnet_poster.pdf", prog='neato')
+
+    G = plot_network(routtp='R', row=3,col=4)[0]
+    G.write_pdf("figs/dynnet.pdf", prog='neato')
+
+    G = plot_network(routtp='S', row=3,col=4, bw=3)[0]
+    G.write_pdf("figs/statnet.pdf", prog='neato')
+
+    G = plot_network(routtp='S', row=2,col=4, bw=3)[0]
+    G.write_pdf("figs/statnetbw.pdf", prog='neato')
+
+    G = plot_network(routtp='S', row=2,col=2, bw=3, legend=False)[0]
+    G.write_pdf("figs/statnetbw_poster.pdf", prog='neato')
+
+    G = plot_network(routtp='both', row=3,col=3, bw=3, legend=False)[0]
+    G.write_pdf("figs/statnetsmall.pdf", prog='neato')
+
+    G = plot_network(routtp='S', row=1,col=2, bw=3, legend=False, drawcu=False)[0]
+    G.write_pdf("figs/switch.pdf", prog='neato')
+
+def main():
+    # plot_split()
+    # plot_mapping()
+
+    # plot_part_dfg()
+    # plot_part()
+    # plot_part2()
+    # plot_part_invalid()
+    # plot_networks()
+
+main()
+
