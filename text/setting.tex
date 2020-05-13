@@ -1,7 +1,7 @@
 \usepackage[T1]{fontenc}
 
 %% Font of document
-%\usepackage{tgpagella}
+\usepackage{tgpagella}
 %\usepackage{tgbonum} %% no good
 %\usepackage{bookman} %% no good
 %\usepackage{charter} 
@@ -33,7 +33,7 @@
 \usepackage{xspace} 
 \usepackage{todonotes}
 
-\setminted[python]{linenos, frame=lines, baselinestretch=0.8, fontsize=\footnotesize}
+\setminted[python]{linenos, frame=lines, framesep=2mm, baselinestretch=0.8, fontsize=\footnotesize,escapeinside=||}
 %\usemintedstyle{pastie}
 
 \newcommand{\name}{SARA\xspace}
@@ -43,6 +43,9 @@
 \renewcommand{\todo}[1]{{\color{red} TODO: #1}}
 \newcommand{\term}[1]{\textbf{#1}}
 \newcommand{\eg}{{\em e.g.}}
+\newcommand{\CL}[1]{\textbf{\textcolor{red}{#1}}}
+\definecolor{brightpurple}{RGB}{163,33,247}
+\newcommand{\CK}[1]{\textbf{\textcolor{brightpurple}{#1}}}
 
 %%
 %% Math operators
