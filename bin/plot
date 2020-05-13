@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from cycler import cycler
 from scipy import stats
+import pydotplus as pydot
 
 def savefig(fig, plot_path, **kws):
     if 'size' in kws:
@@ -135,9 +136,105 @@ def plot_gpu_slide():
     print("Generate {}".format(plot_path))
     plt.savefig(plot_path, format='pdf', dpi=900)
 
+
+class Graph():
+    def __init__(self, *args, **kws):
+        self.args = args
+        self.kws = kws
+    def __enter__(self):
+        self.graph = pydot.Dot(graph_type="digraph")
+        return self
+    def __exit__(self, type, value, traceback):
+        self.graph.write_pdf(*self.args, **self.kws)
+
+    def node(self, name, **kws):
+        attr = kws.copy()
+        if "pos" in attr:
+            x,y = attr["pos"]
+            scale = 1.5
+            x = x * scale
+            y = y * scale
+            attr["pos"] = "{},{}!".format(x,y)
+        n  = pydot.Node(name, **attr)
+        self.graph.add_node(n)
+        return n
+    
+    def edge(self, src, dst, **kws):
+        e = pydot.Edge(src, dst, **kws)
+        self.graph.add_edge(e)
+        return e
+
+class DGraph(Graph):
+    def __init__(self, *args, **kws):
+        super().__init__(*args, **kws)
+        self.pos = 0
+    def vnode(self, name, **kws):
+        n = self.node(name, pos="0,{}!".format(self.pos), **kws)
+        self.pos += 1.5
+        return n
+
+    def bedge(self, src, dst, **kws):
+        return self.edge(src,dst,style="dashed",**kws)
+
+def plot_dep():
+    nodeattr = {}
+    nodeattr['shape']="circle"
+    nodeattr['penwidth']=2
+    nodeattr['fillcolor']="white"
+    nodeattr['style']="filled"
+    nodeattr['fontcolor']="black"
+    nodeattr['fontname']="DejaVu Sans"
+    edgeattr = {}
+    edgeattr['penwidth'] = 2
+    edgeattr['arrowhead'] = "vee"
+
+    with DGraph('figs/dep.pdf') as G:
+        W1 = G.node("W1", **nodeattr)
+        R1 = G.node("R1", **nodeattr)
+
+        G.edge(W1,R1,**edgeattr)
+        G.bedge(R1,W1,**edgeattr)
+
+    with DGraph('figs/dep1.pdf') as G:
+        W0 = G.node("W0", **nodeattr)
+        R0 = G.node("R0", **nodeattr)
+        W1 = G.node("W1", **nodeattr)
+        R1 = G.node("R1", **nodeattr)
+
+        G.edge(W0,R0,**edgeattr)
+        G.bedge(R0,W0,**edgeattr)
+        G.edge(W1,R1,**edgeattr)
+        G.bedge(R1,W1,**edgeattr)
+
+    with DGraph('figs/dep2.pdf', prog='neato') as G:
+        W0 = G.node("W0", pos=(0,1), **nodeattr)
+        R0 = G.node("R0", pos=(0,0), **nodeattr)
+        W1 = G.node("W1", pos=(1,1), **nodeattr)
+        R1 = G.node("R1", pos=(1,0), **nodeattr)
+
+        G.edge(W0,R0,**edgeattr)
+        G.bedge(R0,W0,**edgeattr)
+        G.edge(W1,R0,**edgeattr)
+        G.bedge(R0,W1,**edgeattr)
+        G.edge(W1,R1,**edgeattr)
+        G.bedge(R1,W1,**edgeattr)
+        G.edge(W0,R1,**edgeattr)
+        G.bedge(R1,W0,**edgeattr)
+
+    with DGraph('figs/dep3.pdf') as G:
+        W1 = G.node("W1", **nodeattr)
+        W2 = G.node("W2", **nodeattr)
+        R1 = G.node("R1", **nodeattr)
+
+        G.edge(W1,W2,**edgeattr)
+        G.edge(W1,R1,**edgeattr)
+        G.bedge(W2,W1,**edgeattr)
+        G.bedge(R1,W1,**edgeattr)
+
 def main():
 
-    plot_mlp()
-    plot_gpu_slide()
+    # plot_mlp()
+    # plot_gpu_slide()
+    plot_dep()
 
 main()
