@@ -9,3 +9,6 @@ env/
 *__pycache__
 _minted-thesis/
 *.out
+*.lof
+*.lot
+*.toc

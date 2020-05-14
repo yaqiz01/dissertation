@@ -247,6 +247,14 @@ accesses.
 \centering
 
 \begin{subfigure}[b]{0.5\textwidth}
+\begin{figure*}
+\centering
+\includegraphics[width=0.7\textwidth]{figs/retiming.pdf}
+\caption[Retiming]{
+  Left: retiming with input buffer only. Right: retiming with either input buffer or scratchpad.
+}
+\label{fig:mlp}
+\end{figure*}
 \inputminted{python}{code/dep1.py}
 \caption{Pseudo example}
 \end{subfigure}
@@ -328,12 +336,6 @@ Next, we forward the token going from $reqst_A$ to $reqst_B$ to go through $reqs
 We no longer need to insert the LCD token, as the stiff back pressure from the token buffer in $reqst_B'$ will enforce the expected behavior.
 This optimization only works if the sender and receiver of the token buffer are physically in a single VB where the memory is located.
 In this way, when $reqst_B'$ observes $reqst_A'$s token, $reqst_B'$ is guaranteed to observe the memory update from $reqst_A'$ because the memory also has single-cycle access latency.
-
-\subparagraph{Memory Localization}
-We perform another specialization on non-indexable memories (registers or FIFOs), whose all accesses have no explicit read enables.
-Instead of treating them as shared memories, \name{} duplicates and maps them to local input buffers in all receivers, no longer requiring tokens.
-The sender actor pushes to the network when the token is supposed to be sent, and the receiver dequeues one element from the input buffer when the token is supposed to be consumed.
-This dramatically reduces the synchronization complexity of non-indexable memory in the common case.
 
 \paragraph{When.}
 \name{} configures the actors to generate the token using their local states at runtime.

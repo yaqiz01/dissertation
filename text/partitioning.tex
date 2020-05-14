@@ -188,6 +188,11 @@ Therefore, we perform a heuristic checking on feasibility of the bipartite assig
 The solver-based solution combines partition assignment with PB type assignment as a joint problem. 
 The output of merging gives both partition assignment as well as a PB type assignment, which eliminates the risk of un-mappable bipartite graph due to merging in the traversal-based solution.
 
+\subparagraph{Memory Localization}
+We perform another specialization on non-indexable memories (registers or FIFOs), whose all accesses have no explicit read enables.
+Instead of treating them as shared memories, \name{} duplicates and maps them to local input buffers in all receivers, no longer requiring tokens.
+The sender actor pushes to the network when the token is supposed to be sent, and the receiver dequeues one element from the input buffer when the token is supposed to be consumed.
+This dramatically reduces the synchronization complexity of non-indexable memory in the common case.
 
 %Many of the optimizations we perform are similar to standard compiler optimizations, such as Dead Code Elimination and
 %Constant Propagation.
