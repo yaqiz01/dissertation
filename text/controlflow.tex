@@ -122,11 +122,27 @@ Example of Loop Fission vs. Loop Division
 \includegraphics[width=1\textwidth]{figs/plasticinetiming.pdf}
 \caption{Timing on Plasticine}
 \end{subfigure}
-\caption[Context allocation]{Same example as \Cref{fig:spatialegpar} without outer loop
-  unrolling factor equals to 1.
-  (a) has two basic blocks within the inner most controllers \texttt{B} and \texttt{C}.
-  \name allocates one context per basic block, shown in (b). Outer controller \texttt{A} is
-  duplicated in both \texttt{ctxA} and \texttt{ctxB}.
+\caption[Context allocation]{
+  Lowering example.
+  %Same example as \Cref{fig:spatialegpar} without outer loop
+  %unrolling factor equals to 1.
+  %(a) has two basic blocks within the inner most controllers \texttt{B} and \texttt{C}.
+  \name allocates one context per basic block for \texttt{B} and \texttt{C}, shown in (b). Outer controller \texttt{A} is
+  duplicated in both \texttt{ctxB} and \texttt{ctxC}.
+  (c) \name seperates out requestion generator \texttt{rqstR1} from \texttt{ctxB} for \texttt{R1} 
+  and response receiver from \texttt{ctxC} \texttt{respW1} for \texttt{W1}.
+  The resulting dataflow graph is shown in (d). 
+  To enforce the forward data-dependency between \texttt{W1} and \texttt{R1}, 
+  \name allocates a forward token between \texttt{W1}'s response receiver \texttt{respW1} and
+  \texttt{R1}'s request generator \texttt{rqstR1};
+  to enforce the loop-carried WAR dependency between \texttt{R1} and \texttt{W1}, \name allocates a
+  backward token (\texttt{credit}) between \texttt{R1}'s response receiver \texttt{ctxC} and 
+  \texttt{W1}'s request generator \texttt{ctxB}. 
+  The backward credit is initialized with two elements because \texttt{mem} is double-buffered.
+  On the writer side, a forward \texttt{token} is a
+  produced and a backward \texttt{credit} is consumed every \texttt{B} iterations; on the reader
+  side, a forward \texttt{token} is consumed and a backward credit is produced every \texttt{C}
+  iterations. The resulting timing of the execution is shown in (e).
 }
 \label{fig:contextalloc}
 \end{figure*}
