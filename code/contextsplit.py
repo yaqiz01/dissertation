@@ -1,6 +1,6 @@
 mem = VirtualMemory(dims=[100])
 token = ControlStream()
-credit = ControlStream(init=1)
+credit = ControlStream(init=2)
 
 with Context() as ctxB:
     |\CL{A:}| for i in range(A):
