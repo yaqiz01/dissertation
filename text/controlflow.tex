@@ -1,4 +1,4 @@
-\section{Distributed Control Flow}
+\section{Imperative to Streaming Transformation}
 \label{sec:control}
 
 %In a na\"ive approach, we can map each controller in the hierarchy into a VB (\Cref{fig:centralctrl}).
@@ -13,42 +13,78 @@
 %Therefore, as long as the compututation is executed with the expected number of iterations and the memories are updated consistently, there is no need for any extra synchronization.
 %Next, we walk through how \name{} achieves this in more concrete detail.
 
-
-
-The input to \name is the backend of the Spatial IR, which is an control hierarchy after loop
-unrolling.
-The controller at each level of the hierarchy corresponds to a control primitive, such as a loop, or
-a branch statement. A basic block is attached to each \emph{inner most} controller including instructions
-and memory accesses to user declared data-structures.
-\Cref{fig:spatialegpar} shows an example of a program and a schematic Spatial output IR.
-If the program has instructions outside a outer loop, Spatial automatically inserts a \emph{unit}
-controller that wraps the floating instructions.
+\subsection{Loop Division}
+Reviewing the front-end and back-end abstraction of \name, an obvious gap between the two
+abstractions is that the front-end imperative language can contain arbitrary nested control hierarchy, whereas
+the hardware compute engine can only execute perfectly nested loops.
+To address this issue, we introduce a new type of loop transformation---loop division---for streaming reconfigurable
+accelerators.
+Similar to loop fission, loop division breaks a single loop into multiple loops.
+The difference is that loop fission generates a sequence of sequentially executed loops, whereas
+loop division generates loops executing \emph{concurrently}.
+Additionally, loop fission materializes the intermediate results across fissioned loops into arrays,
+whereas loop division use queue to communicate across loops.
+Each loop generated from loop division can only execute if all of their input queues is not empty.
+\Cref{fig:loopdivision} gives an example of loop fusion vs. loop division.
 
 \begin{figure*}
 \centering
-\begin{subfigure}[b]{0.4\textwidth}
-\inputminted{python}{code/spatialegpar.py}
-\caption{Pseudo Spatial example}
+\begin{subfigure}[b]{0.28\textwidth}
+\inputminted{python}{code/loopexp1.py}
+\caption{Input program}
 \end{subfigure}
 \hfill
-\begin{subfigure}[b]{0.58\textwidth}
-\includegraphics[width=1\textwidth]{figs/spatialir.pdf}
-%\missingfigure[figwidth=1\textwidth]{Spatial IR}
-\caption{Schematic Spatial IR}
+\begin{subfigure}[b]{0.31\textwidth}
+\inputminted{python}{code/loopexp1fission.py}
+\caption{Loop Fission}
 \end{subfigure}
-\caption[Spatial Example]{
-  Pseudo example of \name's front-end language.
-  (a) shows the an example of \name's front-end language. The actual front-end Spatial is a
-  Scala-embeded DSL. For simplicity and generality, we use a python style pseudo code to show an
-  language with similar abstraction. The `par` keyword indicates outer loop unrolling factor, and
-  the `vec` keyword is followed by a inner-loop vectorization factor.
-  When an iterator is vectorized, instructions using the vectorized iterator is automatically
-  vectorized as well. When unrolling the outer loop \texttt{A}, the enclosed loop body and
-  next-level control hierarchy are duplicated, as suggested in (b).
-  Each loop in (a) corresponds to a controller in (b). The inner most controllers \texttt{B} and
-  \texttt{C} each contain a basic block within instructions within the inner most loops.
+\hfill
+\begin{subfigure}[b]{0.32\textwidth}
+\inputminted{python}{code/loopexp1division.py}
+\caption{Loop Division}
+\end{subfigure}
+\caption[Example of Loop Fission vs. Loop Division]{
+Example of Loop Fission vs. Loop Division
 }
-\label{fig:spatialegpar}
+\label{fig:loopexp1}
+\end{figure*}
+
+When executing loop division on a single-threaded CPU, the CPU must context switching between the loops
+and executing the one with cleared input dependencies.
+Like loop fission, loop division is likely worsen the performance on a processor architecture, as
+the worst case queue size can be $O(N)$. On RDAs, loop \todo{} and loop \todo{} are execute
+concurrently in streaming pipelined fashion. The size of the queue can be limit to a small fixed
+size, efficiently implemented with a hardware FIFO. 
+Unlike other loop transformations, which are generally optimizations, 
+loop division is a transformation to converts an infeasible program to a feasible one for Plasticine.
+
+Loop division needs to introduce additional dummy data dependency to enforce the correct execution
+order.
+As a result, loop fission is not always safe, as it may alters the execution order of the program.
+Loop division, on the other hand, does not change the underlying data-dependency and is always safe.
+\Cref{fig:loopdivisionillegal} gives an example of invalid loop fission and correct loop division.
+\Cref{fig:sync} gives more detail on how the dummy data-dependency are generated automatically.
+
+\begin{figure*}
+\centering
+\begin{subfigure}[b]{0.28\textwidth}
+\inputminted{python}{code/loopexp2.py}
+\caption{Input program}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.32\textwidth}
+\inputminted{python}{code/loopexp2fission.py}
+\caption{Invalid Loop Fission}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.31\textwidth}
+\inputminted{python}{code/loopexp2division.py}
+\caption{Loop Division}
+\end{subfigure}
+\caption[Example of Loop Fission vs. Loop Division]{
+Example of Loop Fission vs. Loop Division
+}
+\label{fig:loopexp2}
 \end{figure*}
 
 \subsection{Virtual Context Allocation} 
@@ -206,7 +242,7 @@ for a possible forward dependency, and later in the program order for a possible
 In the example in \Cref{fig:contexteg}, there is a forward data dependency between \texttt{W1} and
 \texttt{R1}, and a LCD between \texttt{R1} and \texttt{W1}. 
 \name builds a dependency graph between declared accesses for each memory.
-\todo{} gives more examples on how \name
+\Cref{fig:depexp} gives more examples on how \name
 determines dependencies based on where these accesses are declared in the control hierarchy.
 
 Enforcing all dependencies in the dependency graph may not be necessary, as enforcing a subset of
