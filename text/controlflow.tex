@@ -23,9 +23,9 @@ Similar to loop fission, loop division breaks a single loop into multiple loops.
 The difference is that loop fission generates a sequence of sequentially executed loops, whereas
 loop division generates loops executing \emph{concurrently}.
 Additionally, loop fission materializes the intermediate results across fissioned loops into arrays,
-whereas loop division use queue to communicate across loops.
+while loop division use queue to communicate across loops.
 Each loop generated from loop division can only execute if all of their input queues is not empty.
-\Cref{fig:loopdivision} gives an example of loop fusion vs. loop division.
+\Cref{fig:loopexp1} gives an example of loop fusion vs. loop division.
 
 \begin{figure*}
 \centering
@@ -44,25 +44,33 @@ Each loop generated from loop division can only execute if all of their input qu
 \caption{Loop Division}
 \end{subfigure}
 \caption[Example of Loop Fission vs. Loop Division]{
-Example of Loop Fission vs. Loop Division
+  (b) and (c) shows the output of loop fission and loop division of the input program (a), respectively.
+  In (b), the first loop is executed entirely before executing the second loop. The intermediate
+  result \texttt{tmp} is materialized into an array with the same size as the loop range.
+  In (b), the two loops can execute concurrently. The intermediate result is materialized into a
+  queue. For each iteration, a loop can execute only if all of its queues are non-empty.
+  The second loop can execute as soon as \texttt{tmp} receives the first element.
 }
 \label{fig:loopexp1}
 \end{figure*}
 
-When executing loop division on a single-threaded CPU, the CPU must context switching between the loops
+When executing loop division on a single-threaded CPU, the CPU must context switching between the
+concurrent loops
 and executing the one with cleared input dependencies.
 Like loop fission, loop division is likely worsen the performance on a processor architecture, as
-the worst case queue size can be $O(N)$. On RDAs, loop \todo{} and loop \todo{} are execute
-concurrently in streaming pipelined fashion. The size of the queue can be limit to a small fixed
+the memory footprint of the intermediate result \texttt{tmp} increases from $O(1)$ to $O(N)$.
+On RDAs, the devisied loops are executing
+concurrently in streaming pipelined fashion. The size of the \texttt{tmp} can be limit to a small fixed
 size, efficiently implemented with a hardware FIFO. 
-Unlike other loop transformations, which are generally optimizations, 
-loop division is a transformation to converts an infeasible program to a feasible one for Plasticine.
+Although loop transformations are generally optimizations on CPUs,
+loop division is a required transformation to converts an infeasible program to a feasible one for Plasticine.
 
-Loop division needs to introduce additional dummy data dependency to enforce the correct execution
+Loop fission is not always safe, as it may alters the execution order of the program.
 order.
-As a result, loop fission is not always safe, as it may alters the execution order of the program.
 Loop division, on the other hand, does not change the underlying data-dependency and is always safe.
-\Cref{fig:loopdivisionillegal} gives an example of invalid loop fission and correct loop division.
+To achieve this, loop division needs to introduce additional dummy data dependency to enforce the correct 
+execution.
+\Cref{fig:loopexp2} gives an example of an invalid loop fission and a correct loop division.
 \Cref{fig:sync} gives more detail on how the dummy data-dependency are generated automatically.
 
 \begin{figure*}
@@ -95,14 +103,26 @@ Example of Loop Fission vs. Loop Division
 \inputminted{python}{code/spatialeg.py}
 \caption{Pseudo input example}
 \label{fig:contexteg}
-\end{subfigure}
-\hfill
-\begin{subfigure}[b]{0.5\textwidth}
 \inputminted{python}{code/contextalloc.py}
 %\missingfigure[figwidth=1\textwidth]{Spatial IR}
 \caption{Context allocation}
 \end{subfigure}
-  \caption[Context allocation]{Same example as \Cref{fig:spatialegpar} without outer loop
+\hfill
+\begin{subfigure}[b]{0.5\textwidth}
+\inputminted{python}{code/contextsplit.py}
+\caption{Request and response division}
+\end{subfigure} \\
+\vspace{0.2cm}
+\begin{subfigure}[b]{0.23\textwidth}
+%\includegraphics[width=1\textwidth]{figs/dep.pdf}
+\includegraphics[width=1\textwidth]{figs/ctxdag.pdf}
+\caption{Context Graph}
+\end{subfigure}
+\begin{subfigure}[b]{0.76\textwidth}
+\includegraphics[width=1\textwidth]{figs/plasticinetiming.pdf}
+\caption{Timing on Plasticine}
+\end{subfigure}
+\caption[Context allocation]{Same example as \Cref{fig:spatialegpar} without outer loop
   unrolling factor equals to 1.
   (a) has two basic blocks within the inner most controllers \texttt{B} and \texttt{C}.
   \name allocates one context per basic block, shown in (b). Outer controller \texttt{A} is
@@ -117,8 +137,7 @@ A basic block maps naturally to a context, as instructions within a basic block 
 Next, \name makes a copy of all controllers enclosing the basic block in the corresponding context;
 these controllers are later converted to counters and control configurations supported by the
 hardware. 
-\Cref{fig:contextalloc} shows an example of the context allocation. For simplicity, we use the same
-example as \Cref{fig:spatialegpar} without outer loop parallelization on loop \texttt{A}.
+\Cref{fig:contextalloc} shows an example of the context allocation. 
 With these controllers, contexts can repeat execution for expected number iterations. However,
 data-structures written and read by different contexts are accessed in random order.
 The insight is that \emph{as long as all contexts accessing a shared memory with expected program order,
