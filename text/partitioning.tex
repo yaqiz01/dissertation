@@ -143,6 +143,14 @@ This commonly happens when producer and consumer loops of the memory are fully u
 
 \subparagraph{Route-Through Elimination (rtelm).} For patterns where the content of a non-indexable memory  (M1) is read and written to another memory (M2), \name{} eliminates the intermediate access if the read of M1 and the write of M2 operates in lock-step.
 
+\begin{figure*}
+\centering
+\includegraphics[width=0.7\textwidth]{figs/retiming.pdf}
+\caption[Retiming]{
+  Left: retiming with input buffer only. Right: retiming with either input buffer or scratchpad.
+}
+\label{fig:mlp}
+\end{figure*}
 \subparagraph{Retiming with scratchpad (retime-mem).} By default, \name{} uses PB input buffers for retiming purpose. 
 This option enables \name{} to use scratchpad memory for retiming that requires large buffer depth.
 
