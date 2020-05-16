@@ -311,11 +311,11 @@ dependency strength than the strength of the removed edge.
 %Enforcing all dependencies in this graph may not be necessary as dependencies between $A_1$ and $A_2$, and $A_2$ and $A_3$ already capture the dependency between $A_1$ and $A_3$.
 
 To eliminate the round-trip overhead between the memory and the computation, 
-\name{} duplicates the local states and expressions required to generate the requests in a separate actor as the one that handles the responses.
+\name{} duplicates the local states and expressions required to generate the requests in a separate context as the one that handles the responses.
 For write accesses, the memory provides an acknowledgment for each request received, used by \name for synchronization.
-The request actor generates requests asynchronously as soon as its data-dependencies are cleared, pushing all requests to memory until back-pressured.
+The request context generates requests asynchronously as soon as its data-dependencies are cleared, pushing all requests to memory until back-pressured.
 To order a declared access A before a declared access B
-\name creates a dummy dependency between the actor that accumulates the response of access A ($resp_A$) and the actor that generates requests for access B ($reqst_B$) (\Cref{fig:token}(b)).
+\name creates a dummy dependency between the context that accumulates the response of access A ($resp_A$) and the context that generates requests for access B ($reqst_B$) (\Cref{fig:token}(b)).
 To enforce LCD from access B to access A, \name introduces a token from $resp_B$ to $reqst_A$, and initializes the token buffer (input buffer receiving the token) with one element to enable the execution of the first iteration.
 If the LCD is on a multi-buffered memory, the LCD token is initialized with the buffer depth number of elements to enable A for multiple iterations before blocked by access B.
 
@@ -323,36 +323,89 @@ These are general schemes we use on any types of memory (including DRAM and on-c
 
 \subparagraph{Special Case: Single-Cycle Access}
 For a memory with guaranteed {\em single-cycle} access latency, such as registers and statically banked SRAMs that are guaranteed conflict-free, we can simplify the necessary synchronization (\Cref{fig:tokentrick}(c)).
-Instead of synchronizing between $resp_A$ and $reqst_B$, we allocate two stateless actors $reqst_A'$ and $reqst_B'$ within {\emph the same} VB as the accessed memory that forwards requests from $reqst_A$ and $reqst_B$, respectively.
+Instead of synchronizing between $resp_A$ and $reqst_B$, we allocate two stateless contexts $reqst_A'$ and $reqst_B'$ within {\emph the same} VB as the accessed memory that forwards requests from $reqst_A$ and $reqst_B$, respectively.
 Next, we forward the token going from $reqst_A$ to $reqst_B$ to go through $reqst_A'$ to $reqst_B'$ instead, and configure the token buffer in $reqst_B'$ with the depth of one for serialized schedule and depth of M for multi-buffered schedule. 
 We no longer need to insert the LCD token, as the stiff back pressure from the token buffer in $reqst_B'$ will enforce the expected behavior.
 This optimization only works if the sender and receiver of the token buffer are physically in a single VB where the memory is located.
 In this way, when $reqst_B'$ observes $reqst_A'$s token, $reqst_B'$ is guaranteed to observe the memory update from $reqst_A'$ because the memory also has single-cycle access latency.
 
 \paragraph{When.}
-\name{} configures the actors to generate the token using their local states at runtime.
-For FIFOs, the token is generated and consumed every cycle when the producer and receiver actors are active.
+\name{} configures the contexts to generate the token using their local states at runtime.
+For FIFOs, the token is generated and consumed every cycle when the producer and receiver contexts are active.
 For register, SRAM, and DRAM the program order expects that the producer and consumer writes and inspects the memory once per iteration of their LCA controller, respectively.
 Since the producer and receiver both have their outer controllers duplicated in their local state, they have independent views for one iteration of the LCA controller, which is when the controller in their ancestors (that is the immediate child of the LCA controller) is completed (\Cref{fig:tokenwhen}(d)).
-The {\em done} signals of these controllers are used to produce and consume the token in actors, independently.
+The {\em done} signals of these controllers are used to produce and consume the token in contexts, independently.
 
 \subsection{Data-Dependent Control Flow}
-Using the synchronization discussed in \Cref{sec:sync}, we can support control constructs that typically are not supported on most RDAs, such as branch and a while convergence loop.
-The controllers in the input graph can also have data dependencies, such as loop ranges. 
-The dynamic-loop ranges are handled as data dependencies to actors with \emph{memory localization} described in \Cref{sec:sync}.
+Using the synchronization discussed in \Cref{sec:sync}, \name can support control constructs that 
+are typically not supported on dataflow accelerators, such as branches and while loops.
+To enable this, the control path of the architecture must permit data-dependency.
+\Cref{fig:dynrange} shows an example of data-dependent loop ranges. \name uses a context to compute
+the loop bound, and the loop bounds are treated as input dependency to the context mapping the loop
+body.
+\begin{figure*}
+\centering
+\begin{subfigure}[b]{0.4\textwidth}
+\inputminted{python}{code/dynrange.py}
+\caption{Input program}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.5\textwidth}
+\inputminted{python}{code/dynrangectx.py}
+\caption{Context graph}
+\end{subfigure}
+\caption[Dynamic Loop Range]{
+  (a) shows an example program with dynamic loop range. 
+  Expressions to generate the loop bounds belongs to a basic block that gets mapped to \texttt{ctx1}.
+  \name maps the loop bound as a data-dependnecy to context that maps the inner loop context, and
+  configures dequeue signal of \texttt{bound} stream to counter \texttt{B.done}.
+}
+\label{fig:dynrange}
+\end{figure*}
+
+\begin{figure*}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\inputminted{python}{code/branch.py}
+\caption{Input program}
+  \vspace{0.2cm}
+\includegraphics[width=0.8\textwidth]{figs/branchctx.pdf}
+\caption{Dataflow graph}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+\inputminted{python}{code/branchctx.py}
+\caption{Context graph}
+\end{subfigure}
+\\
+  \vspace{0.2cm}
+\begin{subfigure}[b]{\textwidth}
+  \centering
+\includegraphics[width=0.8\textwidth]{figs/branchtiming.pdf}
+\caption{Context configuration}
+\end{subfigure}
+\caption[Dynamic Loop Range]{
+  (a) shows an example program with dynamic loop range. 
+  Expressions to generate the loop bounds belongs to a basic block that gets mapped to \texttt{ctx1}.
+  \name maps the loop bound as a data-dependnecy to context that maps the inner loop context, and
+  configures dequeue signal of \texttt{bound} stream to counter \texttt{B.done}.
+}
+\label{fig:dynrange}
+\end{figure*}
 The branch condition is also treated as a data-dependent enable signal of controllers under branch clauses.
+
 If the controller is disabled, it is considered {\em done} immediately.
 Output tokens depending on the {\em done} signal will be immediately sent out.
-For a memory written inside a branch statement and read outside the branch (with a branch miss), the writer actor immediately sends out the token to the receiver
+For a memory written inside a branch statement and read outside the branch (with a branch miss), the
+writer contexts immediately sends out the token to the receiver
 as soon as the branch condition is resolved. 
 With a branch hit, the controller waits until its inner controller completes before raising the {\em done} signal.
-%This way, the 
 A similar scheme is used to implement the while loop, where the while condition is a data-dependency of stop signal of controller X. 
 The producer of the while condition also consumes its own output as an LCD. 
-The condition is then broadcast to all other actors under the same while loop. 
+The condition is then broadcast to all other contexts under the same while loop. 
 The {\em done} signal of the while loop is raised when the condition's data-dependency evaluates to true.
-At this point, actors accessing memory within the while loop will send the token to access actors outside of the while loop, and enable them to access the intermediate memory.
+At this point, contexts accessing memory within the while loop will send the token to access contexts outside of the while loop, and enable them to access the intermediate memory.
 
-After all actors and shared resources are allocated and synchronized, we simply put each actor and shared resource into their own VBs.
-The actors with single-cycle special case (\Cref{sec:sync}) must be put in the same VB as the shared memory.
+After all contexts and shared resources are allocated and synchronized, we simply put each context and shared resource into their own VBs.
+The contexts with single-cycle special case (\Cref{sec:sync}) must be put in the same VB as the shared memory.
 
