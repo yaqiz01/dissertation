@@ -29,6 +29,8 @@ On the other side, regular contexts with non-vectorized fixed-point operations c
   Vector lane width & 16 & 16 & 1 & 1 \\
   Fixed-point op & \cmark & \cmark & \cmark & \xmark\\
   Float-point op & \cmark & \xmark & \xmark & \xmark\\
+  Number of stages & 6 & 10 & 5 & 0 \\
+  Number of pipeline registers & 8 & 8 & 4 & 0 \\
   Reduction tree & \cmark & \xmark & \xmark & \xmark\\
   \# Vector FIFO & 6 & 6 & 4 & 0\\
   \# Scalar FIFO & 6 & 6 & 4 & 16\\
@@ -181,20 +183,60 @@ be partitioned into a tree of VU during the compute partitioning phase in \Cref{
 \subsection{Compute Partitioning} 
 \label{sec:compsplit}
 
-\subparagraph{Partitioning.}
 The {\em compute-partitioning} phase addresses VUs using more compute resource than any PU can provide. 
-If a VU contains multiple contexts, \name{} first attempts to move the contexts into separate VUs.
-If a single context exceeds the resource limit, \name{} breaks down the large dataflow graph in the context into multiple contexts and put them in separate VUs.
-During partitioning, \name{} maps each subgraph of the large dataflow graph into a new context, mirrors the control states of the original context, and streams live variables in between.
-The PU constraint includes the number of operations, input, and output ports available in the PUs.
-Because the global network is specialized to handle efficient broadcasts, the in- and out-degree constraint counts the number of broadcast edges, as supposed to edges between partitions (\Cref{fig:parteg}(a)).
-In addition, the partitioned subgraphs cannot form {\em new} cycle between partitions that did not exists in the original VGDFG. 
-\Cref{fig:parteg} (b) shows an illegal partitioning that fails the cycle constraint.
-This is because each context is enabled atomically by all of its data-dependencies; cyclic dependencies between contexts cause deadlock.
-The original dataflow graph, however, can contain cycles that correspond to LCDs.
-The back edge of the LCD is initialized with dummy data to enable execution in the first iteration.
+If a VU contains multiple contexts, \name{} first moves the contexts into separate VUs.
+If a single context exceeds the resource limit, \name breaks down the dataflow graph in the context into 
+multiple contexts and put them in separate VUs.
+During partitioning, \name maps each subgraph of the large dataflow graph into a new context, 
+mirrors the control states of the original context, and streams live variables in between.
+We can formulate the problem of where to partition in the dataflow graph as an optimization problem, shown in
+\Cref{tab:partprob}.
 
-\subparagraph{Retiming.}
+\begin{table*}
+  \centering
+\begin{tabular}{lp{12cm}}
+  \toprule
+  \textbf{Problem} & Partition the dataflow graph into subgraphs such that all subgraphs satisfy the constraints of a
+  hardware unit. \\[0.9cm]
+  \textbf{Objective }& Minimize the number of partitions and connectivity across partitions. \\[0.5cm]
+  \textbf{Constraints} & 
+  \begin{minipage}{12cm}
+  \begin{outline}
+  \0 Each partition must not exceeds the limit on number of \vspace{-0.2cm}
+    \1 live in/out variables (I/O ports) \vspace{-0.2cm}
+    \1 operations (pipeline stages), \vspace{-0.2cm}
+    \1 and live variables across stages (pipeline registers), etc.\vspace{-0.2cm}
+  \0 No \emph{new} cycles can be formed across partitions other than the cycles in the original
+  dataflow graph.
+  \end{outline}
+  \end{minipage}
+  \\
+ \bottomrule
+\end{tabular}
+\caption[Formulation of the compute partitioning problem]{
+Formulation of the compute partitioning problem
+}
+\label{tab:partprob}
+\end{table*}
+
+Because the global network is specialized to handle efficient broadcasts, 
+the in/out-degree of a partition counts the number of unique live-in/out variables, as supposed to
+number of edges across partitions.
+In addition, the partitioned subgraphs cannot form {\em new} cycles; contexts waits for all
+input dependencies and therefore cycles across contexts cause deadlock. 
+Nonetheless, the original graph might contain cycles representing loop carried dependencies, such as
+accumulation. For these cycles, \name initialize the back edge of the cycle with dummy data to
+enable execution.
+\Cref{fig:parteg} shows examples of valid and invalid partitioning solutions.
+
+\paragraph{Community Detection}
+The formulation of compute partitioning is similar to the community detection problem\cite{community}, which has similar
+objective. The major difference is that the later often takes the number of output partitions as an
+input to the algorithm, whereas our problem partitions until all subgraphes satisfy all constraints.
+Moreover, community detection algorithms do not enforce the cycle constraints. 
+Finally, the edge connectivity in community detection counts the number of edges across partitions, as supposed to broadcast edges.
+
+\paragraph{Retiming}
 To pipeline all partitions at full-throughput, \name{} must retime the imbalanced data paths between partitions with sufficient buffering. 
 Retiming can introduce new VUs in addition to partitioned VUs.
 The objective of this phase is to minimize the number of partitions after retiming and minimizing the amount of connectivities between partitions.
@@ -205,16 +247,16 @@ In the following sections, we present a traversal-based solution that provides a
 
 \begin{figure}
   \centering
-  %\includegraphics[width=1\columnwidth]{figs/partition_example.pdf}
   \includegraphics[width=1\columnwidth]{figs/parteg.pdf}
-  \caption[Compute partitioning example]{
-    \todo{}
-    %(a) An example of an illegal partition. (b) The cost of a partition.
+  \caption[Compute partitioning examples]{
+    Compute partitioning examples. Solution 1 and 2 are both valid partitioning. Solution 2 is
+    better because it has less number of broadcast edges across partitions. Solution 3 is an example
+    of illegal partition result due to the cycle between partition 1 and 2.
   }
   \label{fig:parteg}
 \end{figure}
 
-\paragraph{Traversal-based Solution}
+\subsubsection{Traversal-based Solution}
 To address the cycle constraint, we perform a topological sort of the dataflow graph.
 The topological traversal ignores the back-edge in the graph and produces a list of traversed nodes. 
 The compiler starts from the beginning of the list, recursively adds nodes into a partition until the partition no longer satisfies the hardware constraint, and repeats the process with a new partition.
@@ -227,7 +269,7 @@ For DFS, we re-sort the remaining list each time we start with a new partition.
 %The DFS minimizes the number of live variables between partitions, albeit producing more imbalanced paths between
 %partitions. On the other hand, BFS produces more balanced partitioning with more live variables and partitions.
 
-\paragraph{Solver-based Solution}
+\subsubsection{Solver-based Solution}
 \Cref{tab:solver-eqns} gives our formulation of the partitioning problem.
 At a high-level, we use a boolean matrix $B$ to keep track of the assignment of nodes in the dataflow graph to partitions. 
 $B$ has dimension of number of nodes to number of partitions, where$B[i,j]==1$ indicates an assignment of node $i$ to partition $j$. 
