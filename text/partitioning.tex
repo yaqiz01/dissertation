@@ -14,13 +14,14 @@ less capable than the compute pipeline in PCUs.
 However, heterogeneity tends to reduce average utilization because different applications, and even the same
 application with different data sizes, can vary highly in the desired ratio among different resource.
 A compute-bound application, for example, can heavily underutilize the DAGs and PMUs.
-To address this problem, \name model the virtual to physical assignment as a constraint satisfaction problem; 
+To address this problem, \name models the virtual to physical assignment as a constraint satisfaction problem; 
 each VU consumes a set of resources and can only be assigned to a PU if the PU processes the required resources. 
 %Instead of using heuristics to assign certain a type of VU to a type of PU, we
 \Cref{tab:resource} shows the types of resources in Plasticine's heterogeneous units.
 For example, special connection to off-chip memory interface is
 also treated as a type of resource in the DAG, which forces virtual contexts accessing DRAM to map to DAGs. 
-On the other side, regular contexts with non-vectorized fixed-point operations can also be mapped to spare DAGs.
+On the other side, regular contexts with non-vectorized fixed-point operations can also be mapped to
+spare DAGs, which improves utilization.
 \begin{table*}
   \centering
 \begin{tabular}{lcccc}
@@ -52,6 +53,22 @@ On the other side, regular contexts with non-vectorized fixed-point operations c
 \end{table*}
 
 \begin{algorithm}
+  \Fn(\tcc*[h]{Allocation Algorithm}){alloc(V, P, pruners)}{
+    \KwData{V: a set of VUs from the VUDFG}
+    \KwData{P: a set of all PUs on the hardware}
+    \KwData{pruners: a list of constraint pruners to check
+    and fixes constraint violations}
+    \tcc{Initialize a complete bipartite graph}
+    G = \KwNew BipartiteGraph()\;
+    G[V] = P\;
+    \tcc{Constraint resolution}
+    prune(G, pruners)\;
+    \tcc{Global merging}
+    merge(G)\;
+    \tcc{Virtual to physical assignment}
+    backtracking\_assign(G)\;
+  }
+  \vspace{0.5cm}
   \Fn(\tcc*[h]{A recursive pruning function}){prune(G, pruners)}{
     \KwData{G: bipartite graph between VUs and PUs}
     \KwData{pruners: a list of constraint pruners to check
@@ -80,29 +97,16 @@ On the other side, regular contexts with non-vectorized fixed-point operations c
       }
     }
   }
-  \vspace{0.5cm}
-  \Fn(\tcc*[h]{Allocation Algorithm}){alloc(V, P, pruners)}{
-    \KwData{V: a set of VUs from the VUDFG}
-    \KwData{P: a set of PUs on the hardware}
-    \KwData{pruners: a list of constraint pruners to check
-    and fixes constraint violations}
-    \tcc{Initialize a complete bipartite graph}
-    G = \KwNew BipartiteGraph()\;
-    G[V] = P\;
-    \tcc{Constraint resolution}
-    prune(G, pruners)\;
-    \tcc{Global merging}
-    merge(G)\;
-    \tcc{Virtual to physical assignment}
-    backtracking\_assign(G)\;
-  }
-  \caption{Resource allocation}
+  \caption{Resource allocation. The bipartite graph \texttt{G} contains a bi-directional many-to-many
+  map. \texttt{G[key]} returns a set of values, and \texttt{G[value]} returns a set of keys.
+  \texttt{G[KeySet] = ValueSet} creates all-to-all assignment between \texttt{KeySet} and
+  \texttt{ValueSet}.}
   \label{algo:resalloc}
 \end{algorithm}
  
 %% backtracking_assignment(vu, dom)
 As shown in \Cref{algo:resalloc}, the \emph{resource allocation} phase contains three steps:
-\emph{constraint resolution}, \emph{global optimization}, and \emph{virtual to physical assignment}.
+\emph{constraint resolution}, \emph{global merging}, and \emph{virtual to physical assignment}.
 \name uses a VU-PU bipartite graph (\texttt{G}) to keep track of potential valid assignments between the two.
 Initially, \texttt{G} is initialized to a complete bipartite graph, i.e. all VUs can be assigned to
 all PUs.
@@ -120,65 +124,20 @@ If succeeded, the original graph \texttt{G} is updated with \texttt{V'} and thei
 \paragraph{Global Merging}
 After all VUs have at least one PU in the bipartite graph, \name triggers a global optimization that merges 
 small VUs into a larger VU to reduce fragmentation in allocation.
-Each type of resource has a summation rule to compute how the resource usage change if two VUs are merged
-together.
+Each type of resource has an aggregation rule to compute how the resource usages change if two VUs are merged
+together. Most aggregation rules are simple, such as addition, logical or, max, or union.
+The in- and out-degree increases are tricker and will be detailed in \Cref{sec:compsplit}.
 
 \paragraph{Virtual to Physical Assignment}
 Next, \name performs a quick heuristic check on the bipartite graph to see if there exists a possible assignment with enough PUs, and provide feedback on the critical resources, otherwise.
 Finally, \name assigns each VU to a PU type with a backtracking search on the pruned bipartite
 graph.
 
-This approach can be easily extended to handle new heterogeneous tile in the hardware by registering
-new resources and partitioning rules.
-The rest of this section will focus on two types of partitioning transformations---memory and
-compute partitioning in \Cref{sec:memsplit} and \Cref{sec:compsplit}. 
+This approach can be easily extended to handle new heterogeneous tiles in the architecture by registering
+new types of resources with aggregation and partitioning rules.
+The rest of this section will focus on two types of partitioning transformations--compute
+partitioning in \Cref{sec:compsplit} and memory partitioning in \Cref{sec:memsplit}.
 %We have another partitioner encoding valid rule to decompose a BlackBox IP block available on the RDA.
-
-\subsection{Memory Partitioning} \label{sec:memsplit}
-The memory pruner addresses VUs with virtual on-chip scratchpad memories exceeding the physical limits in capacity or number of banks in a PU.
-Memories in the input graph can have arbitrary size and number of virtual banks.
-The PUs, on the other hand, contains a small number of fix-sized 1-D scratchpad banks.
-
-To partition the virtual memory, \name{} shards the large virtual memory into multiple memory partitioned VUs, and assign each partition with a subset of the virtual banks.
-Each accessor provides a bank ID (BI) that selects which banks to access and a bank offset (BO) that specifies the address within the bank. 
-BI and BO can be vectorized.
-\name{} can use multiple banks within a PU to form a larger virtual bank.
-However, if a virtual bank in VU exceeds the total capacity of all physical banks within a PU, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PU.
-To do so, \name{} injects additional calculation to derive the sub-bank ID and sub-bank offset from the BO, and flattens the sub-bank ID with the previous BI to form the new BI and the new BO.
-
-%The number of banks required in VU increases with parallelization of the program to increase memory access bandwidth.
-%The memory is further multi-buffered to enable coarse-grained pipelining across loop nests\cite{sptial}.
-%The total amount of banks required is the product of the number of banks along all dimensions.
-%The capacity per bank is the capacity of the logical memory divided by the number of banks.
-
-\begin{figure}
-  \centering
-  \includegraphics[width=1\columnwidth]{figs/memsplit.pdf}
-  \caption{An example of splitting a memory to serve parallel requesters.}
-  \label{fig:memsplit}
-\end{figure}
-
-\name{} then set ups the crossbar data path between the parallel producers, memory partitions, and parallel consumers.
-As discussed in \Cref{sec:sync}, each accessor is split into a requester context and receiver context.
-For each memory partition, \name{} uses an context to merge the requests from all parallel requesters, \Cref{fig:memsplit}.
-The merge context uses a special shuffle operator that shuffles the BO vector from the order in BI to the order aligned with banks in its partition.
-If a bank in the partition is not accessed in BI, the output of the shuffle is marked as invalid.
-We assume the capacity of each physical bank is much smaller than $2^{31}$. 
-So we use the first bit of the 32-bit BO to indicate invalid accesses (0 is invalid), which is also used to explicitly disabled access from the program.
-Next, the merger context uses a tree of bit-wise OR operators to combine all bank-aligned BOs, and send the combined request vector to its partition.
-The requests can be trivially ORed because static banking (\Cref{sec:background}) guarantees that no two requesters access the same bank in the same cycle.
-Next, the memory partitions broadcast the respond to all receiver contexts.
-A receiver takes response from all partitions, using the same shuffle operators to align each response back to the requested order in BI, and uses another OR tree to merge the response. 
-The BI is forwarded from the requester to the receiver for the reverse shuffling.
-
-The alternative approach is to reverse the respond to access ordering within the memory partitions before sending them to the requester.
-This approach does not scale with network bandwidth, as the memory partitions need to send the receiver number of distinct outputs.
-(The number of receivers is a function of the parallelization factor.) 
-As a result, the amount of output bandwidth at the memory partition limits how much the program can be parallelized, which causes underutilization of the accelerators.
-In our scheme, each partition sends a single broadcast to all receivers, which is efficiently handled by the network.
-
-The request trees for memory partition and receiver can have high fan-in, which can 
-be partitioned into a tree of VU during the compute partitioning phase in \Cref{sec:compsplit}.
 
 \subsection{Compute Partitioning} 
 \label{sec:compsplit}
@@ -189,8 +148,12 @@ If a single context exceeds the resource limit, \name breaks down the dataflow g
 multiple contexts and put them in separate VUs.
 During partitioning, \name maps each subgraph of the large dataflow graph into a new context, 
 mirrors the control states of the original context, and streams live variables in between.
-We can formulate the problem of where to partition in the dataflow graph as an optimization problem, shown in
+We can formulate the problem of how to partition in the dataflow graph as an optimization problem, shown in
 \Cref{tab:partprob}.
+The partitioner ``fixes'' the VU based on a single PU specification, albeit there are many potential PUs 
+the decomposed VU can be mapped to.
+Currently, we use a heuristic to select a PU type from \texttt{G[v]} right before the compute pruning 
+as a guiding constraint for partitioning.
 
 \begin{table*}
   \centering
@@ -202,10 +165,10 @@ We can formulate the problem of where to partition in the dataflow graph as an o
   \textbf{Constraints} & 
   \begin{minipage}{12cm}
   \begin{outline}
-  \0 Each partition must not exceeds the limit on number of \vspace{-0.2cm}
+  \0 Each partition must not exceeds the limit on the number of \vspace{-0.2cm}
     \1 live in/out variables (I/O ports) \vspace{-0.2cm}
     \1 operations (pipeline stages), \vspace{-0.2cm}
-    \1 and live variables across stages (pipeline registers), etc.\vspace{-0.2cm}
+    \1 and live variables across operations (pipeline registers), etc.\vspace{-0.2cm}
   \0 No \emph{new} cycles can be formed across partitions other than the cycles in the original
   dataflow graph.
   \end{outline}
@@ -237,12 +200,12 @@ Moreover, community detection algorithms do not enforce the cycle constraints.
 Finally, the edge connectivity in community detection counts the number of edges across partitions, as supposed to broadcast edges.
 
 \paragraph{Retiming}
-To pipeline all partitions at full-throughput, \name{} must retime the imbalanced data paths between partitions with sufficient buffering. 
-Retiming can introduce new VUs in addition to partitioned VUs.
-The objective of this phase is to minimize the number of partitions after retiming and minimizing the amount of connectivities between partitions.
+Imbalanced data paths across partitions can cause pipeline stalls at runtime.
+To pipeline at full-throughput, \name needs to insert retiming buffers along imbalanced data path across
+partitions.
+Retiming introduces new VUs in addition to partitioned VUs, which attributes to cost in
+\Cref{tab:partprob}'s objective.
 
-The partitioner ``fixes'' the VU based on a single PU specification, albeit there are many potential PUs the decomposed VU can be mapped to.
-Currently, we use a heuristic to select a PU type from the $dom(VU)$ right before the compute pruning as a guiding constraint for partitioning.
 In the following sections, we present a traversal-based solution that provides a decent solution with fast compile time, and a convex optimization solver-based solution that provides an optimum solution with long turn-around time.
 
 \begin{figure}
@@ -322,3 +285,50 @@ To limit $B$ to a small size, we use the traversal solution to determines the in
 }
 \label{fig:split}
 \end{figure*}
+
+\subsection{Memory Partitioning} \label{sec:memsplit}
+The memory pruner addresses VUs with virtual on-chip scratchpad memories exceeding the physical limits in capacity or number of banks in a PU.
+Memories in the input graph can have arbitrary size and number of virtual banks.
+The PUs, on the other hand, contains a small number of fix-sized 1-D scratchpad banks.
+
+To partition the virtual memory, \name{} shards the large virtual memory into multiple memory partitioned VUs, and assign each partition with a subset of the virtual banks.
+Each accessor provides a bank ID (BI) that selects which banks to access and a bank offset (BO) that specifies the address within the bank. 
+BI and BO can be vectorized.
+\name{} can use multiple banks within a PU to form a larger virtual bank.
+However, if a virtual bank in VU exceeds the total capacity of all physical banks within a PU, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PU.
+To do so, \name{} injects additional calculation to derive the sub-bank ID and sub-bank offset from the BO, and flattens the sub-bank ID with the previous BI to form the new BI and the new BO.
+
+%The number of banks required in VU increases with parallelization of the program to increase memory access bandwidth.
+%The memory is further multi-buffered to enable coarse-grained pipelining across loop nests\cite{sptial}.
+%The total amount of banks required is the product of the number of banks along all dimensions.
+%The capacity per bank is the capacity of the logical memory divided by the number of banks.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=1\columnwidth]{figs/memsplit.pdf}
+  \caption{An example of splitting a memory to serve parallel requesters.}
+  \label{fig:memsplit}
+\end{figure}
+
+\name{} then set ups the crossbar data path between the parallel producers, memory partitions, and parallel consumers.
+As discussed in \Cref{sec:sync}, each accessor is split into a requester context and receiver context.
+For each memory partition, \name{} uses an context to merge the requests from all parallel requesters, \Cref{fig:memsplit}.
+The merge context uses a special shuffle operator that shuffles the BO vector from the order in BI to the order aligned with banks in its partition.
+If a bank in the partition is not accessed in BI, the output of the shuffle is marked as invalid.
+We assume the capacity of each physical bank is much smaller than $2^{31}$. 
+So we use the first bit of the 32-bit BO to indicate invalid accesses (0 is invalid), which is also used to explicitly disabled access from the program.
+Next, the merger context uses a tree of bit-wise OR operators to combine all bank-aligned BOs, and send the combined request vector to its partition.
+The requests can be trivially ORed because static banking (\Cref{sec:background}) guarantees that no two requesters access the same bank in the same cycle.
+Next, the memory partitions broadcast the respond to all receiver contexts.
+A receiver takes response from all partitions, using the same shuffle operators to align each response back to the requested order in BI, and uses another OR tree to merge the response. 
+The BI is forwarded from the requester to the receiver for the reverse shuffling.
+
+The alternative approach is to reverse the respond to access ordering within the memory partitions before sending them to the requester.
+This approach does not scale with network bandwidth, as the memory partitions need to send the receiver number of distinct outputs.
+(The number of receivers is a function of the parallelization factor.) 
+As a result, the amount of output bandwidth at the memory partition limits how much the program can be parallelized, which causes underutilization of the accelerators.
+In our scheme, each partition sends a single broadcast to all receivers, which is efficiently handled by the network.
+
+The request trees for memory partition and receiver can have high fan-in, which can 
+be partitioned into a tree of VU during the compute partitioning phase in \Cref{sec:compsplit}.
+
