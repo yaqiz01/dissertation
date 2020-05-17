@@ -65,6 +65,8 @@ spare DAGs, which improves utilization.
     prune(G, pruners)\;
     \tcc{Global merging}
     merge(G)\;
+    \tcc{Heuristic check on whether assignment is feasible}
+    check(G)\;
     \tcc{Virtual to physical assignment}
     backtracking\_assign(G)\;
   }
@@ -103,6 +105,33 @@ spare DAGs, which improves utilization.
   \texttt{ValueSet}.}
   \label{algo:resalloc}
 \end{algorithm}
+
+\begin{algorithm}
+  \Fn(\tcc*[h]{Assignment feasibility check}){check(G)}{
+    \KwData{G: bipartite graph}
+    \KwResult{whether assignment is possible}
+    \tcc{For every value set in \texttt{G}}
+    \For{V \KwTo G.values().toSet()} {
+      K = $\emptyset$\;
+      \For{v \KwTo V} {
+        \For{k \KwTo G[v]} {
+          \If{G[k] $\subset$ V} {
+            K += k\;
+          }
+        }
+      }
+      \If{|K| > |V|} {
+        \KwRet{failure()}\;
+      }
+    }
+    \KwRet{success()}\;
+  }
+  \caption{Heuristic check on whether it is possible to assign all key with an value in a bipartite
+  graph. Given there are only a few types of hardware tiles, $G.values().toSet()$ is
+  relatively small. This algorithm roughly runs in $O(|G.keys()|\times|G.values()|)$, which is
+  still much faster than the backtracking assignment, which has exponential runtime.}
+  \label{algo:check}
+\end{algorithm}
  
 %% backtracking_assignment(vu, dom)
 As shown in \Cref{algo:resalloc}, the \emph{resource allocation} phase contains three steps:
@@ -129,7 +158,9 @@ together. Most aggregation rules are simple, such as addition, logical or, max, 
 The in- and out-degree increases are tricker and will be detailed in \Cref{sec:compsplit}.
 
 \paragraph{Virtual to Physical Assignment}
-Next, \name performs a quick heuristic check on the bipartite graph to see if there exists a possible assignment with enough PUs, and provide feedback on the critical resources, otherwise.
+Next, \name performs a quick heuristic check on the bipartite graph to see if there exists a
+possible assignment for all VUs with sufficient PUs (\Cref{algo:check}), and provide feedback on the
+limiting resources, otherwise.
 Finally, \name assigns each VU to a PU type with a backtracking search on the pruned bipartite
 graph.
 
