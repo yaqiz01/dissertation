@@ -111,43 +111,6 @@ Currently, we rely on the user to perform manually perform this optimization.
 }
 \label{fig:reversehoisting}
 \end{figure*}
-
-\begin{figure*}
-\centering
-\hfill
-\begin{subfigure}[b]{0.35\textwidth}
-\includegraphics[width=1\textwidth]{figs/algo2.pdf}
-\caption{Resource Comparison}
-\end{subfigure}
-\hfill
-\begin{subfigure}[b]{0.64\textwidth}
-\centering
-\begin{tabular}{lccccc}
-  \toprule
-  \input{data/algo2_split.tex}
- \bottomrule
-\end{tabular}
-\caption{
-  Compile time for spltting
-}
-\vspace{0.1cm}
-\begin{tabular}{lccccc}
-  \toprule
-  \input{data/algo2_merge.tex}
- \bottomrule
-\end{tabular}
-\caption{
-  Compile time for merging
-}
-\vspace{0.65cm}
-\end{subfigure}
-\hfill
-\caption[Partitioning and merging algorithm comparison]{
-  Partitioning and merging algorithm comparison. (a) shows the normalized resource usage between
-  different algorithms (the lower the better). (b) and (c) shows the compile time of each algorithm.
-}
-\label{fig:split}
-\end{figure*}
 %\subparagraph{Dead Code Elimination (DCE)} 
 %We perform aggressive DCE on the VBDFG and only keeps computation that gets materialized to accelerator I/O and DRAM.
 %\subparagraph{Constant Propagation}

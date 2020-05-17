@@ -1,39 +1,150 @@
-\section{Program Decomposition} \label{sec:decompose}
-The output of the previous step (\Cref{sec:control}) is a VBDFG that correctly executes the original program on an RDA without resource constraint. 
-The {\em PB allocation} phase enforces and addresses constraint violations given a hardware specification of the RDA. 
-In the end, each VB is assigned to a PB type used by PaR to map VBs onto the actual PBs.
+\section{Resource Allocation} \label{sec:decompose}
 
-In contrast to a combined VB allocation and assignment approach, where each VB is allocated for a specific type of PB, our approach enables maximum resource utilization with specialization in PBs, because we model what resource each VB consumes and each PB processes without tracking what types they are.
-For example, an application without DRAM access can use the specialized DRAM address generator PB to perform other computations.
+The output of the transformation (\Cref{sec:control}) is a VUDFG that 
+can execute on a Plasticine with infinite-sized physical units (PUs).
+The \emph{Resource Allocation} phase enforces and addresses constraint violations given 
+the specification of the Plasticine units. 
+At the end of this phase, \name assigns each VU in the VUDFG graph to a PU type with required
+resources; the placer then takes the type assignments and determines the final placement.
 
-To enforce resource constraints, \name{} uses a VB-PB bipartite graph to keep track of potential valid assignments between the two.
-We refer to PBs with connection to a VB as the domain of the VB $dom(VB)$.
-Starting from a complete bipartite graph, a list of pruning steps, each considers a different type of on-chip resource and incrementally removes the edges that violate their resource constraints.
-The hard constraints restrict VBs to PBs to assigned resources, such as scratchpads and memory controller interfaces.
-The soft constraints, such as the number of operations in a PB, are ``fixable'' by decomposing the VB.
-The soft constraint pruners contain fallback partitioning transformations that attempt to fix VBs with empty domains.
-The compilation stops if a VB has an empty domain that cannot be fixed.
-The partitioning and pruning can be an iterative process. 
-For example, the memory partitioning can introduce new computation that requires compute partitioning.
-After all VBs have at least one PB in their domain, \name{} triggers a merging step that compacts the small VBs with slack room in their PBs into larger VB to improve PB utilization.
-Next, we perform a quick heuristic check on the bipartite graph to see if there exists a possible assignment with enough PBs, and provide feedback on the critical resources, otherwise.
-Finally, \name{} assigns each VB to a PB type with a backtracking search on the pruned bipartite graph and feeds the VBDFG with assigned PB types to the PaR phase.
-\Cref{sec:memsplit} and \Cref{sec:compsplit} detail the two major partitioning on memory and compute.
-We have another partitioner encoding valid rule to decompose a BlackBox IP block available on the RDA.
+Accelerators often have heterogeneity in compute resources to improve efficiency for commonly used
+special operations.
+In Plasticine, PMUs and DAGs have specialized compute pipelines for address calculation that are 
+less capable than the compute pipeline in PCUs.
+However, heterogeneity tends to reduce average utilization because different applications, and even the same
+application with different data sizes, can vary highly in the desired ratio among different resource.
+A compute-bound application, for example, can heavily underutilize the DAGs and PMUs.
+To address this problem, \name model the virtual to physical assignment as a constraint satisfaction problem; 
+each VU consumes a set of resources and can only be assigned to a PU if the PU processes the required resources. 
+%Instead of using heuristics to assign certain a type of VU to a type of PU, we
+\Cref{tab:resource} shows the types of resources in Plasticine's heterogeneous units.
+For example, special connection to off-chip memory interface is
+also treated as a type of resource in the DAG, which forces virtual contexts accessing DRAM to map to DAGs. 
+On the other side, regular contexts with non-vectorized fixed-point operations can also be mapped to spare DAGs.
+\begin{table*}
+  \centering
+\begin{tabular}{lcccc}
+  \toprule
+  Feature & PCU & PMU & DAG & Host Unit\\ \midrule
+  Vector lane width & 16 & 16 & 1 & 1 \\
+  Fixed-point op & \cmark & \cmark & \cmark & \xmark\\
+  Float-point op & \cmark & \xmark & \xmark & \xmark\\
+  Reduction tree & \cmark & \xmark & \xmark & \xmark\\
+  \# Vector FIFO & 6 & 6 & 4 & 0\\
+  \# Scalar FIFO & 6 & 6 & 4 & 16\\
+  \# Control FIFO & 16 & 16 & 4 & 16\\
+  Scratchpad banks & 0 & 16 & 0 & 0 \\
+  Scratchpad capacity & 0 & 256kB & 0 & 0\\
+  MergeBuffer & \cmark & \xmark & \xmark & \xmark\\
+  Splitter & \cmark & \xmark & \xmark & \xmark\\
+  Scanner & \cmark & \xmark & \xmark & \xmark\\
+  Access to DRAM Interface & \xmark & \xmark & \cmark & \xmark \\
+  Access to Host IO & \xmark & \xmark & \xmark & \cmark \\
+ \bottomrule
+\end{tabular}
+\caption[Mapping between data-structure to hardware memories]{
+  MergeBuffer, Splitter, and Scanner are new hardware introduced in \cite{gorgon} and \cite{capstan}
+  to support database and sparsity in Plasticine.
+}
+\label{tab:resource}
+\end{table*}
 
-\subsection{Virtual Memory Decomposition} \label{sec:memsplit}
-The memory pruner addresses VBs with virtual on-chip scratchpad memories exceeding the physical limits in capacity or number of banks in a PB.
+\begin{algorithm}
+  \Fn(\tcc*[h]{A recursive pruning function}){prune(G, pruners)}{
+    \KwData{G: bipartite graph between VUs and PUs}
+    \KwData{pruners: a list of constraint pruners to check
+    and fixes constraint violations}
+    \KwResult{The function update G by removing VU-PU edges that violates constraints guarded by
+    pruners. The function may fail and raise an exception.}
+
+    \For{pruner \KwTo pruners}{
+      \For{v \KwTo G.keys()}{
+        \For{p \KwTo G[v]} {
+          \If{!pruner.fit(v,p)} {
+            G[v] -= p\;
+          }
+        }
+        \If{G[v].empty()} {
+          \tcc{Partition VU v based on resource constraints registered in pruner. 
+          Not all resources can be partitioned and this step may fail.
+          If succeeded, the function returns a new set of VUs.}
+          V' = pruner.partition(v)\;
+          G' = \KwNew BipartiteGraph()\;
+          G'[V'] = G.values()\;
+          prune(G',pruners)\;
+          G -= v\;
+          G[V'] = G'[V']\;
+        }
+      }
+    }
+  }
+  \vspace{0.5cm}
+  \Fn(\tcc*[h]{Allocation Algorithm}){alloc(V, P, pruners)}{
+    \KwData{V: a set of VUs from the VUDFG}
+    \KwData{P: a set of PUs on the hardware}
+    \KwData{pruners: a list of constraint pruners to check
+    and fixes constraint violations}
+    \tcc{Initialize a complete bipartite graph}
+    G = \KwNew BipartiteGraph()\;
+    G[V] = P\;
+    \tcc{Constraint resolution}
+    prune(G, pruners)\;
+    \tcc{Global merging}
+    merge(G)\;
+    \tcc{Virtual to physical assignment}
+    backtracking\_assign(G)\;
+  }
+  \caption{Resource allocation}
+  \label{algo:resalloc}
+\end{algorithm}
+ 
+%% backtracking_assignment(vu, dom)
+As shown in \Cref{algo:resalloc}, the \emph{resource allocation} phase contains three steps:
+\emph{constraint resolution}, \emph{global optimization}, and \emph{virtual to physical assignment}.
+\name uses a VU-PU bipartite graph (\texttt{G}) to keep track of potential valid assignments between the two.
+Initially, \texttt{G} is initialized to a complete bipartite graph, i.e. all VUs can be assigned to
+all PUs.
+
+\paragraph{Constraint Resolution}
+A list of constraint pruners, each considering a set of on-chip resources, 
+incrementally remove the VU-PU edges that violate the resource constraints.
+If a VU \texttt{v} has no mappable PU after pruning, the pruner attempts to fix the violation by
+decomposing the VU into multiple VUs. 
+Not all resources can be composed and the partitioning transformation may fail.
+If succeeded, the partitioner generates a new set of VUs \texttt{V'}. \name starts a new complete bipartite
+graph between \texttt{V'} and all resources \texttt{P}, and recursively prune on \texttt{V'}.
+If succeeded, the original graph \texttt{G} is updated with \texttt{V'} and their pruned resources.
+
+\paragraph{Global Merging}
+After all VUs have at least one PU in the bipartite graph, \name triggers a global optimization that merges 
+small VUs into a larger VU to reduce fragmentation in allocation.
+Each type of resource has a summation rule to compute how the resource usage change if two VUs are merged
+together.
+
+\paragraph{Virtual to Physical Assignment}
+Next, \name performs a quick heuristic check on the bipartite graph to see if there exists a possible assignment with enough PUs, and provide feedback on the critical resources, otherwise.
+Finally, \name assigns each VU to a PU type with a backtracking search on the pruned bipartite
+graph.
+
+This approach can be easily extended to handle new heterogeneous tile in the hardware by registering
+new resources and partitioning rules.
+The rest of this section will focus on two types of partitioning transformations---memory and
+compute partitioning in \Cref{sec:memsplit} and \Cref{sec:compsplit}. 
+%We have another partitioner encoding valid rule to decompose a BlackBox IP block available on the RDA.
+
+\subsection{Memory Partitioning} \label{sec:memsplit}
+The memory pruner addresses VUs with virtual on-chip scratchpad memories exceeding the physical limits in capacity or number of banks in a PU.
 Memories in the input graph can have arbitrary size and number of virtual banks.
-The PBs, on the other hand, contains a small number of fix-sized 1-D scratchpad banks.
+The PUs, on the other hand, contains a small number of fix-sized 1-D scratchpad banks.
 
-To partition the virtual memory, \name{} shards the large virtual memory into multiple memory partitioned VBs, and assign each partition with a subset of the virtual banks.
+To partition the virtual memory, \name{} shards the large virtual memory into multiple memory partitioned VUs, and assign each partition with a subset of the virtual banks.
 Each accessor provides a bank ID (BI) that selects which banks to access and a bank offset (BO) that specifies the address within the bank. 
 BI and BO can be vectorized.
-\name{} can use multiple banks within a PB to form a larger virtual bank.
-However, if a virtual bank in VB exceeds the total capacity of all physical banks within a PB, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PB.
+\name{} can use multiple banks within a PU to form a larger virtual bank.
+However, if a virtual bank in VU exceeds the total capacity of all physical banks within a PU, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PU.
 To do so, \name{} injects additional calculation to derive the sub-bank ID and sub-bank offset from the BO, and flattens the sub-bank ID with the previous BI to form the new BI and the new BO.
 
-%The number of banks required in VB increases with parallelization of the program to increase memory access bandwidth.
+%The number of banks required in VU increases with parallelization of the program to increase memory access bandwidth.
 %The memory is further multi-buffered to enable coarse-grained pipelining across loop nests\cite{sptial}.
 %The total amount of banks required is the product of the number of banks along all dimensions.
 %The capacity per bank is the capacity of the logical memory divided by the number of banks.
@@ -45,18 +156,16 @@ To do so, \name{} injects additional calculation to derive the sub-bank ID and s
   \label{fig:memsplit}
 \end{figure}
 
-\input{text/solver_table}
-
 \name{} then set ups the crossbar data path between the parallel producers, memory partitions, and parallel consumers.
-As discussed in \Cref{sec:sync}, each accessor is split into a requester actor and receiver actor.
-For each memory partition, \name{} uses an actor to merge the requests from all parallel requesters, \Cref{fig:memsplit}.
-The merge actor uses a special shuffle operator that shuffles the BO vector from the order in BI to the order aligned with banks in its partition.
+As discussed in \Cref{sec:sync}, each accessor is split into a requester context and receiver context.
+For each memory partition, \name{} uses an context to merge the requests from all parallel requesters, \Cref{fig:memsplit}.
+The merge context uses a special shuffle operator that shuffles the BO vector from the order in BI to the order aligned with banks in its partition.
 If a bank in the partition is not accessed in BI, the output of the shuffle is marked as invalid.
 We assume the capacity of each physical bank is much smaller than $2^{31}$. 
 So we use the first bit of the 32-bit BO to indicate invalid accesses (0 is invalid), which is also used to explicitly disabled access from the program.
-Next, the merger actor uses a tree of bit-wise OR operators to combine all bank-aligned BOs, and send the combined request vector to its partition.
+Next, the merger context uses a tree of bit-wise OR operators to combine all bank-aligned BOs, and send the combined request vector to its partition.
 The requests can be trivially ORed because static banking (\Cref{sec:background}) guarantees that no two requesters access the same bank in the same cycle.
-Next, the memory partitions broadcast the respond to all receiver actors.
+Next, the memory partitions broadcast the respond to all receiver contexts.
 A receiver takes response from all partitions, using the same shuffle operators to align each response back to the requested order in BI, and uses another OR tree to merge the response. 
 The BI is forwarded from the requester to the receiver for the reverse shuffling.
 
@@ -67,31 +176,31 @@ As a result, the amount of output bandwidth at the memory partition limits how m
 In our scheme, each partition sends a single broadcast to all receivers, which is efficiently handled by the network.
 
 The request trees for memory partition and receiver can have high fan-in, which can 
-be partitioned into a tree of VB during the compute partitioning phase in \Cref{sec:compsplit}.
+be partitioned into a tree of VU during the compute partitioning phase in \Cref{sec:compsplit}.
 
-\subsection{Virtual Compute Decomposition} 
+\subsection{Compute Partitioning} 
 \label{sec:compsplit}
 
 \subparagraph{Partitioning.}
-The {\em compute-partitioning} phase addresses VBs using more compute than any PB can provide. 
-If a VB contains multiple actors, \name{} first attempts to move the actors into separate VBs.
-If a single actor exceeds the resource limit, \name{} breaks down the large dataflow graph in the actor into multiple actors and put them in separate VBs.
-During partitioning, \name{} maps each subgraph of the large dataflow graph into a new actor, mirrors the control states of the original actor, and streams live variables in between.
-The PB constraint includes the number of operations, input, and output ports available in the PBs.
+The {\em compute-partitioning} phase addresses VUs using more compute resource than any PU can provide. 
+If a VU contains multiple contexts, \name{} first attempts to move the contexts into separate VUs.
+If a single context exceeds the resource limit, \name{} breaks down the large dataflow graph in the context into multiple contexts and put them in separate VUs.
+During partitioning, \name{} maps each subgraph of the large dataflow graph into a new context, mirrors the control states of the original context, and streams live variables in between.
+The PU constraint includes the number of operations, input, and output ports available in the PUs.
 Because the global network is specialized to handle efficient broadcasts, the in- and out-degree constraint counts the number of broadcast edges, as supposed to edges between partitions (\Cref{fig:parteg}(a)).
 In addition, the partitioned subgraphs cannot form {\em new} cycle between partitions that did not exists in the original VGDFG. 
 \Cref{fig:parteg} (b) shows an illegal partitioning that fails the cycle constraint.
-This is because each actor is enabled atomically by all of its data-dependencies; cyclic dependencies between actors cause deadlock.
+This is because each context is enabled atomically by all of its data-dependencies; cyclic dependencies between contexts cause deadlock.
 The original dataflow graph, however, can contain cycles that correspond to LCDs.
 The back edge of the LCD is initialized with dummy data to enable execution in the first iteration.
 
 \subparagraph{Retiming.}
 To pipeline all partitions at full-throughput, \name{} must retime the imbalanced data paths between partitions with sufficient buffering. 
-Retiming can introduce new VBs in addition to partitioned VBs.
+Retiming can introduce new VUs in addition to partitioned VUs.
 The objective of this phase is to minimize the number of partitions after retiming and minimizing the amount of connectivities between partitions.
 
-The partitioner ``fixes'' the VB based on a single PB specification, albeit there are many potential PBs the decomposed VB can be mapped to.
-Currently, we use a heuristic to select a PB type from the $dom(VB)$ right before the compute pruning as a guiding constraint for partitioning.
+The partitioner ``fixes'' the VU based on a single PU specification, albeit there are many potential PUs the decomposed VU can be mapped to.
+Currently, we use a heuristic to select a PU type from the $dom(VU)$ right before the compute pruning as a guiding constraint for partitioning.
 In the following sections, we present a traversal-based solution that provides a decent solution with fast compile time, and a convex optimization solver-based solution that provides an optimum solution with long turn-around time.
 
 \begin{figure}
@@ -123,13 +232,51 @@ For DFS, we re-sort the remaining list each time we start with a new partition.
 At a high-level, we use a boolean matrix $B$ to keep track of the assignment of nodes in the dataflow graph to partitions. 
 $B$ has dimension of number of nodes to number of partitions, where$B[i,j]==1$ indicates an assignment of node $i$ to partition $j$. 
 Each node is constrained to have a single partition assignment.
-The input and output arity constraints show the formulation of the PB I/O constraints.
+The input and output arity constraints show the formulation of the PU I/O constraints.
 These are the two most challenging constraints as we need to identify broadcast edges across partitions.
 To address the cycle constraint, we introduce a delay vector $d$ with size equal to the number of nodes. 
 The delay vector encodes a schedule to execute each node. 
 A node cannot execute earlier than its input dependencies and cannot be scheduled later than its output dependencies (Delay Consistency).
 The dependency constraint further limits nodes belonging to the same partition to have the same delay.
-This delay variable is also used to calculate where retiming is required and projection of the amount of retiming VBs introduced. 
-The final object is just the sum of partitioned VBs and retiming VBs.
+This delay variable is also used to calculate where retiming is required and projection of the amount of retiming VUs introduced. 
+The final object is just the sum of partitioned VUs and retiming VUs.
 To limit $B$ to a small size, we use the traversal solution to determines the initial column size of $B$.
 
+\input{text/solver_table}
+
+\begin{figure*}
+\centering
+\hfill
+\begin{subfigure}[b]{0.35\textwidth}
+\includegraphics[width=1\textwidth]{figs/algo2.pdf}
+\caption{Resource Comparison}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.64\textwidth}
+\centering
+\begin{tabular}{lccccc}
+  \toprule
+  \input{data/algo2_split.tex}
+ \bottomrule
+\end{tabular}
+\caption{
+  Compile time for spltting
+}
+\vspace{0.1cm}
+\begin{tabular}{lccccc}
+  \toprule
+  \input{data/algo2_merge.tex}
+ \bottomrule
+\end{tabular}
+\caption{
+  Compile time for merging
+}
+\vspace{0.65cm}
+\end{subfigure}
+\hfill
+\caption[Partitioning and merging algorithm comparisons]{
+  Partitioning and merging algorithm comparisons. (a) shows the normalized resource usage between
+  different algorithms (the lower the better). (b) and (c) shows the compile time of each algorithm.
+}
+\label{fig:split}
+\end{figure*}

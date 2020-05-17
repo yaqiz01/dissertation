@@ -28,6 +28,20 @@
 \usepackage{caption}
 \usepackage{subcaption}
 
+\usepackage{algorithm2e}
+\SetStartEndCondition{ }{}{}%
+\SetKwProg{Fn}{Function}{\string:}{}
+%\SetKwProg{Fn}{}{}{}
+\SetKw{KwTo}{in}
+\SetKw{KwNew}{new}
+\SetKwIF{If}{ElseIf}{Else}{if}{:}{elif}{else:}{}%
+\SetKwFor{For}{for}{\string:}{}%
+\SetKwFor{While}{while}{:}{}%
+\AlgoDontDisplayBlockMarkers%
+\SetAlgoNoEnd%
+\SetAlgoNoLine%
+\SetKwFunction{Range}{range}%%
+
 \usepackage[hidelinks]{hyperref}
 \usepackage[capitalise]{cleveref}
 \usepackage{xspace} 
