@@ -250,11 +250,24 @@ optimization-based algorithm with an optimum solution but long compile time.
     of illegal partition result due to the cycle between partition 1 and 2.
   }
   \label{fig:parteg}
+
+  \includegraphics[width=0.8\columnwidth]{figs/partcycleeg.pdf}
+  \caption[Compute partitioning examples with cycle]{
+    Compute partitioning examples with cycle in the dataflow graph.
+    Solution 1 is valid because there is no 
+    cycle between partitions after removing the back edge in
+    the original graph in Solution 1. 
+    Solution 2 is invalid because there is still cycle between partition 1 and 2 after
+    removing the original back edge.
+  }
+  \label{fig:parteg}
 \end{figure}
 
 \subsubsection{Traversal-based Solution}
+The traversal-based solution iteratively adds nodes to a partition until the partition can fit no
+more nodes.
 To address the cycle constraint, we perform a topological sort of the dataflow graph.
-The topological traversal ignores the back-edge in the graph and produces a list of traversed nodes. 
+The topological traversal ignores the back-edge of the cycles during traversal. 
 The compiler starts from the beginning of the list, recursively adds nodes into a partition until the partition no longer satisfies the hardware constraint, and repeats the process with a new partition.
 This approach guarantees that no cycle is introduced with $O(V+E)$ complexity, where $V$ and $E$ are the numbers of vertices and edges.
 However, the outcome of the partitioning is a function of the traversal order, which does not guarantee an optimum solution, which we experienced with depth-first search (DFS) and breadth-first search (BFS) with forwarding and backward traversals.

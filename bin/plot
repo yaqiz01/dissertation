@@ -141,11 +141,16 @@ class Graph():
     def __init__(self, *args, **kws):
         self.args = args
         self.kws = kws
-    def __enter__(self):
         self.graph = pydot.Dot(graph_type="digraph")
+    def __enter__(self):
         return self
+
     def __exit__(self, type, value, traceback):
-        self.graph.write_pdf(*self.args, **self.kws)
+        self.write_pdf(*self.args, **self.kws)
+
+    def write_pdf(self, *args, **kws):
+        print("Generate to " + ' '.join(args))
+        self.graph.write_pdf(*args, **kws)
 
     def node(self, name, **kws):
         attr = kws.copy()
@@ -163,6 +168,14 @@ class Graph():
         e = pydot.Edge(src, dst, **kws)
         self.graph.add_edge(e)
         return e
+
+    def subgraph(self,*args, **kws):
+        sub = pydot.Subgraph(*args, **kws)
+        self.graph.add_subgraph(sub)
+        return sub
+
+    def get_node(self, id):
+        return self.graph.get_node(id)
 
 class DGraph(Graph):
     def __init__(self, *args, **kws):
@@ -231,10 +244,186 @@ def plot_dep():
         G.bedge(W2,W1,**edgeattr)
         G.bedge(R1,W1,**edgeattr)
 
+
+partnodeattr = {}
+partnodeattr['shape']="circle"
+partnodeattr['penwidth']=3
+partnodeattr['fillcolor']="#3f65b8"
+partnodeattr['style']="filled"
+partnodeattr['fontcolor']="white"
+partnodeattr['fontname']="Raleway bold"
+
+partsubgraphattr = {}
+partsubgraphattr['color'] = 'black'
+partsubgraphattr['style'] = 'rounded'
+
+partedgeattr = {}
+partedgeattr['style'] = 'bold'
+
+def create_part_dfg():
+    graph = Graph()
+    A = graph.node("A", **partnodeattr)
+    B = graph.node("B", **partnodeattr)
+    C = graph.node("C", **partnodeattr)
+    D = graph.node("D", **partnodeattr)
+    E = graph.node("E", **partnodeattr)
+    F = graph.node("F", **partnodeattr)
+    G = graph.node("G", **partnodeattr)
+    H = graph.node("H", **partnodeattr)
+    edge1 = graph.edge(A,B,**partedgeattr)
+    edge2 = graph.edge(A,C,**partedgeattr)
+    edge3 = graph.edge(B,D,**partedgeattr)
+    edge4 = graph.edge(C,D,**partedgeattr)
+    edge5 = graph.edge(B,E,**partedgeattr)
+    edge6 = graph.edge(E,F,**partedgeattr)
+    edge7 = graph.edge(D,F,**partedgeattr)
+    edge8 = graph.edge(H,D,**partedgeattr)
+    edge9 = graph.edge(H,B,**partedgeattr)
+    edge10 = graph.edge(G,C,**partedgeattr)
+    edge11 = graph.edge(G,F,**partedgeattr)
+    return graph, partnodeattr, partsubgraphattr
+
+def plot_part_dfg():
+    graph, nodeattr, subgraphattr = create_part_dfg()
+    graph.write_pdf('figs/part_dfg.pdf')
+
+def set_enode(graph, name):
+    node = graph.get_node(name)[0]
+    node.set_fillcolor("#ffcc5c")
+    node.set_fontcolor("black")
+
+def plot_part():
+    graph, nodeattr, subgraphattr = create_part_dfg()
+    cu1 = graph.subgraph('cluster_a', **subgraphattr)
+    cu1.add_node(graph.get_node("A")[0])
+    cu1.add_node(graph.get_node("B")[0])
+    cu1.add_node(graph.get_node("H")[0])
+    cu1.add_node(graph.get_node("G")[0])
+    cu1.add_node(graph.get_node("C")[0])
+    cu2 = graph.subgraph('cluster_b', **subgraphattr)
+    cu2.add_node(graph.get_node("E")[0])
+    cu2.add_node(graph.get_node("D")[0])
+    cu2.add_node(graph.get_node("F")[0])
+    set_enode(graph, "B")
+    set_enode(graph, "C")
+    set_enode(graph, "G")
+    set_enode(graph, "H")
+    graph.graph.obj_dict['nodes'].clear()
+
+    graph.write_pdf('figs/part.pdf')
+
+def plot_part2():
+    graph, nodeattr, subgraphattr = create_part_dfg()
+    cu1 = graph.subgraph('cluster_a', **subgraphattr)
+    cu1.add_node(graph.get_node("A")[0])
+    cu1.add_node(graph.get_node("B")[0])
+    cu1.add_node(graph.get_node("H")[0])
+    cu1.add_node(graph.get_node("G")[0])
+    cu1.add_node(graph.get_node("C")[0])
+    cu1.add_node(graph.get_node("D")[0])
+    cu2 = graph.subgraph('cluster_b', **subgraphattr)
+    cu2.add_node(graph.get_node("E")[0])
+    cu2.add_node(graph.get_node("F")[0])
+    set_enode(graph, "B")
+    set_enode(graph, "D")
+    set_enode(graph, "G")
+    graph.graph.obj_dict['nodes'].clear()
+    graph.write_pdf('figs/part2.pdf')
+
+def plot_part_invalid():
+    graph, nodeattr, subgraphattr = create_part_dfg()
+    cu1 = graph.subgraph('cluster_a',**subgraphattr)
+    cu1.add_node(graph.get_node("A")[0])
+    cu1.add_node(graph.get_node("B")[0])
+    cu1.add_node(graph.get_node("H")[0])
+    cu1.add_node(graph.get_node("E")[0])
+    cu1.add_node(graph.get_node("F")[0])
+    cu1.add_node(graph.get_node("D")[0])
+    cu2 = graph.subgraph('cluster_c', **subgraphattr)
+    cu2.add_node(graph.get_node("C")[0])
+    cu2.add_node(graph.get_node("G")[0])
+    set_enode(graph, "A")
+    set_enode(graph, "C")
+    set_enode(graph, "G")
+    graph.graph.obj_dict['nodes'].clear()
+    graph.write_pdf('figs/part_invalid.pdf')
+
+def create_part_cycle():
+    graph = Graph()
+    A = graph.node("A", **partnodeattr)
+    B = graph.node("B", **partnodeattr)
+    C = graph.node("C", **partnodeattr)
+    D = graph.node("D", **partnodeattr)
+    E = graph.node("E", **partnodeattr)
+    F = graph.node("F", **partnodeattr)
+    G = graph.node("G", **partnodeattr)
+    # graph.edge(A,B,**partedgeattr)
+    graph.edge(A,C,**partedgeattr)
+    graph.edge(B,D,**partedgeattr)
+    graph.edge(C,D,**partedgeattr)
+    graph.edge(B,E,**partedgeattr)
+    graph.edge(E,F,**partedgeattr)
+    graph.edge(D,F,**partedgeattr)
+    graph.edge(G,C,**partedgeattr)
+    graph.edge(G,E,**partedgeattr)
+    graph.edge(F,C,color="#ff4000", **partedgeattr)
+    return graph, partnodeattr, partsubgraphattr
+
+def plot_part_cycle_valid():
+    graph, nodeattr, subgraphattr = create_part_cycle()
+    cu1 = graph.subgraph('cluster_a', **subgraphattr)
+    cu1.add_node(graph.get_node("A")[0])
+    cu1.add_node(graph.get_node("B")[0])
+    cu1.add_node(graph.get_node("G")[0])
+    cu1.add_node(graph.get_node("C")[0])
+    cu1.add_node(graph.get_node("D")[0])
+    cu2 = graph.subgraph('cluster_b', **subgraphattr)
+    cu2.add_node(graph.get_node("E")[0])
+    cu2.add_node(graph.get_node("F")[0])
+    set_enode(graph, "B")
+    set_enode(graph, "D")
+    set_enode(graph, "G")
+    set_enode(graph, "F")
+    graph.graph.obj_dict['nodes'].clear()
+
+    graph.write_pdf('figs/part_cycle_valid.pdf')
+
+def plot_part_cycle_invalid():
+    graph, nodeattr, subgraphattr = create_part_cycle()
+    cu1 = graph.subgraph('cluster_a', **subgraphattr)
+    cu1.add_node(graph.get_node("B")[0])
+    cu1.add_node(graph.get_node("G")[0])
+    cu1.add_node(graph.get_node("D")[0])
+    cu2 = graph.subgraph('cluster_b', **subgraphattr)
+    cu2.add_node(graph.get_node("A")[0])
+    cu2.add_node(graph.get_node("C")[0])
+    cu2.add_node(graph.get_node("E")[0])
+    cu2.add_node(graph.get_node("F")[0])
+    set_enode(graph, "B")
+    set_enode(graph, "G")
+    set_enode(graph, "D")
+    set_enode(graph, "C")
+    graph.graph.obj_dict['nodes'].clear()
+
+    graph.write_pdf('figs/part_cycle_invalid.pdf')
+
+def plot_part_cycle():
+    graph, nodeattr, subgraphattr = create_part_cycle()
+    graph.write_pdf('figs/part_cycle.pdf')
+
 def main():
 
-    plot_mlp()
+    # plot_mlp()
     # plot_gpu_slide()
     # plot_dep()
+
+    # plot_part_dfg()
+    # plot_part()
+    # plot_part2()
+    # plot_part_invalid()
+
+    plot_part_cycle()
+    plot_part_cycle_valid()
+    plot_part_cycle_invalid()
 
 main()
