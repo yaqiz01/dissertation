@@ -181,7 +181,7 @@ During partitioning, \name maps each subgraph of the large dataflow graph into a
 mirrors the control states of the original context, and streams live variables in between.
 We can formulate the problem of how to partition in the dataflow graph as an optimization problem, shown in
 \Cref{tab:partprob}.
-The partitioner ``fixes'' the VU based on a single PU specification, albeit there are many potential PUs 
+The partitioner ``fixes'' the VU \texttt{v} based on a single PU specification, albeit there are many potential PUs 
 the decomposed VU can be mapped to.
 Currently, we use a heuristic to select a PU type from \texttt{G[v]} right before the compute pruning 
 as a guiding constraint for partitioning.
@@ -232,12 +232,14 @@ Finally, the edge connectivity in community detection counts the number of edges
 
 \paragraph{Retiming}
 Imbalanced data paths across partitions can cause pipeline stalls at runtime.
-To pipeline at full-throughput, \name needs to insert retiming buffers along imbalanced data path across
+To ensure full-throughput pipelining, \name needs to insert retiming buffers along imbalanced data path across
 partitions.
-Retiming introduces new VUs in addition to partitioned VUs, which attributes to cost in
+Retiming introduces new VUs in addition to the partitioned VUs, which attributes to the cost in
 \Cref{tab:partprob}'s objective.
 
-In the following sections, we present a traversal-based solution that provides a decent solution with fast compile time, and a convex optimization solver-based solution that provides an optimum solution with long turn-around time.
+In the following sections, we present two algorithms to solve this problem--
+a traversal-based algorithm providing a decent solution with fast compile time, and a convex
+optimization-based algorithm with an optimum solution but long compile time.
 
 \begin{figure}
   \centering
