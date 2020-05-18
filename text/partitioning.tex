@@ -222,6 +222,7 @@ Nonetheless, the original graph might contain cycles representing loop carried d
 accumulation. For these cycles, \name initialize the back edge of the cycle with dummy data to
 enable execution.
 \Cref{fig:parteg} shows examples of valid and invalid partitioning solutions.
+\Cref{fig:partcycleeg} shows a valid and invalid solution for a dataflow graph with cycle.
 
 \paragraph{Community Detection}
 The formulation of compute partitioning is similar to the community detection problem\cite{community}, which has similar
@@ -264,36 +265,98 @@ optimization-based algorithm with an optimum solution but long compile time.
 \end{figure}
 
 \subsubsection{Traversal-based Solution}
-The traversal-based solution iteratively adds nodes to a partition until the partition can fit no
-more nodes.
-To address the cycle constraint, we perform a topological sort of the dataflow graph.
-The topological traversal ignores the back-edge of the cycles during traversal. 
-The compiler starts from the beginning of the list, recursively adds nodes into a partition until the partition no longer satisfies the hardware constraint, and repeats the process with a new partition.
-This approach guarantees that no cycle is introduced with $O(V+E)$ complexity, where $V$ and $E$ are the numbers of vertices and edges.
-However, the outcome of the partitioning is a function of the traversal order, which does not guarantee an optimum solution, which we experienced with depth-first search (DFS) and breadth-first search (BFS) with forwarding and backward traversals.
+To address the cycle constraint, the traversal-based algorithm performs a topological sort of the dataflow graph.
+The topological traversal ignores the back edges in the graph. 
+Staring from the beginning of the sorted list, the algorithm iteratively adds nodes into a partition
+until it fits no more nodes. The algorithm then repeat the process with a new partition.
+This approach guarantees that no cycle is introduced with $O(V+E)$ complexity, 
+where $V$ and $E$ are the numbers of vertices and edges in the dataflow graph.
+
+The partitioning result is a function of the traversal order.
+We experienced with depth-first search (DFS) and breadth-first search (BFS) with forward and
+backward traversal orders.
 For DFS, we re-sort the remaining list each time we start with a new partition.
 
-%The forward traversal schedules nodes as earlier as possible, which reduces the number of
-%external live variables and the backward traversal minimizes the number of internal variables.
-%The DFS minimizes the number of live variables between partitions, albeit producing more imbalanced paths between
-%partitions. On the other hand, BFS produces more balanced partitioning with more live variables and partitions.
-
 \subsubsection{Solver-based Solution}
-\Cref{tab:solver-eqns} gives our formulation of the partitioning problem.
+The convex optimization solution models the problem as a node to partition assignment problem.
+\Cref{tab:solver-eqns} gives our formulation.
 At a high-level, we use a boolean matrix $B$ to keep track of the assignment of nodes in the dataflow graph to partitions. 
-$B$ has dimension of number of nodes to number of partitions, where$B[i,j]==1$ indicates an assignment of node $i$ to partition $j$. 
+$B$ has the dimension of number of nodes by number of partitions, where$B[i,j]==1$ indicates that
+node $i$ is assigned to partition $j$.
 Each node is constrained to have a single partition assignment.
+\gist{talk about other regular constraints}
 The input and output arity constraints show the formulation of the PU I/O constraints.
 These are the two most challenging constraints as we need to identify broadcast edges across partitions.
 To address the cycle constraint, we introduce a delay vector $d$ with size equal to the number of nodes. 
-The delay vector encodes a schedule to execute each node. 
-A node cannot execute earlier than its input dependencies and cannot be scheduled later than its output dependencies (Delay Consistency).
-The dependency constraint further limits nodes belonging to the same partition to have the same delay.
-This delay variable is also used to calculate where retiming is required and projection of the amount of retiming VUs introduced. 
-The final object is just the sum of partitioned VUs and retiming VUs.
-To limit $B$ to a small size, we use the traversal solution to determines the initial column size of $B$.
+The delay vector encodes a schedule to execute each node and the schedule is selected by the
+solver.
+A node cannot be scheduled earlier than its input dependencies and later than its output dependencies (Delay Consistency).
+\name further limits nodes belonging to the same partition to have the same delay.
+In addition to enforce the cycle constraint, 
+this delay variable is also used to calculate where retiming is required and 
+project the amount of introduced retiming VUs. 
+To reduce the solving time, we also use the traversal-based solution to warm start the assignment matrix
+$B$.
 
 \input{text/solver_table}
+
+\subsubsection{Comparison}
+\todo{Benchmark Table}
+\Cref{fig:split} shows the comparison between the traversal-based and the solver-based solutions for both
+compute partitioning and global merging.
+Global merging is an global optimization merging small VUs into a large VU that can still fit in
+a PU. 
+The merging algorithm is very similar to the compute partitioning algorithm, where nodes in the
+dataflow graph correspond to the VUs in a VUDFG. 
+The merging problem also has a traversal-based and solver-based solution.
+\Cref{sec:opt} will discuss about merging in more details.
+
+We used a commercial solver Gurobi~\cite{gurobi} for the solver-based solutions. 
+The evaluation is performed on a Intel Xeon E7-8890 CPU at 2.5GHz with 1TB DDR4 RAM. 
+Gurobi is parallelized across 10 threads for each application.
+To speedup convergence, we configured Gurobi with 15\% optimality gap, i.e. the solver is allowed to early 
+stop after the solution is more than 85\% close to the optimum. 
+%To speed up convergence, we use a 15\% optimality gap that stops the solver at a reasonable solution.
+The solving time increase dramatically as getting close to 100\% optimum.
+
+\Cref{fig:split} (a) shows the normalized resource in number of VUs after partitining and merging.
+We can see that Gurobi provides almost the best solution for all application when it can derive
+an answer in a reasonable amount of time. The missing solver bar in random forest (\emph{rf}) partitioning
+is due to timeout after a few days.
+The traversal-based algorithms can sometimes match or even outperform the solver slightly.
+However, because the partitioning result is a function of the traversal order, 
+each traversal order has adversarial cases, where they can be up to 1.7x worse in resource 
+than the best possible solution.
+The forward (\emph{fwd}) traversal order schedules nodes as earlier as possible, which reduces the number of
+external live variables; the backward traversal minimizes the number of internal live variables
+across partitions.
+The depth-first-search (DFS) traversal order minimizes the number of live variables between partitions, 
+albeit producing more imbalanced paths between partitions. 
+On the other hand, breath-first-search (BFS) produces more balanced partitioning with more live variables and partitions.
+
+There are two common graph patterns in applications that require partitioning. 
+The first is a data-flow graph from a large basic block, which contains a small set of external
+live-in and live-out variables and abundant of intermediate temporary variables.
+Such graphs typically have long-live variables that require retiming.
+\todo{continue}
+
+\Cref{fig:split} (b) and (c) shows the compile time for these algorithms. The single-threaded
+traversal-based algorithm runs in minutes, which is significantly faster than the parallelized
+solver that takes hours to days.
+In general, the solver runtime becomes quickly unscalable with a large amount of VBs.
+\todo{show solver time with increase number of VBs}.
+
+In a summary, the solver solution provides a guaranteed close-to-optimum solution at an expensive
+compile time. The solver-solution also treats the retiming and partitioning as a joint optimization,
+whereas these two problems are solved in two separate passes in the traversal-based solution.
+Moreover, the solver-based solution tends to produce better result for an architecture with tight I/O
+bound and relax stage constraint.
+The traversal-based solutions, on the other hand, can produce a decent solution in a short amount of
+time.
+However, the solution is prune to adversarial cases and potentially perform badly for unseen graph structure.
+In practice, we can combine the two approaches and invoke the expensive solver only when the
+traversal-based solution is insufficient. The quality of partitioning can be easily estimated by the
+resource utilization in each partition.
 
 \begin{figure*}
 \centering
