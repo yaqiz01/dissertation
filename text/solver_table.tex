@@ -44,6 +44,10 @@
     $b_d$ & Constant, $\nnint$ & \ccell{Maximum input\\ buffer depth} & HW Spec \\[0.5cm]
     $K$ & Constant, $\mathbb{R}_+$ & \ccell{Very Large Constant, used\\ for constraint activation} & $P \times N$ \\[0.5cm]
     $\alpha_d$ & Hyperparameter, $\mathbb{R}_+$ & \ccell{Retime merging\\ probability multiplier}& $\frac{1}{\max\{c_o, c_i\}}$ \\[0.5cm]
+    $\mathcal{C}_r$& \ccell{$[\mathcal{N} \to \mathbb{R}_+,\mathbb{R}_+, [\mathbb{R}_+]$\\$ \to \mathbb{R}_+]$} & 
+    \ccell{List of per-node values, limits,\\ and reduction functions for\\ reducible constraints}& Supplemental Materials\\[0.7cm]
+
+    F & $\{0, 1\}^{N \times P}$ & \ccell{Feasibility matrix, whether a\\ partition can support a node}& HW Spec \\ 
     \bottomrule
   \end{tabularx}
   \caption{Names and definitions used in the solver-based partitioning.}
@@ -55,13 +59,14 @@
   \begin{tabularx}{\textwidth}{cll}
     \toprule
 		\textbf{Type} & \textbf{Description} & \textbf{Expression}\\\midrule
-    \multirow{3}{*}{\lcell{Cost\\Function}} & Allocated Partitions & $\Sigma_i \projb{\Sigma_j B_{i, j}}$\\
+    \multirow{3}{*}{\ccell{Cost\\Function}} & Allocated Partitions & $\Sigma_i \projb{\Sigma_j B_{i, j}}$\\
 
     & \lcell{Additional Retiming\\Partitions}
     & $\alpha_d \Sigma_{n_i \to n_j \in \mathcal{E}} \projb{\max\{d_n(j) - d_n(i) - b_d, 0\}}$\\[0.3cm]
 		\hline
 
-    \multirow{12}{*}{\lcell{\\\\Constraint}} & Partition Assignment & $ \forall n_i \in \mathcal{N}:\ \Sigma_j B_{i, j} = 1$\\[0.1cm]
+    \multirow{13}{*}{\ccell{Partition\\Constraint}}
+    & Partition Assignment & $ \forall n_i \in \mathcal{N}:\ \Sigma_j B_{i, j} = 1$\rule{0pt}{0.4cm}\\[0.1cm]
 
     &\lcell{Dependency\\Constraint} & $\forall n_i \to n_j \in \mathcal{E}:\ d_n(i) + 1[p_i \ne p_j] \le d_n(j)$\\[0.1cm]
 
@@ -84,32 +89,15 @@
     \lcell{
       $\forall n_i \in \mathcal{N}:\ d_n(i) \le K$\\
 		  $\forall i \in [0, P):\ d_p(i) \le K$
-    } \\
+    } \\[0.4cm] \hline
+
+    \multirow{3}{*}{\ccell{Merge\\Constraint}}
+    & Feasibility Constraint & $ \forall i, j \in [0, N) \times [0, P):\ B_{i, j} \le F_{i, j}$\rule{0pt}{0.5cm}\\[0.3cm]
+
+    & Reducible Constraints & 
+    \lcell{$\forall j \in [0, P).\ \forall (c(\cdot), c_v, r(\cdot)) \in \mathcal{C}:$\\$ r([c(n_i) \times B_{i, j}]_{n_i \in \mathcal{N}}) \le c_v$}\\
     \bottomrule
 	\end{tabularx}
   \caption{Solver formulation for partitioning*.}
 	\label{tab:solver-eqns}
 \end{table*}
-
-\begin{table*}
-	\begin{tabular}{c | c | c | c}
-		\textbf{Name} & \textbf{Type} & \textbf{Description} & \textbf{Definition / Default}\\\hline
-		$\mathcal{C}_r$& $[\mathcal{N} \to \mathbb{R}_+,\mathbb{R}_+, [\mathbb{R}_+] \to \mathbb{R}_+]$ & List of per-node values, limits, and reduction& Supplemental Materials\\&& functions for reducible constraints& \\
-		F & $\{0, 1\}^{N \times P}$ & Feasibility matrix, whether a partition can support a node& HW Spec \\ 
-	\end{tabular}
-	\caption{\Cref{tab:solver-variables} extension for solver-based merging, which is a generalization of the partitioning problem.}
-	\label{tab:merging-variables}
-
-	\begin{tabular}{c | c | c}
-		\textbf{Type} & \textbf{Description} & \textbf{Expression}\\\hline
-		Constraint & Feasibility Constraint & $ \forall i, j \in [0, N) \times [0, P):\ B_{i, j} \le F_{i, j}$\\
-		& Reducible Constraints & $\forall j \in [0, P).\ \forall (c(\cdot), c_v, r(\cdot)) \in \mathcal{C}:\ r([c(n_i) \times B_{i, j}]_{n_i \in \mathcal{N}}) \le c_v$\\
-	\end{tabular}
-  \caption{\Cref{tab:solver-eqns} extension for solver-based merging*. The Retiming Partition objective is not used for merging.}
-	\label{tab:merge-eqns}
-  \scriptsize
-  \raggedright
-  \vspace{-0.3cm}
-  *Expressions are presented using the Disciplined Convex Programming ruleset \cite{DCP, DCP-online}. Explanations for selected expressions can be found in the supplemental material.
-\end{table*}
-
