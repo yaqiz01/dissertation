@@ -1,64 +1,87 @@
+\newcommand{\lcell}[1]{\makecell[l]{#1}}
+\newcommand{\ccell}[1]{\makecell[c]{#1}}
 \begin{table*}
   \centering
-	\begin{tabular}{c | c | c | c}
-		\textbf{Name} & \textbf{Type} & \textbf{Description} & \textbf{Definition / Default}\\\hline
-		$\mathcal{N}$ & Constant & Enumeration of nodes to partition, numbered $\{n_i\}_i$ & - \\
-		N & Constant, $\nnint$ & Number of operations to partition & $N = |\mathcal{N}|$\\
-		P & Constant, $\nnint$ & Number of partitions to consider & $N$, or from heuristic \\
-		$\mathcal{E}$ & Constant, $\{n_i \to n_j\}$& Directed edges representing dependence & - \\
-		B & Variable, $\{0, 1\}^{N \times P}$ & Boolean Partitioning Matrix& - \\
-		%p & Variable, $\nnint^N$ & Vector of mappings from node to assigned partition& $p = B \begin{bmatrix} 0 & 1 & \cdots & P-1\end{bmatrix}^T$\\
-		$\projb{\cdot}$ & $\nnint \to \mathbb{B}$ & Function to convert a positive integer into a boolean& Supplemental Materials\\
-		$\andf(\cdot, \cdot)$ & $\{0, 1\} \times \{0, 1\} \to \{0, 1\}$ & Boolean and of binary variables & Supplemental Materials \\ 
-		$d_p$ & Variable, $\nnint^P$ & Vector of partition delays & - \\
-		$d_n$ & Variable, $\nnint^N$ & Vector of node delays & - \\
-		$\dest(n)$ & $\mathcal{N} \to \mathcal{P}(\mathcal{N})$& The set of nodes which depend on $n$& $\{n' | n' \in \mathcal{N}\ s.t.\ (n \to n') \in \mathcal{E}\}$\\
-		$c_o$ & Constant, $\nnint$ & Maximum output arity of a partition & HW Spec \\
-		$c_i$ & Constant, $\nnint$ & Maximum input arity of a partition & HW Spec \\
-		$b_d$ & Constant, $\nnint$ & Maximum input buffer depth & HW Spec \\
-		$K$ & Constant, $\mathbb{R}_+$ & Very Large Constant, used for constraint activation & $P \times N$ \\
-		$\alpha_d$ & Hyperparameter, $\mathbb{R}_+$ & Retime merging probability multiplier& $\frac{1}{\max\{c_o, c_i\}}$ \\
-	\end{tabular}
-	\caption{Names and definitions used in the solver-based partitioning.}
-	\label{tab:solver-variables}
+
+  %\scriptsize
+	%\begin{tabular}{c | c | c | c}
+		%\textbf{Name} & \textbf{Type} & \textbf{Description} & \textbf{Definition / Default}\\\hline
+		%$\mathcal{N}$ & Constant & Enumeration of nodes to partition, numbered $\{n_i\}_i$ & - \\
+		%N & Constant, $\nnint$ & Number of operations to partition & $N = |\mathcal{N}|$\\
+		%P & Constant, $\nnint$ & Number of partitions to consider & $N$, or from heuristic \\
+		%$\mathcal{E}$ & Constant, $\{n_i \to n_j\}$& Directed edges representing dependence & - \\
+		%B & Variable, $\{0, 1\}^{N \times P}$ & Boolean Partitioning Matrix& - \\
+		%%p & Variable, $\nnint^N$ & Vector of mappings from node to assigned partition& $p = B \begin{bmatrix} 0 & 1 & \cdots & P-1\end{bmatrix}^T$\\
+		%$\projb{\cdot}$ & $\nnint \to \mathbb{B}$ & Function to convert a positive integer into a boolean& Supplemental Materials\\
+		%$\andf(\cdot, \cdot)$ & $\{0, 1\} \times \{0, 1\} \to \{0, 1\}$ & Boolean and of binary variables & Supplemental Materials \\ 
+		%$d_p$ & Variable, $\nnint^P$ & Vector of partition delays & - \\
+		%$d_n$ & Variable, $\nnint^N$ & Vector of node delays & - \\
+		%$\dest(n)$ & $\mathcal{N} \to \mathcal{P}(\mathcal{N})$& The set of nodes which depend on $n$& $\{n' | n' \in \mathcal{N}\ s.t.\ (n \to n') \in \mathcal{E}\}$\\
+		%$c_o$ & Constant, $\nnint$ & Maximum output arity of a partition & HW Spec \\
+		%$c_i$ & Constant, $\nnint$ & Maximum input arity of a partition & HW Spec \\
+		%$b_d$ & Constant, $\nnint$ & Maximum input buffer depth & HW Spec \\
+		%$K$ & Constant, $\mathbb{R}_+$ & Very Large Constant, used for constraint activation & $P \times N$ \\
+		%$\alpha_d$ & Hyperparameter, $\mathbb{R}_+$ & Retime merging probability multiplier& $\frac{1}{\max\{c_o, c_i\}}$ \\
+	%\end{tabular}
+
+  \begin{tabularx}{\textwidth}{cccc}
+    \toprule
+    \textbf{Name} & \textbf{Type} & \textbf{Description} & \textbf{Definition / Default}\\
+    \midrule
+    $\mathcal{N}$ & Constant & \ccell{Enumeration of nodes to\\ partition, numbered $\{n_i\}_i$} & - \\[0.5cm]
+    N & Constant, $\nnint$ & \ccell{Number of operations\\ to partition} & $N = |\mathcal{N}|$\\[0.5cm]
+    P & Constant, $\nnint$ & \ccell{Number of partitions\\ to consider} & $N$, or from heuristic \\[0.5cm]
+    $\mathcal{E}$ & Constant, $\{n_i \to n_j\}$& \ccell{Directed edges representing\\ dependence} & - \\[0.5cm]
+    B & Variable, $\{0, 1\}^{N \times P}$ & \ccell{Boolean Partitioning\\ Matrix}& - \\[0.5cm]
+    %p & Variable, $\nnint^N$ & Vector of mappings from node to assigned partition& $p = B \begin{bmatrix} 0 & 1 & \cdots & P-1\end{bmatrix}^T$\\
+    $\projb{\cdot}$ & $\nnint \to \mathbb{B}$ & \ccell{Function to convert a\\ positive integer into\\ a boolean}& Supplemental Materials\\[0.5cm]
+    $\andf(\cdot, \cdot)$ & \ccell{$\{0, 1\} \times \{0, 1\}$\\$ \to \{0, 1\}$} & \ccell{Boolean and of\\ binary variables} & Supplemental Materials \\ [0.5cm]
+    $d_p$ & Variable, $\nnint^P$ & Vector of partition delays & - \\[0.5cm]
+    $d_n$ & Variable, $\nnint^N$ & Vector of node delays & - \\[0.5cm]
+    $\dest(n)$ & $\mathcal{N} \to \mathcal{P}(\mathcal{N})$& \ccell{The set of nodes\\ which depend on $n$} & $\{n' | n' \in \mathcal{N}\ s.t.\ (n \to n') \in \mathcal{E}\}$\\[0.5cm]
+    $c_o$ & Constant, $\nnint$ & \ccell{Maximum output arity\\ of a partition} & HW Spec \\[0.5cm]
+    $c_i$ & Constant, $\nnint$ & \ccell{Maximum input arity\\ of a partition} & HW Spec \\[0.5cm]
+    $b_d$ & Constant, $\nnint$ & \ccell{Maximum input\\ buffer depth} & HW Spec \\[0.5cm]
+    $K$ & Constant, $\mathbb{R}_+$ & \ccell{Very Large Constant, used\\ for constraint activation} & $P \times N$ \\[0.5cm]
+    $\alpha_d$ & Hyperparameter, $\mathbb{R}_+$ & \ccell{Retime merging\\ probability multiplier}& $\frac{1}{\max\{c_o, c_i\}}$ \\[0.5cm]
+    \bottomrule
+  \end{tabularx}
+  \caption{Names and definitions used in the solver-based partitioning.}
+  \label{tab:solver-variables}
 \end{table*}
 
 \begin{table*}
   \centering
-  \newcommand\cola{1.6cm}
-  \newcommand\colb{3.8cm}
-  \newcommand\colc{9cm}
-  \newcommand{\gcell}[2]{\Gape[#1cm][0cm]{\makecell[l]{#2}}}
-  \begin{tabularx}{\textwidth}{cp{\colb}X}
+  \begin{tabularx}{\textwidth}{cll}
     \toprule
 		\textbf{Type} & \textbf{Description} & \textbf{Expression}\\\midrule
-    \multirow{3}{*}{\makecell[l]{Cost\\Function}} & Allocated Partitions & $\Sigma_i \projb{\Sigma_j B_{i, j}}$\\
+    \multirow{3}{*}{\lcell{Cost\\Function}} & Allocated Partitions & $\Sigma_i \projb{\Sigma_j B_{i, j}}$\\
 
-    & \makecell[l]{Additional Retiming\\Partitions}
+    & \lcell{Additional Retiming\\Partitions}
     & $\alpha_d \Sigma_{n_i \to n_j \in \mathcal{E}} \projb{\max\{d_n(j) - d_n(i) - b_d, 0\}}$\\[0.3cm]
 		\hline
 
-    \multirow{12}{\cola}{\makecell[l]{\\\\Constraint}} & Partition Assignment & $ \forall n_i \in \mathcal{N}:\ \Sigma_j B_{i, j} = 1$\\[0.1cm]
+    \multirow{12}{*}{\lcell{\\\\Constraint}} & Partition Assignment & $ \forall n_i \in \mathcal{N}:\ \Sigma_j B_{i, j} = 1$\\[0.1cm]
 
-    &\makecell[l]{Dependency\\Constraint} & $\forall n_i \to n_j \in \mathcal{E}:\ d_n(i) + 1[p_i \ne p_j] \le d_n(j)$\\[0.1cm]
+    &\lcell{Dependency\\Constraint} & $\forall n_i \to n_j \in \mathcal{E}:\ d_n(i) + 1[p_i \ne p_j] \le d_n(j)$\\[0.1cm]
 
-    &\makecell[l]{Output Arity\\ Constraint} 
-    &\makecell[l]{
+    &\lcell{Output Arity\\ Constraint} 
+    &\lcell{
       $\forall p \in [0, P):$ \\
       $\Sigma_{n_s \in \mathcal{N}} \andf(B_{s, p}, \projb{\max\{(\Sigma_{n_d \in \dest(n_s)} B_{d, p}) -$ \\
       $K \times B_{s, p}, 0\}}) \le c_o$
     }\\[0.7cm]
 
-    &\makecell[l]{Input Arity Constraint\\ (vectorized)} & $\Sigma_{n_i \in \mathcal{N}} \max\{\projb{\Sigma_{n_j \in \dest(n_i)} B_{j, :}} - B_{i, :}, 0\} \le c_i \times \vec{1}$\\
+    &\lcell{Input Arity Constraint\\ (vectorized)} & $\Sigma_{n_i \in \mathcal{N}} \max\{\projb{\Sigma_{n_j \in \dest(n_i)} B_{j, :}} - B_{i, :}, 0\} \le c_i \times \vec{1}$\\
 
 		&Delay Consistency& 
-    \makecell[l]{
+    \lcell{
     $\forall n_i \in \mathcal{N}:\ d_n(i) \le \min_j (d_p(j) + K - B_{i, j} \times K)$ \\
 		$\forall n_i \in \mathcal{N}:\ d_n(i) \ge \max_j (d_p(j) + B_{i, j} \times K - K)$
     }\\[0.5cm]
 
 		&Constant Validity& 
-    \makecell[l]{
+    \lcell{
       $\forall n_i \in \mathcal{N}:\ d_n(i) \le K$\\
 		  $\forall i \in [0, P):\ d_p(i) \le K$
     } \\
