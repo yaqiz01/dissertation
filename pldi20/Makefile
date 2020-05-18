@@ -1,4 +1,5 @@
-TARGET=paper
+TARGET=supplement
+#TARGET=paper
 all: pdf
 
 pdf:

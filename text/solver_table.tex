@@ -50,7 +50,7 @@
     F & $\{0, 1\}^{N \times P}$ & \ccell{Feasibility matrix, whether a\\ partition can support a node}& HW Spec \\ 
     \bottomrule
   \end{tabularx}
-  \caption{Names and definitions used in the solver-based partitioning.}
+  \caption{Names and definitions used in the solver-based algorithms.}
   \label{tab:solver-variables}
 \end{table*}
 
@@ -59,25 +59,26 @@
   \begin{tabularx}{\textwidth}{cll}
     \toprule
 		\textbf{Type} & \textbf{Description} & \textbf{Expression}\\\midrule
-    \multirow{3}{*}{\ccell{Cost\\Function}} & Allocated Partitions & $\Sigma_i \projb{\Sigma_j B_{i, j}}$\\
+    \multirow{2.5}{*}{\ccell{Cost\\Function}} 
+    & Allocated Partitions & $\Sigma_i \projb{\Sigma_j B_{i, j}}$\\[0.2cm]
 
-    & \lcell{Additional Retiming\\Partitions}
+    & \lcell{Retiming Partitions}
     & $\alpha_d \Sigma_{n_i \to n_j \in \mathcal{E}} \projb{\max\{d_n(j) - d_n(i) - b_d, 0\}}$\\[0.3cm]
 		\hline
 
     \multirow{13}{*}{\ccell{Partition\\Constraint}}
     & Partition Assignment & $ \forall n_i \in \mathcal{N}:\ \Sigma_j B_{i, j} = 1$\rule{0pt}{0.4cm}\\[0.1cm]
 
-    &\lcell{Dependency\\Constraint} & $\forall n_i \to n_j \in \mathcal{E}:\ d_n(i) + 1[p_i \ne p_j] \le d_n(j)$\\[0.1cm]
+    &\lcell{Input Arity Constraint\\ (vectorized)} & $\Sigma_{n_i \in \mathcal{N}} \max\{\projb{\Sigma_{n_j \in \dest(n_i)} B_{j, :}} - B_{i, :}, 0\} \le c_i \times \vec{1}$\\
 
     &\lcell{Output Arity\\ Constraint} 
     &\lcell{
       $\forall p \in [0, P):$ \\
       $\Sigma_{n_s \in \mathcal{N}} \andf(B_{s, p}, \projb{\max\{(\Sigma_{n_d \in \dest(n_s)} B_{d, p}) -$ \\
       $K \times B_{s, p}, 0\}}) \le c_o$
-    }\\[0.7cm]
+    }\\[0.5cm]
 
-    &\lcell{Input Arity Constraint\\ (vectorized)} & $\Sigma_{n_i \in \mathcal{N}} \max\{\projb{\Sigma_{n_j \in \dest(n_i)} B_{j, :}} - B_{i, :}, 0\} \le c_i \times \vec{1}$\\
+    &\lcell{Dependency\\Constraint} & $\forall n_i \to n_j \in \mathcal{E}:\ d_n(i) + 1[p_i \ne p_j] \le d_n(j)$\\[0.1cm]
 
 		&Delay Consistency& 
     \lcell{
@@ -98,6 +99,8 @@
     \lcell{$\forall j \in [0, P).\ \forall (c(\cdot), c_v, r(\cdot)) \in \mathcal{C}:$\\$ r([c(n_i) \times B_{i, j}]_{n_i \in \mathcal{N}}) \le c_v$}\\
     \bottomrule
 	\end{tabularx}
-  \caption{Solver formulation for partitioning*.}
+  \caption{Solver formulation for partitioning. 
+  Expressions are presented using the Disciplined Convex Programming ruleset \cite{DCP, DCP-online}. Explanations for selected expressions can be found in the supplemental material.
+  }
 	\label{tab:solver-eqns}
 \end{table*}
