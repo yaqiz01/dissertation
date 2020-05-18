@@ -222,7 +222,7 @@ Nonetheless, the original graph might contain cycles representing loop carried d
 accumulation. For these cycles, \name initialize the back edge of the cycle with dummy data to
 enable execution.
 \Cref{fig:parteg} shows examples of valid and invalid partitioning solutions.
-\Cref{fig:partcycleeg} shows a valid and invalid solution for a dataflow graph with cycle.
+\Cref{fig:partcycleeg} shows another example partitioning for a dataflow graph with cycle.
 
 \paragraph{Community Detection}
 The formulation of compute partitioning is similar to the community detection problem\cite{community}, which has similar
@@ -238,7 +238,7 @@ partitions.
 Retiming introduces new VUs in addition to the partitioned VUs, which attributes to the cost in
 \Cref{tab:partprob}'s objective.
 
-In the following sections, we present two algorithms to solve this problem--
+In the following sections, we present two algorithms to solve this problem:
 a traversal-based algorithm providing a decent solution with fast compile time, and a convex
 optimization-based algorithm with an optimum solution but long compile time.
 
@@ -247,7 +247,8 @@ optimization-based algorithm with an optimum solution but long compile time.
   \includegraphics[width=1\columnwidth]{figs/parteg.pdf}
   \caption[Compute partitioning examples]{
     Compute partitioning examples. Solution 1 and 2 are both valid partitioning. Solution 2 is
-    better because it has less number of broadcast edges across partitions. Solution 3 is an example
+    better because it has less number of broadcast edges (3 as supposed to 4 in Solution 1) across partitions. 
+    Solution 3 is an example
     of illegal partition result due to the cycle between partition 1 and 2.
   }
   \label{fig:parteg}
@@ -257,11 +258,11 @@ optimization-based algorithm with an optimum solution but long compile time.
     Compute partitioning examples with cycle in the dataflow graph.
     Solution 1 is valid because there is no 
     cycle between partitions after removing the back edge in
-    the original graph in Solution 1. 
+    the original graph.
     Solution 2 is invalid because there is still cycle between partition 1 and 2 after
-    removing the original back edge.
+    removing the back edge.
   }
-  \label{fig:parteg}
+  \label{fig:partcycleeg}
 \end{figure}
 
 \subsubsection{Traversal-based Solution}
@@ -274,14 +275,14 @@ where $V$ and $E$ are the numbers of vertices and edges in the dataflow graph.
 
 The partitioning result is a function of the traversal order.
 We experienced with depth-first search (DFS) and breadth-first search (BFS) with forward and
-backward traversal orders.
+backward dataflow traversal orders.
 For DFS, we re-sort the remaining list each time we start with a new partition.
 
 \subsubsection{Solver-based Solution}
 The convex optimization solution models the problem as a node to partition assignment problem.
 \Cref{tab:solver-eqns} gives our formulation.
-At a high-level, we use a boolean matrix $B$ to keep track of the assignment of nodes in the dataflow graph to partitions. 
-$B$ has the dimension of number of nodes by number of partitions, where$B[i,j]==1$ indicates that
+At a high-level, we use a boolean matrix $B$ to keep track of the assignment. 
+$B$ has dimension equals to the number of nodes in the dataflow graph by the number of partitions, where$B[i,j]==1$ indicates that
 node $i$ is assigned to partition $j$.
 Each node is constrained to have a single partition assignment.
 \gist{talk about other regular constraints}
