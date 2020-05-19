@@ -7,7 +7,8 @@ Other optimizations can be counter-intuitive, as they introduce redundant comput
 reduces resource without necessarily impacting performance.
 In this discussion, we focus our primary objective on performance.
 Resource is an indirect objective as resource reduction enable larger parallelization factors,
-, which in turn improves performance.
+which in turn improves performance.
+Other objectives, such as power saving, is left as future work.
 
 \subparagraph{Memory strength reduction (msr).} Like traditional strength reduction on arithmetics, \name{} replaces expensive on-chip memories with cheaper memories whenever possible.
 %We map register accumulation in the program with single-cycle initiation interval to pipeline registers.
@@ -24,15 +25,16 @@ This commonly happens when producer and consumer loops of the memory are fully u
 }
 \label{fig:mlp}
 \end{figure*}
-\subparagraph{Retiming with scratchpad (retime-mem).} By default, \name{} uses PB input buffers for retiming purpose. 
+\subparagraph{Retiming with scratchpad (retime-mem).} By default, \name{} uses input buffers in PU for retiming purpose. 
 This option enables \name{} to use scratchpad memory for retiming that requires large buffer depth.
 
 \subparagraph{Crossbar datapath elimination (xbar-elm).}
 Although, crossbars between accessors and memory partitions (\Cref{sec:memsplit}) are very expensive in the general case, the BI sometimes can be statically resolvable with certain combinations of parallelization on memory accesses. 
 When BI is a constant, \name{} can use this information to intelligently assign virtual banks to partitions that reduce the crossbar data path to a partial or a point-to-point connection.
 
-\subparagraph{Read request duplication (dupra).} During memory partitioning (\Cref{sec:memsplit}), instead of forwarding BI from the requester to receiver, \name{} can also duplicate the BI with local state on receiver side, which
-eliminates the unbalanced data path at the cost of extra computation.
+\subparagraph{Read address duplication (dupra).} During memory partitioning (\Cref{sec:memsplit}),
+instead of forwarding BI from the requester to receiver, \name{} can also duplicate the computation 
+BI with local state on receiver side, which eliminates the unbalanced data path at the cost of extra computation.
 
 \begin{figure*}
 \centering
