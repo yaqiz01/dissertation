@@ -1,0 +1,17 @@
+\section{Evaluation (WIP)} \label{sec:eval}
+
+\begin{figure*}
+\centering
+\includegraphics[width=1\textwidth]{figs/slide_gpu.pdf}
+\caption[Performance comparison with V100 GPU]{
+  Plasticine's latency and throughout improvement over V100 GPU.
+  The evaluated Plasticine architecture has area footprint of 352$mm^2$ at 28nm.
+  V100 GPU has area footprint of 815$mm^2$ at 12nm.
+  Both platforms have the same off-chip bandwidth at 1TB/s with HBM technology.
+  Yellow and blue bars show the raw measured speedup in throughput and latency, respectively.
+  To account for the resource discrepancy, the pink bar shows the normalized throughput
+  for compute-bound application--SqueezeNet and LSTM, which scales performance with additionally
+  on-chip resources.
+}
+\label{fig:peakutil}
+\end{figure*}

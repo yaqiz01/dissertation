@@ -13,7 +13,7 @@
 %Therefore, as long as the compututation is executed with the expected number of iterations and the memories are updated consistently, there is no need for any extra synchronization.
 %Next, we walk through how \name{} achieves this in more concrete detail.
 
-\subsection{Loop Division}
+\subsection{Loop Division (Ready)}
 Reviewing the front-end and back-end abstraction of \name, an obvious gap between the two
 abstractions is that the front-end imperative language can contain arbitrary nested control hierarchy, whereas
 the hardware compute engine can only execute perfectly nested loops.
@@ -58,18 +58,18 @@ When executing loop division on a single-threaded CPU, the CPU must context swit
 concurrent loops
 and executing the one with cleared input dependencies.
 Like loop fission, loop division is likely worsen the performance on a processor architecture, as
-the memory footprint of the intermediate result \texttt{tmp} increases from $O(1)$ to $O(N)$.
-On RDAs, the devisied loops are executing
+the worst case memory footprint of the intermediate result \texttt{tmp} increases from $O(1)$ to $O(N)$.
+On RDAs, the divided loops are executing
 concurrently in streaming pipelined fashion. The size of the \texttt{tmp} can be limit to a small fixed
 size, efficiently implemented with a hardware FIFO. 
 Although loop transformations are generally optimizations on CPUs,
 loop division is a required transformation to converts an infeasible program to a feasible one for Plasticine.
 
-Loop fission is not always safe, as it may alters the execution order of the program.
+Loop fission is not always safe, as it may alter the execution order of the program.
 order.
 Loop division, on the other hand, does not change the underlying data-dependency and is always safe.
-To achieve this, loop division needs to introduce additional dummy data dependency to enforce the correct 
-execution.
+To achieve this, loop division needs to introduce additional dummy data dependencies across divided
+loops to enforce the correct execution order.
 \Cref{fig:loopexp2} gives an example of an invalid loop fission and a correct loop division.
 \Cref{fig:sync} gives more detail on how the dummy data-dependency are generated automatically.
 
@@ -89,13 +89,13 @@ execution.
 \inputminted{python}{code/loopexp2division.py}
 \caption{Loop Division}
 \end{subfigure}
-\caption[Example of Loop Fission vs. Loop Division]{
-Example of Loop Fission vs. Loop Division
+\caption[Example of an illegal loop fission and a legal loop division]{
+Example of an illegal loop fission and a legal loop division
 }
 \label{fig:loopexp2}
 \end{figure*}
 
-\subsection{Virtual Context Allocation} 
+\subsection{Virtual Context Allocation (Ready)} 
 
 \begin{figure*}
 \centering
@@ -153,6 +153,7 @@ A basic block maps naturally to a context, as instructions within a basic block 
 Next, \name makes a copy of all controllers enclosing the basic block in the corresponding context;
 these controllers are later converted to counters and control configurations supported by the
 hardware. 
+Effectively, \name performs loop division such that all basic blocks are perfectly nested.
 \Cref{fig:contextalloc} shows an example of the context allocation. 
 With these controllers, contexts can repeat execution for expected number iterations. However,
 data-structures written and read by different contexts are accessed in random order.
@@ -165,7 +166,7 @@ program \emph{only} among contexts accessing a shared memory.
 This way, \name introduces minimum p2p synchronizations among small groups of contexts; contexts
 accessing different memories are naturally parallelized without impacting the final output.
 
-\subsection{Control Allocation} 
+\subsection{Control Allocation (WIP)} 
 \label{sec:sync}
 Starting with all contexts execute in parallel, \name introduces \term{control token}s across contexts
 to serialize their execution order based on the program order.
@@ -178,7 +179,7 @@ access the shared memory.
 We refer to an memory access appeared in the input IR as a \emph{declared access}, as supposed to
 memory accesses executed at runtime.
 \texttt{W1} and \texttt{R1} are examples of two declared accesses in \Cref{fig:contexteg}
-In the rest of this section, we will walk through the detail on how \name allocates control tokens
+In the rest of this section, we will walk through how \name allocates control tokens
 to maintain sequential consistency on Plasticine.
 
 \begin{table*}
@@ -230,15 +231,15 @@ Whether two declared accesses interfere depends on
 
 \Cref{tab:memtype} lists hardware memories available on reconfigurable architectures and software
 data-structures providing similar program semantics.
-The type of the memory matters because they have different programming interface in the hardware.
+The type of the memory matters because they have different programming interface on the hardware.
 For instance, two read accesses does not interfere for DRAM because the DRAM interface permits
 multiple concurrent access streams through multiple DAGs\footnote{All DAGs can access the full DRAM
 address space}. 
-\gist{mension port virtualization}
+%\gist{mension port virtualization}
 Therefore, from the programmer perspective, users do not need
 to serialize the two contexts reading the same DRAM address. 
-SRAMs, on the other hand, have single read 
-and write ports. Programmers must guarantee that a PMU receives read requests from a single context
+SRAMs, on the other hand, have a single read 
+and write port. Programmers must guarantee that a PMU receives read requests from a single context
 at any point in time for correctness.
 \Cref{tab:interferetab} shows the interference relation between different types of memory across
 accesses.
@@ -267,7 +268,7 @@ accesses.
 \end{subfigure}
 
 \caption[Dep Graph]{
-    Dep Graph
+  Dep Graph (WIP)
 }
 \label{fig:depexp}
 \end{figure*}
@@ -275,7 +276,7 @@ accesses.
 For every declared access, \name{} checks on other accesses appeared earlier in the program order
 for a possible forward dependency, and later in the program order for a possible loop-carried dependency (LCD). 
 In the example in \Cref{fig:contexteg}, there is a forward data dependency between \texttt{W1} and
-\texttt{R1}, and a LCD between \texttt{R1} and \texttt{W1}. 
+\texttt{R1}, and a write-after-read LCD between \texttt{R1} and \texttt{W1}. 
 \name builds a dependency graph between declared accesses for each memory.
 \Cref{fig:depexp} gives more examples on how \name
 determines dependencies based on where these accesses are declared in the control hierarchy.
@@ -284,7 +285,7 @@ Enforcing all dependencies in the dependency graph may not be necessary, as enfo
 dependencies can be sufficient to enforce the order of the whole graph.
 Therefore, \name performs a transitive reduction (TR) on the graph to keep the minimum number of dependency edges 
 that preserve the same ordering \cite{tr}.
-Since TR on a cyclic graph is NP-hard, ]name perform TRs on the forward and backward LCD graphs, separately.
+Since TR on a cyclic graph is NP-hard, \name perform TRs on the forward and backward LCD graphs, separately.
 Notice, dependencies between accesses touching different buffers of a multi-buffered memory is less rigid 
 than accesses touching the same buffer.
 Therefore, we can only remove an edge if all dependencies on the equivalent path have a stronger or equivalent 
@@ -336,10 +337,10 @@ For register, SRAM, and DRAM the program order expects that the producer and con
 Since the producer and receiver both have their outer controllers duplicated in their local state, they have independent views for one iteration of the LCA controller, which is when the controller in their ancestors (that is the immediate child of the LCA controller) is completed (\Cref{fig:tokenwhen}(d)).
 The {\em done} signals of these controllers are used to produce and consume the token in contexts, independently.
 
-\subsection{Data-Dependent Control Flow}
+\subsection{Data-Dependent Control Flow (WIP)}
 Using the synchronization discussed in \Cref{sec:sync}, \name can support control constructs that 
-are typically not supported on dataflow accelerators, such as branches and while loops.
-To enable this, the control path of the architecture must permit data-dependency.
+typically are not supported on dataflow accelerators, such as branches and while loops.
+To enable this, the control path of the architecture must permit data dependencies.
 \Cref{fig:dynrange} shows an example of data-dependent loop ranges. \name uses a context to compute
 the loop bound, and the loop bounds are treated as input dependency to the context mapping the loop
 body.

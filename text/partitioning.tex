@@ -1,4 +1,4 @@
-\section{Resource Allocation} \label{sec:decompose}
+\section{Resource Allocation (Ready)} \label{sec:decompose}
 
 The output of the transformation (\Cref{sec:control}) is a VUDFG that 
 can execute on a Plasticine with infinite-sized physical units (PUs).
@@ -12,12 +12,13 @@ special operations.
 In Plasticine, PMUs and DAGs have specialized compute pipelines for address calculation that are 
 less capable than the compute pipeline in PCUs.
 However, heterogeneity tends to reduce average utilization because different applications, and even the same
-application with different data sizes, can vary highly in the desired ratio among different resource.
+application with different data sizes, can vary highly in the desired ratio among different
+resource~\cite{lstml}.
 A compute-bound application, for example, can heavily underutilize the DAGs and PMUs.
 To address this problem, \name models the virtual to physical assignment as a constraint satisfaction problem; 
 each VU consumes a set of resources and can only be assigned to a PU if the PU processes the required resources. 
 %Instead of using heuristics to assign certain a type of VU to a type of PU, we
-\Cref{tab:resource} shows the types of resources in Plasticine's heterogeneous units.
+\Cref{tab:resource} shows the types of resources \name models in Plasticine's heterogeneous units.
 For example, special connection to off-chip memory interface is
 also treated as a type of resource in the DAG, which forces virtual contexts accessing DRAM to map to DAGs. 
 On the other side, regular contexts with non-vectorized fixed-point operations can also be mapped to
@@ -145,7 +146,7 @@ A list of constraint pruners, each considering a set of on-chip resources,
 incrementally remove the VU-PU edges that violate the resource constraints.
 If a VU \texttt{v} has no mappable PU after pruning, the pruner attempts to fix the violation by
 decomposing the VU into multiple VUs. 
-Not all resources can be composed and the partitioning transformation may fail.
+Not all resources are composable and the partitioning transformation may fail.
 If succeeded, the partitioner generates a new set of VUs \texttt{V'}. \name starts a new complete bipartite
 graph between \texttt{V'} and all resources \texttt{P}, and recursively prune on \texttt{V'}.
 If succeeded, the original graph \texttt{G} is updated with \texttt{V'} and their pruned resources.
@@ -153,9 +154,9 @@ If succeeded, the original graph \texttt{G} is updated with \texttt{V'} and thei
 \paragraph{Global Merging}
 After all VUs have at least one PU in the bipartite graph, \name triggers a global optimization that merges 
 small VUs into a larger VU to reduce fragmentation in allocation.
-Each type of resource has an aggregation rule to compute how the resource usages change if two VUs are merged
+Each type of resource has an aggregation rule to compute how the resource cost changes if two VUs are merged
 together. Most aggregation rules are simple, such as addition, logical or, max, or union.
-The in- and out-degree increases are tricker and will be detailed in \Cref{sec:compsplit}.
+The in- and out-degree costs are tricker and will be detailed in \Cref{sec:compsplit}.
 
 \paragraph{Virtual to Physical Assignment}
 Next, \name performs a quick heuristic check on the bipartite graph to see if there exists a
@@ -218,11 +219,11 @@ the in/out-degree of a partition counts the number of unique live-in/out variabl
 number of edges across partitions.
 In addition, the partitioned subgraphs cannot form {\em new} cycles; contexts waits for all
 input dependencies and therefore cycles across contexts cause deadlock. 
-Nonetheless, the original graph might contain cycles representing loop carried dependencies, such as
-accumulation. For these cycles, \name initialize the back edge of the cycle with dummy data to
+Nonetheless, the original graph might contain cycles representing loop-carried dependencies, such as
+accumulation. For these cycles, \name initializes the back edge of the cycle with dummy data to
 enable execution.
 \Cref{fig:parteg} shows examples of valid and invalid partitioning solutions.
-\Cref{fig:partcycleeg} shows another example partitioning for a dataflow graph with cycle.
+\Cref{fig:partcycleeg} shows another partitioning example for a dataflow graph with cycle.
 
 \paragraph{Community Detection}
 The formulation of compute partitioning is similar to the community detection problem\cite{community}, which has similar
@@ -235,6 +236,7 @@ Finally, the edge connectivity in community detection counts the number of edges
 Imbalanced data paths across partitions can cause pipeline stalls at runtime.
 To ensure full-throughput pipelining, \name needs to insert retiming buffers along imbalanced data path across
 partitions.
+\todo{add an example.}
 Retiming introduces new VUs in addition to the partitioned VUs, which attributes to the cost in
 \Cref{tab:partprob}'s objective.
 
@@ -248,8 +250,7 @@ optimization-based algorithm with an optimum solution but long compile time.
   \caption[Compute partitioning examples]{
     Compute partitioning examples. Solution 1 and 2 are both valid partitioning. Solution 2 is
     better because it has less number of broadcast edges (3 as supposed to 4 in Solution 1) across partitions. 
-    Solution 3 is an example
-    of illegal partition result due to the cycle between partition 1 and 2.
+    Solution 3 is an illegal partition result due to the cycle between partition 1 and 2.
   }
   \label{fig:parteg}
 
@@ -293,9 +294,9 @@ The delay vector encodes a schedule to execute each node and the values are sele
 The \emph{dependency constraint} enforces scheduling a node no earlier than its input dependencies, and
 no later than its output dependents.
 Since the operations within a partition has to be triggered atomically, there is another delay
-vector $d_p$ for the partitions. The \emph{delay consistency} enforces the schedule of the node equals to the
+vector $d_p$ for the partitions. The \emph{delay consistency} enforces the schedule of a node equals to the
 schedule of its assigned partition.
-Finally, \emph{constant validity} limits the range of values the delay values can be chosen from.
+Finally, \emph{constant validity} limits the range of values the delay vectors can be chosen from.
 In addition to enforcing the cycle constraint, 
 these delay variables are also used to calculate where retiming is required and 
 project the amount of introduced retiming VUs. 
@@ -342,12 +343,13 @@ There are two common graph patterns in applications that require partitioning.
 The first is a data-flow graph from a large basic block, which contains a small set of external
 live-in and live-out variables and abundant of intermediate temporary variables.
 Such graphs typically end up with long-live variables across partitions that require retiming.
+\todo{show example and discuss the other pattern.}
 
 \Cref{fig:split} (b) and (c) shows the compile time for these algorithms. The single-threaded
 traversal-based algorithm runs in minutes, which is significantly faster than the parallelized
 solver that takes hours to days.
 In general, the solver runtime becomes quickly unbounded with a large amount of VBs.
-\todo{show solver time with increase number of VBs}.
+\todo{show solver time with increasing number of VBs}.
 
 In summary, the solver solution provides a guaranteed close-to-optimum solution at an expensive
 compile time. Nonetheless, the solver-solution treats the retiming and partitioning as a joint optimization,
@@ -407,7 +409,8 @@ As we parallelize the computation, the on-chip memory must provide higher addres
 compute throughput.
 On a processor-based architecture, this is often achieved by associating a separate first-level
 cache for each processor core, as shown in \Cref{fig:memmodel} (a).
-The cache implements a hardware coherence protocol that synchronizes the different copies of data,
+The cache implements a hardware coherence protocol that synchronizes the different copies of data
+behind the scenes,
 providing the abstraction of a shared memory.
 
 \begin{figure}
@@ -442,33 +445,6 @@ functions of the requested logical memory address.
 BI determines which partition each requests is going to, and BO is the offset within the
 partition.
 
-\Cref{fig:memsplit} shows how static banking is achieved on the Plasticine architecture.
-Banking analysis from Spatial specifies the number of banks required to sustain bandwidth for the
-current parallelization factors, and expressions for BIs and BOs. 
-\name groups the banks into virtual memories, with group size limited by number of banks in a PMU.
-For each access lane, \name allocates a context to compute the logical and remapped address, which
-outputs a vectorized BI and BO for each lane. BIs and BOs are broadcasted to all memory partitions.
-For each memory partition, \name allocates a merge context, merging BOs from all requesting lanes.
-The merge context uses a shuffle operator to transform the vectorized BO from bank order specified by BI
-(access-aligned) to banks assigned to the current partition (bank-aligned).
-Because the static banking analysis guarantees no bank conflicts for all banks,
-\name can uses a OR tree to merge the bank-aligned BOs into the final BO that gets send to
-banks in the partition. On the receiver side, \name uses a inverse shuffle to convert responses from
-partitions from bank-aligned back to access-aligned.
-\name uses another OR tree to merge the access-aligned responses, which produces the final vector data requested
-by the access lane.
-With large parallelization, both the merge OR tree and the respond OR tree can be
-partitioned across VUs if running out of stages in a VU, and to scale in the network bandwidth.
-
-%\name{} can use multiple banks within a PU to form a larger virtual bank.
-%However, if a virtual bank in VU exceeds the total capacity of all physical banks within a PU, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PU.
-%To do so, \name{} injects additional calculation to derive the sub-bank ID and sub-bank offset from the BO, and flattens the sub-bank ID with the previous BI to form the new BI and the new BO.
-
-%The number of banks required in VU increases with parallelization of the program to increase memory access bandwidth.
-%The memory is further multi-buffered to enable coarse-grained pipelining across loop nests\cite{sptial}.
-%The total amount of banks required is the product of the number of banks along all dimensions.
-%The capacity per bank is the capacity of the logical memory divided by the number of banks.
-
 \begin{figure}
   \centering
   \includegraphics[width=0.6\columnwidth]{figs/memsplit2.pdf}
@@ -493,6 +469,33 @@ partitioned across VUs if running out of stages in a VU, and to scale in the net
   }
   \label{fig:memsplit}
 \end{figure}
+
+\Cref{fig:memsplit} shows how static banking is achieved on the Plasticine architecture.
+Banking analysis from Spatial specifies the number of banks required to sustain bandwidth for the
+current parallelization factors, and expressions for BIs and BOs. 
+\name groups the banks into virtual memories, with group size limited by number of banks in a PMU.
+For each access lane, \name allocates a context to compute the logical and remapped address, which
+outputs a vectorized BI and BO for each access lane. BIs and BOs are broadcasted to all memory partitions.
+For each memory partition, \name allocates a merge context, merging BOs from all requesting lanes.
+The merge context uses a shuffle operator to transform the vectorized BO from bank order specified by BI
+(access-aligned) to bank order assigned to the current partition (bank-aligned).
+Because the static banking analysis guarantees no bank conflicts for all banks,
+\name can uses a OR tree to merge the bank-aligned BOs into the final BO that gets send to
+banks in the partition. On the receiver side, \name uses a inverse shuffle to convert responses from
+partitions from bank-aligned back to access-aligned.
+\name uses another OR tree to merge the access-aligned responses, which produces the final vector data requested
+by the access lane.
+With large parallelization, both the merge OR tree and the respond OR tree can be
+partitioned across VUs if running out of stages in a VU, and to scale in the network bandwidth.
+
+%\name{} can use multiple banks within a PU to form a larger virtual bank.
+%However, if a virtual bank in VU exceeds the total capacity of all physical banks within a PU, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PU.
+%To do so, \name{} injects additional calculation to derive the sub-bank ID and sub-bank offset from the BO, and flattens the sub-bank ID with the previous BI to form the new BI and the new BO.
+
+%The number of banks required in VU increases with parallelization of the program to increase memory access bandwidth.
+%The memory is further multi-buffered to enable coarse-grained pipelining across loop nests\cite{sptial}.
+%The total amount of banks required is the product of the number of banks along all dimensions.
+%The capacity per bank is the capacity of the logical memory divided by the number of banks.
 
 %So we use the first bit of the 32-bit BO to indicate invalid accesses (0 is invalid), which is also used to explicitly disabled access from the program.
 %Next, the merger context uses a tree of bit-wise OR operators to combine all bank-aligned BOs, and send the combined request vector to its partition.

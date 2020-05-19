@@ -1,4 +1,4 @@
-\section{Low-level Native Programming Interface of Plasticine}
+\section{Low-level Native Programming Interface of Plasticine (Ready)}
 Similar to FPGA high-level synthesis tools, \name provides a high-level imperative programming
 abstraction and synthesizes the program to execute on a reconfigurable accelerator. Targeting an \rda, however,
 is much more challenging than targeting FPAGs due to \rda's stringent mapping constraints. 
@@ -21,7 +21,7 @@ There are three types of streams---single-bit control streams, 32-bit word scala
 16-word vector streams---corresponding to three types of global networks.
 Execution of the PCU is triggered by the arrival of its input dependencies and back pressured by
 the downstream buffers.
-The PCU also contains configurable counters, which can be chained to produce the values of nested
+PCU also contains configurable counters, which can be chained to produce the values of nested
 loop iterators used in the datapath. 
 
 \begin{figure}
@@ -51,6 +51,9 @@ loop iterators used in the datapath.
     and explicitly forward live variables across stages. 
     For simplicity, these details are omitted in the imperative-style on the right and
     \Cref{sec:regalloc} gives more details on register allocation for the SIMD pipeline.
+    In (b), we move the definitions of streams outside of the context, so they can be written by
+    other contexts. However, these streams represent the input buffers of the context, where each
+    stream can have exactly one writer and one reader.
   }
   \label{fig:context}
 \end{figure}
@@ -65,7 +68,7 @@ signals, can be used to dequeue and enqueue the input and output streams, respec
 The counter bounds (i.e. min, max, and stride) can also be data-dependent using values from the 
 scalar input streams. Compared to other data-flow architectures, the data-flow engine in Plasticine 
 is more flexible in that it allows dynamic enqueue and dequeue window for its input and output streams.
-\emph{This feature enable Plasticine to support complex control hierarchy, suchas  non-perfectly nested loops and
+\emph{This feature enable Plasticine to support complex control hierarchy, such as  non-perfectly nested loops and
 branch statements, across contexts even though individual contexts can only executes instructions that are
 control-free}. 
 
@@ -102,7 +105,7 @@ All contexts within PMU have access to the scratchpads with unprotected order. F
 restrict a read context to access the scratchpad after the write context, the software must explicitly allocate
 a token from the write context to the read context.
 \name automatically generates required control tokens across context such that the memory access order is
-consistent to the one from high-level program order.
+consistent to the program order from a high-level imperative programming language.
 
 Unlike most accelerators at this scale, Plasticine does not have any shared global on-chip memory. 
 This design dramatically improve the memory density and scalability of the architecture 
@@ -111,7 +114,7 @@ by eliminating hardware complexity and overhead to support complex cache coheren
 On the other hand, however, the burden of maintaining consistent view of a logical memory mapped
 across distributed scratchpads is left to the software.
 The software must explicitly configure synchronizations across PCUs and PMUs, taking into account
-that the network can introduce variable latency on both control and data path.
+that the network can introduce unpredictable latency on both control and data path.
 One of the major contribution of \name is to hide these synchronization burden from the programmer
 and still provide a programming abstraction of logical memories with configurable bandwidth and 
 arbitrary capacity that fits on-chip.
@@ -123,11 +126,13 @@ Each side has a column of DRAM address generator (DAG) specialized to generate o
 requests. Like compute pipeline in PMUs, the pipeline in DAG is also non-vectorized with integer
 arithmetics. Each DAG can generates a load or a store request streams to the off-chip memory. All
 streams can access the entire address space of the DRAM, with in-order response within each stream
-and no ordering guaranteed across streams. To provide off-chip memory consistency, \name allocates
-synchronizations across request generator and response receiver contexts to preserve memory ordering
-specified in the program.
+and no ordering guaranteed across streams. 
+In streaming pipelined execution, the program can use multiple streams for DRAM accesses appeared in
+different locations of the program.
+To provide off-chip memory consistency, \name allocates
+synchronizations across these streams to preserve memory ordering expected by the program.
 
-\section{Compiler Overview}
+\section{Compiler Overview (Ready)}
 
 \begin{figure*}
 \centering
@@ -150,23 +155,21 @@ maximizes scalability of the architecture.
 \name further virtualizes resources allocation and hides the underlying resource constrains on
 this hierarchical architecture from the programmers.
 
-First, \name takes the input Spatial IR and performs the \term{virtual allocation}.
+First, \name takes the input Spatial IR and performs the \term{imperative to streaming
+transformation}.
 A virtual unit (VU) is our intermediate representation that captures computations that will be
-mapped onto a physical unit (PB), such as a PCU and PMU.
+mapped onto a physical unit (PU), such as a PCU and PMU.
 Each VU can contain multiple contexts. However, a VU can be mapped to a PU only if the aggregated
-resource usage of all contexts in the VU can fit in the PU. The PU can also limits the maximum 
-number of contexts it can support, and has resources that cannot be split across contexts.
+resource usage of all contexts in the VU can fit in the PU. The hardware can also limits the maximum 
+number of contexts a PU can support, and has resources that cannot be split across contexts.
 Additionally, messages across VUs are mapped across the global network, and must tolerate arbitrary 
-amount of network latencies; messages within a single VB across contexts takes only a single cycle.
-In the first phase, \name generates p2p synchronizations across contexts such that 
-the execution is the same as if there are centrolized scheduler scheduling each level of the 
-nested control hierarchy in the original program.
-The allocation phase generates a virtual unit data-flow graph (VUDFG) with appropriate
-synchronizations, such that the on-chip distributed execution produces the same result as if the program is
-sequentially executed.
+amount of network latencies; messages within a single VU across contexts takes only a single cycle.
+The transformation phase generates a virtual unit data-flow graph (VUDFG) with appropriate
+synchronizations, such that the on-chip distributed pipeline produces the same result as a
+parallelized program executed in time.
 
 At the end of the allocation phase, a virtual unit can consume as much resource as the program
-requires. The second phase is \term{physical allocation}, where \name assign each VU to a
+requires. The second phase is \term{resource allocation}, where \name assign each VU to a
 PU that processes the required resources. If no PU can execute a VU, \name tries to partition the
 VU into multiple VUs to eliminate constraint violation. If there is insufficient PU or the
 VU cannot be partitioned, the mapping process fails with appropriate hint to the programmer for the
@@ -177,9 +180,10 @@ resource cost of the VUDFG, or alleviates potential performance bottleneck in st
 After all VU fits in at least one type of PU, \name performs a global optimization that merges 
 small VUs into a larger VU to reduce resource fragmentations.
 
-At the end the previous phase, each VB is tagged with a PB type that can fit the VB, and it is up to the
+The output of the resource allocation phase is a VUDFG with tagged PU type for each VU.
+It is up to the
 \term{placement and routing (PaR)} phase to determine where the VB will be finally placed.
-\name can perform static analysis on the traffic pattern and generate heuristics for PaR to
+Additionally, \name performs static analysis on the traffic pattern and generate heuristics for PaR to
 reduce runtime congestion.
 
 In the following sections, \Cref{sec:control} describes conversion from imperative paradigm with
@@ -187,19 +191,3 @@ nested control hierarchy to the distributed streaming data-flow execution.
 \Cref{sec:decompose} details program-partitioning passes that decompose program over distributed resources.
 \Cref{sec:opt} enumerates several optimizations in \name, and \Cref{sec:par} discuss about PaR and
 heuristic generation.
-
-\begin{figure*}
-\centering
-\includegraphics[width=1\textwidth]{figs/slide_gpu.pdf}
-\caption[Performance comparison with V100 GPU]{
-  Plasticine's latency and throughout improvement over V100 GPU.
-  The evaluated Plasticine architecture has area footprint of 352$mm^2$ at 28nm.
-  V100 GPU has area footprint of 815$mm^2$ at 12nm.
-  Both platforms have the same off-chip bandwidth at 1TB/s with HBM technology.
-  Yellow and blue bars show the raw measured speedup in throughput and latency, respectively.
-  To account for the resource discrepancy, the pink bar shows the normalized throughput
-  for compute-bound application--SqueezeNet and LSTM, which scales performance with additionally
-  on-chip resources.
-}
-\label{fig:peakutil}
-\end{figure*}

@@ -1,9 +1,9 @@
-with Context() as ctx:
-    bufferA = VecInSteram() 
-    bufferB = ScalInSteram()
-    bufferC = VecInSteram()
-    outputD = VecOutSteram()
+bufferA = VecSteram() 
+bufferB = ScalSteram()
+bufferC = VecSteram()
+outputD = VecSteram()
 
+with Context() as ctx:
     b = bufferB.deq()
     for i in range(0, 3, 1)
         c = bufferC.deq()
