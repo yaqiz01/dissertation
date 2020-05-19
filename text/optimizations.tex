@@ -69,7 +69,7 @@ Instead of treating them as shared memories, \name{} duplicates and maps them to
 The sender actor pushes to the network when the token is supposed to be sent, and the receiver dequeues one element from the input buffer when the token is supposed to be consumed.
 This dramatically reduces the synchronization complexity of non-indexable memory in the common case.
 
-\subparagraph{Reverse Loop Invariant Hoisting}
+\subparagraph{Reversed Loop Invariant Hoisting}
 A common loop optimizations is to move loop invariant expressions outside of the loop body to reduce
 computation. This optimizations, however, might introduce more basic blocks in the program.
 For Plasticine, number of basic blocks have a strong correlation with number of contexts and
@@ -88,10 +88,10 @@ Currently, we rely on the user to perform manually perform this optimization.
 \hfill
 \begin{subfigure}[b]{0.4\textwidth}
 \inputminted{python}{code/reversehoisting.py}
-\caption{Reverse Loop Invariant Hoisting}
+\caption{Reversed Loop Invariant Hoisting}
 \end{subfigure}
 \hfill
-\caption[Reverse Loop Invariant Hoisting]{
+\caption[Reversed Loop Invariant Hoisting]{
   The original program requires at least two contexts to execute Block 1 and Block 2.
   By moving the invariant instruction \texttt{c = a + b} into the loop body, (b) only needs a single
   context instead. Because instructions within \texttt{Block 2} are pipelined across loop
