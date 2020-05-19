@@ -341,26 +341,27 @@ On the other hand, breath-first-search (BFS) produces more balanced partitioning
 There are two common graph patterns in applications that require partitioning. 
 The first is a data-flow graph from a large basic block, which contains a small set of external
 live-in and live-out variables and abundant of intermediate temporary variables.
-Such graphs typically have long-live variables that require retiming.
-\todo{continue}
+Such graphs typically end up with long-live variables across partitions that require retiming.
 
 \Cref{fig:split} (b) and (c) shows the compile time for these algorithms. The single-threaded
 traversal-based algorithm runs in minutes, which is significantly faster than the parallelized
 solver that takes hours to days.
-In general, the solver runtime becomes quickly unscalable with a large amount of VBs.
+In general, the solver runtime becomes quickly unbounded with a large amount of VBs.
 \todo{show solver time with increase number of VBs}.
 
-In a summary, the solver solution provides a guaranteed close-to-optimum solution at an expensive
-compile time. The solver-solution also treats the retiming and partitioning as a joint optimization,
-whereas these two problems are solved in two separate passes in the traversal-based solution.
+In summary, the solver solution provides a guaranteed close-to-optimum solution at an expensive
+compile time. Nonetheless, the solver-solution treats the retiming and partitioning as a joint optimization,
+whereas the traversal-based solution solves these two problems in two separate passes,
+which is less optimum.
 Moreover, the solver-based solution tends to produce better result for an architecture with tight I/O
 bound and relax stage constraint.
 The traversal-based solutions, on the other hand, can produce a decent solution in a short amount of
 time.
-However, the solution is prune to adversarial cases and potentially perform badly for unseen graph structure.
+However, the solution is prune to adversarial cases and potentially perform badly for unseen graph
+structures.
 In practice, we can combine the two approaches and invoke the expensive solver only when the
-traversal-based solution is insufficient. The quality of partitioning can be easily estimated by the
-resource utilization in each partition.
+traversal-based solution is insufficient. The quality of the traversal-based solution can be 
+easily estimated by the resource utilization in each partition.
 
 \begin{figure*}
 \centering
@@ -400,16 +401,68 @@ resource utilization in each partition.
 \end{figure*}
 
 \subsection{Memory Partitioning} \label{sec:memsplit}
-The memory pruner addresses VUs with virtual on-chip scratchpad memories exceeding the physical limits in capacity or number of banks in a PU.
-Memories in the input graph can have arbitrary size and number of virtual banks.
-The PUs, on the other hand, contains a small number of fix-sized 1-D scratchpad banks.
+The memory pruner addresses virtual on-chip memory exceeding the capacity and bandwidth limit of a
+single PMU.
+As we parallelize the computation, the on-chip memory must provide higher address bandwidth to sustain the
+compute throughput.
+On a processor-based architecture, this is often achieved by associating a separate first-level
+cache for each processor core, as shown in \Cref{fig:memmodel} (a).
+The cache implements a hardware coherence protocol that synchronizes the different copies of data,
+providing the abstraction of a shared memory.
 
-To partition the virtual memory, \name{} shards the large virtual memory into multiple memory partitioned VUs, and assign each partition with a subset of the virtual banks.
-Each accessor provides a bank ID (BI) that selects which banks to access and a bank offset (BO) that specifies the address within the bank. 
-BI and BO can be vectorized.
-\name{} can use multiple banks within a PU to form a larger virtual bank.
-However, if a virtual bank in VU exceeds the total capacity of all physical banks within a PU, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PU.
-To do so, \name{} injects additional calculation to derive the sub-bank ID and sub-bank offset from the BO, and flattens the sub-bank ID with the previous BI to form the new BI and the new BO.
+\begin{figure}
+  \begin{subfigure}[b]{0.35\textwidth}
+  \centering
+  \includegraphics[width=1\columnwidth]{figs/cpumemmodel.pdf}
+  \caption{Processor Architecture}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.45\textwidth}
+  \centering
+  \includegraphics[width=1\columnwidth]{figs/spatialmemmodel.pdf}
+  \caption{Reconfigurable Spatial Architecture}
+  \end{subfigure}
+  \caption[Memory model of different architectures]{Memory model of different architectures}
+  \label{fig:memmodel}
+\end{figure}
+
+The coherence protocol is both expensive in hardware complexity and hard to scale in bandwidth for
+streaming pipelined execution.
+Instead of making redundant copies of the data, we can partition the data across different memory
+partitions to get additional address port on a reconfigurable accelerator, as shown in
+\Cref{fig:memmodel} (b).
+Each parallel worker broadcasts the requests to all memory partitions.
+If the data accessed by two parallel workers live in the same bank, the bandwidth will be halved.
+To avoid bank conflicts, an important static analysis often used on reconfigurable accelerators 
+is called static partitioning, or static banking~\cite{poly_cong}.
+For most address patterns, the compiler can derive a partitioning scheme such that every partition is accessed by a
+single worker at any time, which guarantees bandwidth at runtime.
+The output of the analysis is an expression for bank ID (BI) and bank offset (BO), both are
+functions of the requested logical memory address.
+BI determines which partition each requests is going to, and BO is the offset within the
+partition.
+
+\Cref{fig:memsplit} shows how static banking is achieved on the Plasticine architecture.
+Banking analysis from Spatial specifies the number of banks required to sustain bandwidth for the
+current parallelization factors, and expressions for BIs and BOs. 
+\name groups the banks into virtual memories, with group size limited by number of banks in a PMU.
+For each access lane, \name allocates a context to compute the logical and remapped address, which
+outputs a vectorized BI and BO for each lane. BIs and BOs are broadcasted to all memory partitions.
+For each memory partition, \name allocates a merge context, merging BOs from all requesting lanes.
+The merge context uses a shuffle operator to transform the vectorized BO from bank order specified by BI
+(access-aligned) to banks assigned to the current partition (bank-aligned).
+Because the static banking analysis guarantees no bank conflicts for all banks,
+\name can uses a OR tree to merge the bank-aligned BOs into the final BO that gets send to
+banks in the partition. On the receiver side, \name uses a inverse shuffle to convert responses from
+partitions from bank-aligned back to access-aligned.
+\name uses another OR tree to merge the access-aligned responses, which produces the final vector data requested
+by the access lane.
+With large parallelization, both the merge OR tree and the respond OR tree can be
+partitioned across VUs if running out of stages in a VU, and to scale in the network bandwidth.
+
+%\name{} can use multiple banks within a PU to form a larger virtual bank.
+%However, if a virtual bank in VU exceeds the total capacity of all physical banks within a PU, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PU.
+%To do so, \name{} injects additional calculation to derive the sub-bank ID and sub-bank offset from the BO, and flattens the sub-bank ID with the previous BI to form the new BI and the new BO.
 
 %The number of banks required in VU increases with parallelization of the program to increase memory access bandwidth.
 %The memory is further multi-buffered to enable coarse-grained pipelining across loop nests\cite{sptial}.
@@ -418,30 +471,42 @@ To do so, \name{} injects additional calculation to derive the sub-bank ID and s
 
 \begin{figure}
   \centering
-  \includegraphics[width=1\columnwidth]{figs/memsplit.pdf}
-  \caption{An example of splitting a memory to serve parallel requesters.}
+  \includegraphics[width=0.6\columnwidth]{figs/memsplit2.pdf}
+  \caption[Memory partitioning]{Example of memory partitioning across physical units. In this
+  example, the program parallelize the outer loop by 2 and vectorized the inner loop by 4, which
+  generates to two vectorized access lanes. We need 8 scratchpad banks to sustain the read bandwidth. 
+  \name groups the 8 banks in two virtual memory partitions, $P_A$ (bank 0-3) and $P_B$ (bank 4-7). The
+  address generation contexts $A_0$ and $A_1$ contains the computation for logical address and address
+  remapping, which output $BI$s and $BO$s. \name allocates one merge context per memory partition
+  ($M_A$ and $M_B$),
+  merging requests from all access lanes. Inside the merge context, the shuffle operator converts
+  the BO from access-aligned to bank-aligned. $A_0$, for example, requests offsets 
+  A, B, C, and D ($BO_0$) from banks 1,4,5,and 3 ($BI_0$). The shuffle operator picks the requests
+  belonging to partition A and outputs a BO aligned with bank 0-3. If the bank $i$ in the partition has no
+  request, the $i$th element in the output is marked as invalid.
+  The merge context contains one shuffle operator per request lane, and uses a tree of $OR$
+  operators to combine all bank-aligned BOs into the final $BO_A$.
+  On the receiver side, the memory broadcasts its response to all receiver lanes.
+  The receiver context use a inverse shuffle operator to convert the response from bank-aligned back to
+  access-aligned, using the $BI$ forwarded from the address context. The response is then merged
+  with another OR tree. 
+  }
   \label{fig:memsplit}
 \end{figure}
 
-\name{} then set ups the crossbar data path between the parallel producers, memory partitions, and parallel consumers.
-As discussed in \Cref{sec:sync}, each accessor is split into a requester context and receiver context.
-For each memory partition, \name{} uses an context to merge the requests from all parallel requesters, \Cref{fig:memsplit}.
-The merge context uses a special shuffle operator that shuffles the BO vector from the order in BI to the order aligned with banks in its partition.
-If a bank in the partition is not accessed in BI, the output of the shuffle is marked as invalid.
-We assume the capacity of each physical bank is much smaller than $2^{31}$. 
-So we use the first bit of the 32-bit BO to indicate invalid accesses (0 is invalid), which is also used to explicitly disabled access from the program.
-Next, the merger context uses a tree of bit-wise OR operators to combine all bank-aligned BOs, and send the combined request vector to its partition.
-The requests can be trivially ORed because static banking (\Cref{sec:background}) guarantees that no two requesters access the same bank in the same cycle.
-Next, the memory partitions broadcast the respond to all receiver contexts.
-A receiver takes response from all partitions, using the same shuffle operators to align each response back to the requested order in BI, and uses another OR tree to merge the response. 
-The BI is forwarded from the requester to the receiver for the reverse shuffling.
+%So we use the first bit of the 32-bit BO to indicate invalid accesses (0 is invalid), which is also used to explicitly disabled access from the program.
+%Next, the merger context uses a tree of bit-wise OR operators to combine all bank-aligned BOs, and send the combined request vector to its partition.
+%The requests can be trivially ORed because static banking (\Cref{sec:background}) guarantees that no two requesters access the same bank in the same cycle.
+%Next, the memory partitions broadcast the respond to all receiver contexts.
+%A receiver takes response from all partitions, using the same shuffle operators to align each response back to the requested order in BI, and uses another OR tree to merge the response. 
+%The BI is forwarded from the requester to the receiver for the reverse shuffling.
 
-The alternative approach is to reverse the respond to access ordering within the memory partitions before sending them to the requester.
-This approach does not scale with network bandwidth, as the memory partitions need to send the receiver number of distinct outputs.
-(The number of receivers is a function of the parallelization factor.) 
-As a result, the amount of output bandwidth at the memory partition limits how much the program can be parallelized, which causes underutilization of the accelerators.
-In our scheme, each partition sends a single broadcast to all receivers, which is efficiently handled by the network.
+%The alternative approach is to reverse the respond to access ordering within the memory partitions before sending them to the requester.
+%This approach does not scale with network bandwidth, as the memory partitions need to send the receiver number of distinct outputs.
+%(The number of receivers is a function of the parallelization factor.) 
+%As a result, the amount of output bandwidth at the memory partition limits how much the program can be parallelized, which causes underutilization of the accelerators.
+%In our scheme, each partition sends a single broadcast to all receivers, which is efficiently handled by the network.
 
-The request trees for memory partition and receiver can have high fan-in, which can 
-be partitioned into a tree of VU during the compute partitioning phase in \Cref{sec:compsplit}.
+%The request trees for memory partition and receiver can have high fan-in, which can 
+%be partitioned into a tree of VU during the compute partitioning phase in \Cref{sec:compsplit}.
 

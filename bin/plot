@@ -411,6 +411,47 @@ def plot_part_cycle():
     graph, nodeattr, subgraphattr = create_part_cycle()
     graph.write_pdf('figs/part_cycle.pdf')
 
+def plot_merge():
+    nodeattr = {}
+    nodeattr['shape']="circle"
+    nodeattr['penwidth']=2
+    nodeattr['fillcolor']="white"
+    nodeattr['style']="filled"
+    nodeattr['fontcolor']="black"
+    nodeattr['fontname']="DejaVu Sans"
+    nodeattr['fillcolor']="#ffcc5c"
+    nodeattr['fixedsize']='true'
+    nodeattr['width']=0.5
+    nodeattr['height']=0.5
+
+    lattr = {}
+    lattr['shape']="planetext"
+    lattr['fillcolor']="none"
+    lattr['color']="none"
+    lattr['fontcolor']="black"
+    lattr['fontname']="DejaVu Sans"
+
+    edgeattr = {}
+    edgeattr['penwidth'] = 2
+    edgeattr['arrowhead'] = "vee"
+
+    with Graph('figs/merge.pdf') as G:
+        BI0 = G.node("BI0", label="<BI<SUB>0</SUB>>", **lattr)
+        BO0 = G.node("BO0", label="<BO<SUB>0</SUB>>", **lattr)
+        s0 = G.node("s0", label="S", **nodeattr)
+        G.edge(BI0,s0,**edgeattr)
+        G.edge(BO0,s0,**edgeattr)
+        # s1 = G.node("s1", label="<S<SUP>-1</SUP>>", **nodeattr)
+        BI1 = G.node("BI1", label="<BI<SUB>1</SUB>>", **lattr)
+        BO1 = G.node("BO1", label="<BO<SUB>1</SUB>>", **lattr)
+        s1 = G.node("s1", label="S", **nodeattr)
+        G.edge(BI1,s1,**edgeattr)
+        G.edge(BO1,s1,**edgeattr)
+
+        OR = G.node("OR", **nodeattr)
+        G.edge(s0,OR,**edgeattr)
+        G.edge(s1,OR,**edgeattr)
+
 def main():
 
     # plot_mlp()
@@ -422,8 +463,10 @@ def main():
     # plot_part2()
     # plot_part_invalid()
 
-    plot_part_cycle()
-    plot_part_cycle_valid()
-    plot_part_cycle_invalid()
+    # plot_part_cycle()
+    # plot_part_cycle_valid()
+    # plot_part_cycle_invalid()
+
+    plot_merge()
 
 main()
