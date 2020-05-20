@@ -82,7 +82,7 @@ spare DAGs, which improves utilization.
     \For{pruner \KwTo pruners}{
       \For{v \KwTo G.keys()}{
         \For{p \KwTo G[v]} {
-          \If{!pruner.fit(v,p)} {
+          \If{pruner.cost(v) > pruner.cost(p)} {
             G[v] -= p\;
           }
         }
@@ -101,8 +101,9 @@ spare DAGs, which improves utilization.
     }
   }
   \caption{Resource allocation. The bipartite graph \texttt{G} contains a bi-directional many-to-many
-  map. \texttt{G[key]} returns a set of values, and \texttt{G[value]} returns a set of keys.
-  \texttt{G[KeySet] = ValueSet} creates all-to-all assignment between \texttt{KeySet} and
+  map. \texttt{G[key]} returns the set of values connecting to key (dom(key)), and \texttt{G[value]}
+  returns the set of keys connecting to the value.
+  \texttt{G[KeySet] = ValueSet} creates all-to-all connection between \texttt{KeySet} and
   \texttt{ValueSet}.}
   \label{algo:resalloc}
 \end{algorithm}
@@ -137,19 +138,20 @@ spare DAGs, which improves utilization.
 %% backtracking_assignment(vu, dom)
 As shown in \Cref{algo:resalloc}, the \emph{resource allocation} phase contains three steps:
 \emph{constraint resolution}, \emph{global merging}, and \emph{virtual to physical assignment}.
-\name uses a VU-PU bipartite graph (\texttt{G}) to keep track of potential valid assignments between the two.
-Initially, \texttt{G} is initialized to a complete bipartite graph, i.e. all VUs can be assigned to
+\name uses a VU-PU bipartite graph (\emph{G}) to keep track of potential valid assignments between the two.
+Initially, \emph{G} is initialized to a complete bipartite graph, i.e. all VUs can be assigned to
 all PUs.
+We refer to all PUs connected to a VU \emph{v} as the domain of \emph{v} in G, i.e. \emph{dom(v)}.
 
 \paragraph{Constraint Resolution}
 A list of constraint pruners, each considering a set of on-chip resources, 
 incrementally remove the VU-PU edges that violate the resource constraints.
-If a VU \texttt{v} has no mappable PU after pruning, the pruner attempts to fix the violation by
+If a VU \emph{v} has an empty domain after pruning, the pruner attempts to fix the violation by
 decomposing the VU into multiple VUs. 
 Not all resources are composable and the partitioning transformation may fail.
-If succeeded, the partitioner generates a new set of VUs \texttt{V'}. \name starts a new complete bipartite
-graph between \texttt{V'} and all resources \texttt{P}, and recursively prune on \texttt{V'}.
-If succeeded, the original graph \texttt{G} is updated with \texttt{V'} and their pruned resources.
+If succeeded, the partitioner generates a new set of VUs \emph{V'}. \name starts a new complete bipartite
+graph between \emph{V'} and all resources \emph{P}, and recursively prune on \emph{V'}.
+If succeeded, the original graph \emph{G} is updated with \emph{V'} and their pruned resources.
 
 \paragraph{Global Merging}
 After all VUs have at least one PU in the bipartite graph, \name triggers a global optimization that merges 
@@ -182,9 +184,9 @@ During partitioning, \name maps each subgraph of the large dataflow graph into a
 mirrors the control states of the original context, and streams live variables in between.
 We can formulate the problem of how to partition in the dataflow graph as an optimization problem, shown in
 \Cref{tab:partprob}.
-The partitioner ``fixes'' the VU \texttt{v} based on a single PU specification, albeit there are many potential PUs 
+The partitioner ``fixes'' the VU \emph{v} based on a single PU specification, albeit there are many potential PUs 
 the decomposed VU can be mapped to.
-Currently, we use a heuristic to select a PU type from \texttt{G[v]} right before the compute pruning 
+Currently, we use a heuristic to select a PU type from \emph{dom(v)} right before the compute pruning 
 as a guiding constraint for partitioning.
 
 \begin{table*}
@@ -516,3 +518,12 @@ partitioned across VUs if running out of stages in a VU, and to scale in the net
 \todo{Talk about what if banking fails.}
 
 \subsection{Register Allocation} \label{sec:regalloc}
+
+%\subsubsection{Blackbox IP Pruning} \label{sec:bbsplit}
+%\yz{Cut this if out of the space}
+%This step illustrates an example of integrating a customized partitioner for composable IP available on
+%the architecture.
+%The cost metrics and partition rule is specific to each IP.
+%The example IP is a merge buffer, which can merge two sorted vector streams into a single stream with
+%one vector per cycle throughput.
+%The merge buffer pruner uses a tree of 2-way merge buffers across PUs to compose a multi-way merge buffer declared in the program.

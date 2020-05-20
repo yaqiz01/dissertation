@@ -10,31 +10,108 @@ Resource is an indirect objective as resource reduction enable larger paralleliz
 which in turn improves performance.
 Other objectives, such as power saving, is left as future work.
 
-\subparagraph{Memory strength reduction (msr).} Like traditional strength reduction on arithmetics, \name{} replaces expensive on-chip memories with cheaper memories whenever possible.
-%We map register accumulation in the program with single-cycle initiation interval to pipeline registers.
-For example, \name{} replaces a scratchpad with constant address in all accesses to a un-indexable memory, such as a FIFO.
-This commonly happens when producer and consumer loops of the memory are fully unrolled.
-
-\subparagraph{Route-Through Elimination (rtelm).} For patterns where the content of a non-indexable memory  (M1) is read and written to another memory (M2), \name{} eliminates the intermediate access if the read of M1 and the write of M2 operates in lock-step.
+\subsection{Description}\label{sec:des}
 
 \begin{figure*}
 \centering
-\includegraphics[width=0.7\textwidth]{figs/retiming.pdf}
-\caption[Retiming]{
-  Left: retiming with input buffer only. Right: retiming with either input buffer or scratchpad.
+\begin{subfigure}[b]{0.4\textwidth}
+\inputminted{python}{code/msr.py}
+\caption{Input program}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.5\textwidth}
+\inputminted{python}{code/msrctx.py}
+\caption{Context graph}
+\end{subfigure}
+\caption[Memory strength reduction]{
+  (a) shows an example where read and write address of \texttt{mem} can be constant folded because
+  loop A and loop C are fully parallelized.
+  Instead of mapping \texttt{mem} into a scratchpad, which heavily underutilize the capacity of the 
+  scratchpad, \name maps the memory into a non-indexable vector stream in (b). The vector stream
+  stores address [0-15] of the original memory, whereas the reader $R1$ requests address [15-0] instead.
+  \name uses a \texttt{shuffle} operator to swap the vector elements based on reader's expected order.
+  This is the same \texttt{shuffle} operator we introduced in the memory partitioning section
+  \Cref{sec:memsplit}. 
 }
-\label{fig:mlp}
+\label{fig:msr}
 \end{figure*}
-\subparagraph{Retiming with scratchpad (retime-mem).} By default, \name{} uses input buffers in PU for retiming purpose. 
-This option enables \name{} to use scratchpad memory for retiming that requires large buffer depth.
+
+\subparagraph{Memory strength reduction (msr).} Like traditional strength reduction on arithmetics,
+\name{} replaces expensive on-chip memories with cheaper memory types whenever possible.
+Scratchpad, input buffer, and pipeline register are different types of on-chip memory on Plasticine from
+the most expensive to the cheapest.
+%We map register accumulation in the program with single-cycle initiation interval to pipeline registers.
+For example, \name maps on-chip array to a scratchpad by default. However, if all of the readers and
+writers of the array index into memory with constant addresses, often as a result of constant propagation of full
+parallelized loops, \name maps the memory to the input buffer of an context, and setup datapath to
+connect the reader and writer directly.
+\Cref{fig:msr} shows an example of strength reduce a scratchpad into an input buffer with additional
+operations.
+Fully parallelized loops is a common outcome of an automatic design space exploration on the parallelization factors.
+We also use it as a way for the user to explicitly program vectorized streaming operation for
+Plasticine.
+
+\begin{figure*}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\inputminted{python}{code/rteg1.py}
+\caption{Example with variable}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.45\textwidth}
+\inputminted{python}{code/rteg2.py}
+\caption{Example with queue}
+\end{subfigure}
+\caption[Examples of route through elimination]{
+  (a) and (b) shows route through opportunities in the program.
+  These opportunities are often outcome of lowering and other optimizations. To proof the route
+  through is safe, \name needs to have access to all readers and writers of a memory, and analyze
+  the control structure around the memory accesses.
+  In addition to saving on the memory, the optimization eliminates the basic block in line 7 of (a)
+  and line 8 of (b), which saves a context.
+}
+\label{fig:rtelm}
+\end{figure*}
+
+\subparagraph{Route-Through Elimination (rtelm).} 
+For patterns where the content of a non-indexable memory (M1) is read and written to another memory
+(M2), \name{} eliminates the intermediate access and feed the output of M1's writer (W1) directly to M2's
+reader (R2) if it can proof the propagation is safe.
+\Cref{fig:rtelm} shows examples of route through opportunities.
+These patterns are often the
+outcome of multiple levels of compiler lowering and the \emph{msr} optimization. 
+Eliminating route-through
+pattern can simplify control hierarchy and reduce number of basic blocks, which eliminates contexts.
+
+\begin{figure*}
+\centering
+\includegraphics[width=0.8\textwidth]{figs/retiming.pdf}
+\caption[Retiming]{
+  Virtual unit dataflow graph (VUDFG) after retiming. CU: virtual compute unit. MU: virtual memory
+  unit. MCI: memory controller interface.
+  Left: retiming with input buffer only. Right: retiming with either input buffer or scratchpad.
+  The yellow CUs are CUs used for retiming. The original program does not have MU and the yellow MU
+  on the right are MUs used for retiming. 
+}
+\label{fig:retiming}
+\end{figure*}
+\subparagraph{Retiming with scratchpad (retime-mem).} 
+By default, \name{} uses input buffers in PU for retiming purpose. 
+This option enables \name{} to use scratchpad memory to retime paths requiring deep buffers.
+\Cref{fig:retiming} shows VUDFGs after retiming with and without scratchpad retiming. As we can see,
+allowing scratchpad and input buffer for retiming significantly reduces the total number of retiming
+units.
 
 \subparagraph{Crossbar datapath elimination (xbar-elm).}
-Although, crossbars between accessors and memory partitions (\Cref{sec:memsplit}) are very expensive in the general case, the BI sometimes can be statically resolvable with certain combinations of parallelization on memory accesses. 
-When BI is a constant, \name{} can use this information to intelligently assign virtual banks to partitions that reduce the crossbar data path to a partial or a point-to-point connection.
-
-\subparagraph{Read address duplication (dupra).} During memory partitioning (\Cref{sec:memsplit}),
-instead of forwarding BI from the requester to receiver, \name{} can also duplicate the computation 
-BI with local state on receiver side, which eliminates the unbalanced data path at the cost of extra computation.
+Although in the general cases described in \Cref{sec:memsplit}, 
+crossbar data paths between accessors and memory partitions are very expensive, 
+the BI can often be statically resolved to a constant vector for certain
+parallelization factors and address patterns.  
+When BI is a constant, \name{} can use this information to intelligently 
+group banks into memory partitions that reduce the crossbar to a partial 
+or a point-to-point connection.
+This is an important optimization that prevents resource scaling quadratically with increasing
+parallelization in the common cases.
 
 \begin{figure*}
 \centering
@@ -48,35 +125,67 @@ BI with local state on receiver side, which eliminates the unbalanced data path 
 \caption{Throughput and resource as a function of parallelization factor}
 \end{subfigure}
 \caption[MLP case study]{
-  MLP case study
+  A 4x4x4 MLP case study. 
+  Light-weight models like this can be useful in ultra high-bandwidth and
+  low-latency inference in packet processing~\cite{taurus}.
+  (a) shows changes in VUDFG as we parallelize the output dimension.
+  The input dimension of MLP is vectorized across SIMD lanes.
+  As reaching par factor at 4, the intermediate memory in MU gets optimized away due to constant
+  folding and rtelm on fully unrolled loops. (b) shows the throughput and resource increase as the
+  output dimension is parallelized.
 }
 \label{fig:mlp}
 \end{figure*}
 
-\subparagraph{Global Merging (merge).}
-After all VBs satisfy the hardware constraint, we perform a global optimization to compact small VBs into  larger VBs. 
-Merging has very similar problem statement as compute partitioning (\Cref{sec:compsplit}) except with more constraints.
-The traversal-based algorithm requires a reference cost for PB to check if the merged VB still satisfy the hardware constraint.
-At each step of merging, we take the union of the domains of VBs within the current partition, and intersect with the domain of the merging VB.
-The caveat is that even with a non-empty intersection, the bipartite graph might not have a possible assignment, as merged VB might fit in a larger PB with insufficient quantity.
-Therefore, we perform a heuristic checking on feasibility of the bipartite assignment at each step of merging.
-The solver-based solution combines partition assignment with PB type assignment as a joint problem. 
-The output of merging gives both partition assignment as well as a PB type assignment, which eliminates the risk of un-mappable bipartite graph due to merging in the traversal-based solution.
+Combined with \emph{msr} and \emph{rtelm} mentioned above, \name is able to 
+dramatically reduce the resource usage for certain parallelization factors.
+\Cref{fig:mlp} shows an interesting case study on a MLP presenting performance scaling and resource
+increase while scaling up parallelism.
+\Cref{fig:mlp} (b) demonstrates that Plasticine can have resource
+non-linearly increasing with parallelization factors, while having perfect performance 
+scaling, due to compiler optimizations.
 
-\subparagraph{Memory Localization}
-We perform another specialization on non-indexable memories (registers or FIFOs), whose all accesses have no explicit read enables.
-Instead of treating them as shared memories, \name{} duplicates and maps them to local input buffers in all receivers, no longer requiring tokens.
-The sender actor pushes to the network when the token is supposed to be sent, and the receiver dequeues one element from the input buffer when the token is supposed to be consumed.
-This dramatically reduces the synchronization complexity of non-indexable memory in the common case.
+\subparagraph{Read address duplication (dupra).} 
+%The long traveling path for BI from the address context to the receiver context showing in memory partitioning
+%\Cref{sec:memsplit} \Cref{fig:memsplit} can cause pipeline stalls due to the imbalance datapath between
+%the BI forwarding path and the memory data path.
+Between the address context and receiver contexts in memory partitioning shown in \Cref{sec:memsplit}
+\Cref{fig:memsplit},
+the imbalance datapaths between BI forwarding and request datapath can cause significant pipeline
+stalls, limiting the overall application performance to a small fraction of the ideal throughput.
+When parallelizing the memory access, the OR tree in the merge context gets partitioned into a tree
+of contexts, which further increases the mismatch in latency between the imbalanced datapaths.
+Instead of retiming BI forwarding path, 
+this compiler flag forces \name to duplicate the BI computation using local states
+within the receiver context, which could use less resources than retiming.
+
+\subparagraph{Global Merging (merge).}
+After all VUs satisfy the hardware constraint, we perform a global optimization to compact small VUs into larger VUs. 
+Merging has a very similar problem statement as compute partitioning (\Cref{sec:compsplit}) except with more constraints.
+For merging, the VUDFG is the graph, the VUs are the nodes, and the merged VUs are partitions.
+Unlike the partitioning problem, which uses a single set of cost metrics to determine if a partition
+is valid, the merged partition
+can be mapped to any PU available on-chip, each having a different set of cost metrics and a
+quantity limit.
+%The traversal-based algorithm requires a reference cost from PU to check if the merged VU still satisfy the hardware constraint.
+When adding a new VU \emph{m} to a partition \emph{P} in the traversal-based algorithm, 
+we first take the union of the domains of VUs within the current partition, and
+intersect with the domain of \emph{m}.
+The domain of the merged partition \emph{M} is updated to all PUs within this intersection that \emph{M} can fit.
+\begin{align}
+  M &= P \cup \{m\} \\
+  dom(M) &= \{ p | p \in \{\cup\ dom(n)\ |\ \forall n \in P\} \cap dom(m), cost(M) \leq cost(p) \}
+\end{align}
+The caveat is that even if \emph{M} has non-empty domain, the bipartite graph might not have a possible 
+assignment after merging, as \emph{M} might fit in a larger PU with insufficient quantity.
+Therefore, we perform the feasibility checking of the bipartite assignment at each step
+of merging, shown in \Cref{algo:check}, and only merge if the assignment is feasible.
+
+The solver-based solution combines the VU merging with VU to PU assignment as a joint problem. 
+The output of merging gives both partition assignment as well as a PU type assignment, which
+eliminates the risk of infeasible assignment due to merging in the traversal-based solution.
 
 \subparagraph{Reversed Loop Invariant Hoisting}
-A common loop optimizations is to move loop invariant expressions outside of the loop body to reduce
-computation. This optimizations, however, might introduce more basic blocks in the program.
-For Plasticine, number of basic blocks have a strong correlation with number of contexts and
-physical units. \Cref{fig:reversehoisting} shows an example where moving instructions into the loop
-body reduces number compute units. Because instructions within basic blocks and basic blocks
-themselves are pipelined, doing so does not have performance impact on the application.
-Currently, we rely on the user to perform manually perform this optimization.
 
 \begin{figure*}
 \centering
@@ -88,10 +197,10 @@ Currently, we rely on the user to perform manually perform this optimization.
 \hfill
 \begin{subfigure}[b]{0.4\textwidth}
 \inputminted{python}{code/reversehoisting.py}
-\caption{Reversed Loop Invariant Hoisting}
+\caption{Reversed loop invariant hoisting}
 \end{subfigure}
 \hfill
-\caption[Reversed Loop Invariant Hoisting]{
+\caption[Reversed loop invariant hoisting]{
   The original program requires at least two contexts to execute Block 1 and Block 2.
   By moving the invariant instruction \texttt{c = a + b} into the loop body, (b) only needs a single
   context instead. Because instructions within \texttt{Block 2} are pipelined across loop
@@ -102,51 +211,40 @@ Currently, we rely on the user to perform manually perform this optimization.
 \label{fig:reversehoisting}
 \end{figure*}
 
+A common loop optimizations on traditional CPU is to move loop-invariant expressions 
+outside of the loop body to reduce computation. 
+This transformation, however, can introduce more basic blocks in the program, that translates to
+more contexts on Plasticine.
+Therefore, the reversed loop invariant hoisting, which moves loop-invariant expressions into the 
+loop body, can sometimes saving resources by simplifying the control structure, as shown in 
+\Cref{fig:reversehoisting}.
+Because instructions within the basic blocks are pipelined, 
+moving instructions into the loop body increases computation without hurting throughput, which
+dominant the performance for spatial architecture.
+Currently, we rely on the user to perform this optimization manually.
+
+\subsection{Evaluation}
+
 \begin{figure*}
 \centering
-\includegraphics[width=0.7\textwidth]{figs/heat.pdf}
-\caption[Optimization Effectiveness]{
-  Optimization Effectiveness. Percentage resource reduction or performance improvement from each
+\includegraphics[width=0.8\textwidth]{figs/heat.pdf}
+\caption[Optimization effectiveness]{
+  Optimization effectiveness. Percentage resource reduction or performance improvement from each
   optimization. The heat map shows the maximum differences when turning on/off the optimization, 
-  while keeping other optimizations the same.
-  For a single application, the improvement is taking the geometric mean across different application parameters.
+  while fixing other optimizations at the most optimum combination for the application.
+  Each application has a large design space with various parallelization factors in different loops, 
+  we report a design point that has the maximum impact, either positively or negatively.
 }
-\label{fig:reversehoisting}
+\label{fig:heat}
 \end{figure*}
-%\subparagraph{Dead Code Elimination (DCE)} 
-%We perform aggressive DCE on the VBDFG and only keeps computation that gets materialized to accelerator I/O and DRAM.
-%\subparagraph{Constant Propagation}
-%Aside from regular constant propagation on arithmetics, we also eliminates crossbar datapath when bank ID 
-%can be statically resolved described later in \Cref{sec:memsplit}.
-%During loop unrolling, address of indexable memory sometimes can be resolved to static constant.
-%For a read-only RAM with constant address, we lookup their content at compile time and embed its content into registers.
-%For \emph{route-through} pattern, where content of a non-indexable memory M1 is read and written to another memory M2,
-%we can eliminate the intermediate write and forward the data directly to the final memory if the compiler
-%can prove the read M1 and write of M2 operates in lock-step.
-%We also perform constant propagation on control signals with loop-range analysis. 
-%Eliminates the control signals can expose more lock-step accesses and \emph{route-through} opportunities.
-%\subparagraph{Strength Reduction}
-%In addition to traditional strength reduction on arithmetics, we also replace expensive memories
-%with cheaper memory whenever possible.
-%We map register accumulation in the program with single-cycle initiation interval to pipeline registers.
-%Banked-SRAM with constant bank IDs and offsets in all accessors can also be replaced with FIFOs,
-%which is happens when producer and consumer loops are fully unrolled.
 
-%Accesses statically banked in the input graph can operates concurrently 
-%without bank conflicts, as explained in \Cref{sec:background}.
-%These accesses are usually from a unrolled loops. For banked accesses from the same pre-unrolled access, 
-%\name first merge all requests before sending to the memory (details in \Cref{sec:memsplit}). 
-%Because these accesses are from loop unrolling, they have the same program order and same dependency with other accesses.
-%So the synchronization can be performed on the merged access, which prevents the amount of synchronization
-%to increase with parallelism on a banked memory, as shown in \Cref{fig:mergetoken}
+\Cref{fig:heat} presents the evaluation on performance improvement and resource reduction from
+optimizations discussed in \Cref{sec:des}.
 
-%\subsubsection{Blackbox IP Pruning} \label{sec:bbsplit}
-%\yz{Cut this if out of the space}
-%This step illustrates an example of integrating a customized partitioner for composable IP available on
-%the architecture.
-%The cost metrics and partition rule is specific to each IP.
-%The example IP is a merge buffer, which can merge two sorted vector streams into a single stream with
-%one vector per cycle throughput.
-%The merge buffer pruner uses a tree of 2-way merge buffers across PBs to compose a multi-way merge buffer declared in the program.
+\emph{merge} and \emph{rtelm} are optimizations that gives a consistent resource improvement for most applications.
+\emph{dupra} and \emph{msr} helps \emph{\bf mlp} and \emph{\bf lstm}, which are heavily partitioned during the memory-partitioning stage.
 
+\emph{dupra} significantly reduces unbalancing in the data path caused due to the large merge tree generated by memory partitioning.
+\emph{retime} can have significant impact on performance of the application at the cost of increase in resource usage.
+Using scratchpad as a retiming buffer with \emph{retime-mem} flag can significantly reduce resource usage.
 

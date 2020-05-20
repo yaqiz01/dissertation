@@ -38,12 +38,12 @@ def plot_mlp():
     ax.bar(index, pcu, bar_width,
     alpha=opacity,
     color=colors[0],
-    label='PCU')
+    label='CU')
 
     ax.bar(index, pmu, bar_width, bottom=pcu,
     alpha=opacity,
     color=colors[1],
-    label='PMU')
+    label='MU')
 
     thrpt = 1.0 / (4 / ops)
     ax2.plot(index, thrpt,
@@ -55,7 +55,7 @@ def plot_mlp():
 
     ax.set_xticks(index)
     ax.set_xticklabels(ops)
-    ax.set_xlabel("Output Channel Parallelization")
+    ax.set_xlabel("Output Parallelization Factor")
     ax.set_ylabel("Number of VU")
     ax2.set_ylabel("Throughput (Gsample/s)",rotation=-90, labelpad=20)
     fig.subplots_adjust(left=0.2,right=0.8,bottom=0.2)
@@ -454,7 +454,7 @@ def plot_merge():
 
 def main():
 
-    # plot_mlp()
+    plot_mlp()
     # plot_gpu_slide()
     # plot_dep()
 
@@ -467,6 +467,6 @@ def main():
     # plot_part_cycle_valid()
     # plot_part_cycle_invalid()
 
-    plot_merge()
+    # plot_merge()
 
 main()

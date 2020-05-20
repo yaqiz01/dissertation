@@ -43,7 +43,7 @@ Each loop generated from loop division can only execute if all of their input qu
 \inputminted{python}{code/loopexp1division.py}
 \caption{Loop Division}
 \end{subfigure}
-\caption[Example of Loop Fission vs. Loop Division]{
+\caption[Example of loop fission vs. loop division]{
   (b) and (c) shows the output of loop fission and loop division of the input program (a), respectively.
   In (b), the first loop is executed entirely before executing the second loop. The intermediate
   result \texttt{tmp} is materialized into an array with the same size as the loop range.
@@ -322,14 +322,6 @@ If the LCD is on a multi-buffered memory, the LCD token is initialized with the 
 
 These are general schemes we use on any types of memory (including DRAM and on-chip memories) with unpredictable access latency.
 
-\subparagraph{Special Case: Single-Cycle Access}
-For a memory with guaranteed {\em single-cycle} access latency, such as registers and statically banked SRAMs that are guaranteed conflict-free, we can simplify the necessary synchronization (\Cref{fig:tokentrick}(c)).
-Instead of synchronizing between $resp_A$ and $reqst_B$, we allocate two stateless contexts $reqst_A'$ and $reqst_B'$ within {\emph the same} VB as the accessed memory that forwards requests from $reqst_A$ and $reqst_B$, respectively.
-Next, we forward the token going from $reqst_A$ to $reqst_B$ to go through $reqst_A'$ to $reqst_B'$ instead, and configure the token buffer in $reqst_B'$ with the depth of one for serialized schedule and depth of M for multi-buffered schedule. 
-We no longer need to insert the LCD token, as the stiff back pressure from the token buffer in $reqst_B'$ will enforce the expected behavior.
-This optimization only works if the sender and receiver of the token buffer are physically in a single VB where the memory is located.
-In this way, when $reqst_B'$ observes $reqst_A'$s token, $reqst_B'$ is guaranteed to observe the memory update from $reqst_A'$ because the memory also has single-cycle access latency.
-
 \paragraph{When.}
 \name{} configures the contexts to generate the token using their local states at runtime.
 For FIFOs, the token is generated and consumed every cycle when the producer and receiver contexts are active.
@@ -355,7 +347,7 @@ body.
 \inputminted{python}{code/dynrangectx.py}
 \caption{Context graph}
 \end{subfigure}
-\caption[Dynamic Loop Range]{
+\caption[Example of dynamic loop range]{
   (a) shows an example program with dynamic loop range. 
   Expressions to generate the loop bounds belongs to a basic block that gets mapped to \texttt{ctx1}.
   \name maps the loop bound as a data-dependnecy to context that maps the inner loop context, and
@@ -385,11 +377,7 @@ body.
 \includegraphics[width=0.8\textwidth]{figs/branchtiming.pdf}
 \caption{Context configuration}
 \end{subfigure}
-\caption[Dynamic Loop Range]{
-  (a) shows an example program with dynamic loop range. 
-  Expressions to generate the loop bounds belongs to a basic block that gets mapped to \texttt{ctx1}.
-  \name maps the loop bound as a data-dependnecy to context that maps the inner loop context, and
-  configures dequeue signal of \texttt{bound} stream to counter \texttt{B.done}.
+\caption[Branching example]{
 }
 \label{fig:dynrange}
 \end{figure*}
@@ -410,3 +398,16 @@ At this point, contexts accessing memory within the while loop will send the tok
 After all contexts and shared resources are allocated and synchronized, we simply put each context and shared resource into their own VBs.
 The contexts with single-cycle special case (\Cref{sec:sync}) must be put in the same VB as the shared memory.
 
+\subparagraph{Specialization for dense on-chip array}
+For a memory with guaranteed {\em single-cycle} access latency, such as registers and statically banked SRAMs that are guaranteed conflict-free, we can simplify the necessary synchronization (\Cref{fig:tokentrick}(c)).
+Instead of synchronizing between $resp_A$ and $reqst_B$, we allocate two stateless contexts $reqst_A'$ and $reqst_B'$ within {\emph the same} VB as the accessed memory that forwards requests from $reqst_A$ and $reqst_B$, respectively.
+Next, we forward the token going from $reqst_A$ to $reqst_B$ to go through $reqst_A'$ to $reqst_B'$ instead, and configure the token buffer in $reqst_B'$ with the depth of one for serialized schedule and depth of M for multi-buffered schedule. 
+We no longer need to insert the LCD token, as the stiff back pressure from the token buffer in $reqst_B'$ will enforce the expected behavior.
+This optimization only works if the sender and receiver of the token buffer are physically in a single VB where the memory is located.
+In this way, when $reqst_B'$ observes $reqst_A'$s token, $reqst_B'$ is guaranteed to observe the memory update from $reqst_A'$ because the memory also has single-cycle access latency.
+
+\subparagraph{Specialization for non-indexable memory}
+We perform another specialization on non-indexable memories (registers or FIFOs), whose all accesses have no explicit read enables.
+Instead of treating them as shared memories, \name{} duplicates and maps them to local input buffers in all receivers, no longer requiring tokens.
+The sender actor pushes to the network when the token is supposed to be sent, and the receiver dequeues one element from the input buffer when the token is supposed to be consumed.
+This dramatically reduces the synchronization complexity of non-indexable memory in the common case.
