@@ -6,16 +6,16 @@ This section discusses communication characteristics common in
 applications that have been spatially mapped to CGRAs. %In this paper, we explore a wide variety of interconnection network designs for CGRAs.
 Because CGRAs encompass a broad range of architectures, we first describe the abstract machine model
 of our target CGRA for this study, shown in  Figure~\ref{fig:arch}.
-The CGRA contains Physical Blocks (PBs) corresponding to distributed hardware resources, including compute units, scratchpads, and DRAM controllers.
-The communication between PBs, sent over a reconfigurable network, is purely streaming.
-Compute PBs have a simple control mechanism: they wait on input data dependencies and stall for backpressure from the network. 
+The CGRA contains Physical Units (PUs) corresponding to distributed hardware resources, including compute units, scratchpads, and DRAM controllers.
+The communication between PUs, sent over a reconfigurable network, is purely streaming.
+Compute PUs have a simple control mechanism: they wait on input data dependencies and stall for backpressure from the network. 
 %The compute can have simple state machine allow rate matching between dependencies.
-The network guarantees exactly-once, in-order delivery with variable latency, and communication between PBs can have varying granularities (e.g., 512-bit vector or 32-bit scalar).
+The network guarantees exactly-once, in-order delivery with variable latency, and communication between PUs can have varying granularities (e.g., 512-bit vector or 32-bit scalar).
 
 %\subsection{CGRA Characteristics} 
 In this study, we focus on two categories of CGRA architectures.
-The first architecture uses pipelining in compute PBs, as shown in Figure~\ref{fig:arch}.
-To provide high throughput, each stage of the pipeline exploits SIMD parallelism, and multiple SIMD operations are pipelined within a PB.
+The first architecture uses pipelining in compute PUs, as shown in Figure~\ref{fig:arch}.
+To provide high throughput, each stage of the pipeline exploits SIMD parallelism, and multiple SIMD operations are pipelined within a PU.
 Plasticine, a recently proposed CGRA, is an example of a pipelined architecture \cite{plasticine}.
 %Since computations are laid out in space, pipelined communication forms between data producers and consumers.  
 %Due to the pipelined computation, performance is less sensitive to the latency of the communication. 
@@ -31,9 +31,9 @@ Plasticine, a recently proposed CGRA, is an example of a pipelined architecture 
 %in such a CGRA, variables are not loaded into each compute unit every cycle.
 %By keeping more computation in a single compute unit, the total amount of network communication is reduced and there are more opportunities for link sharing than with the pipelined network.
 %Figure~\ref{fig:link}(a) shows the activation rate of all communications in the program. About 40\% of the links are firing at more than 50\% of the time for most of the compute bound applications, such as GDA, GEMM, and Kmeans. On the other hand, about half of the links activate at very low frequency, where link sharing can improve overall link utilization.
-The second architecture uses time-scheduled execution, where each PB executes a small loop of instructions (e.g., 6) repeatedly. 
+The second architecture uses time-scheduled execution, where each PU executes a small loop of instructions (e.g., 6) repeatedly. 
 The scheduling window is small enough that instructions are stored as part of the configuration fabric, without dynamic instruction fetch overhead. 
-This execution model creates more interleaved pipelining across PBs with communication that is tolerant of lower network throughput, which provides an opportunity to share links.
+This execution model creates more interleaved pipelining across PUs with communication that is tolerant of lower network throughput, which provides an opportunity to share links.
 Many proposed CGRAs and domain-specific architectures use this \emph{time-scheduled} form of computation, including Brainwave~\cite{brainwave} and DaDianNao~\cite{dadiannao}.
 
 \subsection{Application Characteristics}
@@ -64,7 +64,7 @@ This variation in communication motivates specialization for optimal area- and e
 %In Plasticine, these are 512bit vectors and 32bit scalars.
 
 \subsubsection{Broadcast and incast communication} 
-A key optimization for spatial reconfigurable accelerators is the parallelization of execution across PBs.
+A key optimization for spatial reconfigurable accelerators is the parallelization of execution across PUs.
 This parallelization involves unrolling outer loop nests in addition to the vectorization of the inner loop.
 For neural network accelerators, this corresponds to parallelizing one layer across different channels. 
 %, balancing the throughput
@@ -113,11 +113,11 @@ This can be fixed by providing more buffering on the low-latency pipeline; with 
 \fi
 
 %The other consequence of partitioning is forming of unbalanced pipeline. 
-%For example if output of $VB-A$ is send to $VB-B$ and $VB-D$.
-%Additionally, $VB-D$ also consumes output of $VB-C$, which consumes output of $VB-B$, then the
-%imbalanced two branch of data path $VB-A \rightarrow VB-B \rightarrow VB-C \rightarrow VB-D$ and
-%$VB-A \rightarrow VB-D$ can cause pipeline bubbles if $VB-D$ does not have enough input buffer to
-%buffer fast data path from $VB-A$. This bubble is uniform across all design points, however, can be
+%For example if output of $VU-A$ is send to $VU-B$ and $VU-D$.
+%Additionally, $VU-D$ also consumes output of $VU-C$, which consumes output of $VU-B$, then the
+%imbalanced two branch of data path $VU-A \rightarrow VU-B \rightarrow VU-C \rightarrow VU-D$ and
+%$VU-A \rightarrow VU-D$ can cause pipeline bubbles if $VU-D$ does not have enough input buffer to
+%buffer fast data path from $VU-A$. This bubble is uniform across all design points, however, can be
 %alleviated with designs with more buffering along routes, such as double-buffer static network and
 %dynamic network. 
 
@@ -127,7 +127,7 @@ This can be fixed by providing more buffering on the low-latency pipeline; with 
 %Because the applications run on CGRAs have inherently simple control flow patterns, we are able to
 %perform effective static analysis on them. % someone might question this
 %\yaqi{
-Unlike the dynamic communication of multi-processors, communication on spatial architectures is created statically by compiling and mapping the compute graph onto the distributed PB resources.
+Unlike the dynamic communication of multi-processors, communication on spatial architectures is created statically by compiling and mapping the compute graph onto the distributed PU resources.
 As the compiler performs optimization passes, such as unrolling and banking, it has static knowledge about communication generated by
 these transformations.
 This knowledge allows the compiler to accurately determine which network flows in the transformed design correspond to throughput-critical inner-loop traffic and which correspond to low-bandwidth outer-loop traffic.
@@ -172,12 +172,12 @@ Compute and on-chip memory-bound applications show a significant amount of high-
 A few of these high-bandwidth links also exhibit high broadcast fanout. 
 Therefore, a network architecture must provide sufficient bandwidth and efficient broadcasts to sustain program throughput.
 On the contrary, time-scheduled architectures, shown in Figure~\ref{fig:link}(c,d), exhibit
-lower bandwidth requirements due to the lower throughput of individual compute PBs. 
+lower bandwidth requirements due to the lower throughput of individual compute PUs. 
 Even applications limited by on-chip resources have less than a 30\% firing rate on the busiest logical links; this reveals an opportunity for link sharing without sacrificing performance.
 
-Figure~\ref{fig:graph} shows statistics describing the VB dataflow graph before and after partitioning.
-The blue bars show the number of VBs, number of logical links, and maximum VB input/output degrees in the original parallelized program; the yellow and green bars show the same statistics after partitioning. 
-Fewer VBs are partitioned for hybrid networks and dynamic networks with the time-scheduled architecture, as explained in Section~\ref{sec:partition}. 
+Figure~\ref{fig:graph} shows statistics describing the VU dataflow graph before and after partitioning.
+The blue bars show the number of VUs, number of logical links, and maximum VU input/output degrees in the original parallelized program; the yellow and green bars show the same statistics after partitioning. 
+Fewer VUs are partitioned for hybrid networks and dynamic networks with the time-scheduled architecture, as explained in Section~\ref{sec:partition}. 
 The output degree does not change with partitioning because most outputs with a large degree are from broadcast links.
 
 
@@ -192,7 +192,7 @@ Finally, we explore the benefits of specialization by evaluating design points t
 \subsubsection{Static networks}
 We explore static network design points along three axes. 
 First, we study the impact of flow-control schemes in static switches. 
-In credit-based flow control~\cite{wang2013avoiding}, the source and destination PBs coordinate to ensure that the destination buffer does not overflow.
+In credit-based flow control~\cite{wang2013avoiding}, the source and destination PUs coordinate to ensure that the destination buffer does not overflow.
 For this design point, switches only have a single register at each input, and there is no backpressure between switches.
 %This design utilizes minimum buffering within switches, but require larger end-point buffering.
 %
@@ -245,12 +245,12 @@ We also explore different flit widths on the dynamic network, with a smaller bus
 %When extending the deadlock model to a CGRA, there are three main types of deadlock that we need to avoid: traditional network deadlock, endpoint buffer deadlock, and through-node deadlock.
 %For CGRAs, there are three main types of deadlock that we need to avoid: traditional network deadlock, endpoint buffer deadlock, and through-node deadlock.
 %A key difference between CGRA and CPU networks is that CGRAs operate in a streaming fashion---each spatially distributed node, after completing its assigned work, sends the result to the next node(s).
-Because CGRA networks are streaming---each PB pushes the result to the next PB(s) without explicit request---the network cannot handle routing schemes that may drop packets; otherwise, application data would be lost.
+Because CGRA networks are streaming---each PU pushes the result to the next PU(s) without explicit request---the network cannot handle routing schemes that may drop packets; otherwise, application data would be lost.
 %Due to spatial accelerator tends to optimize for lightweight control to maximize compute density, there is also less leverage on complicated routing hardware with packet reordering. 
 Because packet ordering corresponds directly to control flow, it is also imperative that all packets arrive in the order they were sent; this further eliminates adaptive or oblivious routing from consideration.
 We limit our study of dynamic networks to statically placed and routed source routing due to these architectural constraints.
-PBs propagate backpressure signals from their outputs to their inputs, so they must be considered as part of the network graph for deadlock purposes~\cite{hansson2007avoiding}.
-Furthermore, each PB has fixed-size input buffers; these are far too small to perform high-throughput, end-to-end credit-based flow control in the dynamic network for the entire program \cite{wang2013avoiding}.
+PUs propagate backpressure signals from their outputs to their inputs, so they must be considered as part of the network graph for deadlock purposes~\cite{hansson2007avoiding}.
+Furthermore, each PU has fixed-size input buffers; these are far too small to perform high-throughput, end-to-end credit-based flow control in the dynamic network for the entire program \cite{wang2013avoiding}.
 %This is similar to work done on streaming NoCs, where multiple streams of traffic compete for the same resources \cite{hansson2007avoiding, wang2013avoiding}.
 %Furthermore, because a compute node must be able to send its output to read its inputs, dependences may be propagated backwards through the network; this means that dimension order routing alone is insufficient to make progress and separate virtual networks must be used.
 %\subsubsection{Endpoint Buffer Deadlock}
@@ -428,7 +428,7 @@ For metrics that are calculated per application, such as performance, performanc
 worst network configuration for that application. 
 For each network configuration, we present a geometric mean normalized across all applications. 
 For all of our experiments, except Section~\ref{sec:scale}, we use a network
-size of $14\times14$ end-point PBs. All vector networks use a vectorization factor of 16 (\SI{512}{bit} messages).
+size of $14\times14$ end-point PUs. All vector networks use a vectorization factor of 16 (\SI{512}{bit} messages).
 
 \begin{figure}
 \centering
@@ -437,21 +437,21 @@ size of $14\times14$ end-point PBs. All vector networks use a vectorization fact
 \end{figure}
 \subsubsection{Bandwidth scaling with network size}\label{sec:scale}
 %Figure~\ref{fig:scale} shows the performance scaling of applications as accelerator size scales with different network configurations.
-Figure~\ref{fig:scale} shows how different networks allow several applications to scale to different numbers of PBs.
+Figure~\ref{fig:scale} shows how different networks allow several applications to scale to different numbers of PUs.
 For IO-bound applications (BlackScholes and TPCHQ6), performance does not scale with additional compute and on-chip memory resources.
 However, the performance of compute-bound applications (GEMM and SGD) improves with increased resources, but plateaus at a level that is determined by on-chip network bandwidth. 
 %Although this is expected for general network designs, it is much more noticeable due to the high-bandwidth communication inherent in pipelined reconfigurable accelerators.
-This creates a trade-off in accelerator design between highly vectorized compute PBs with a small network---which would be underutilized for non-vectorized problems---and smaller compute PBs with limited performance due to network overhead. 
-For more finely grained compute PBs, both more switches and more costly (higher-radix) switches must be employed to meet application requirements.
+This creates a trade-off in accelerator design between highly vectorized compute PUs with a small network---which would be underutilized for non-vectorized problems---and smaller compute PUs with limited performance due to network overhead. 
+For more finely grained compute PUs, both more switches and more costly (higher-radix) switches must be employed to meet application requirements.
 
 The scaling of time-scheduled accelerators (bottom row) is much less dramatic than that of deeply pipelined architectures (top row). 
-Although communication between PBs in these architectures is less frequent, the scheduled architecture must use additional parallelization to match the throughput of the pipelined architecture; this translates to larger network sizes. 
+Although communication between PUs in these architectures is less frequent, the scheduled architecture must use additional parallelization to match the throughput of the pipelined architecture; this translates to larger network sizes. 
 %Since scaling dynamic bandwidth is much more expensive than scaling static bandwidth, as shown in section \ref{sec:net_char}, 
 %we only explored scaling bandwidth in vector switches. 
 
 For pipelined architectures, both hybrid and static networks provide similar scaling with the same static bandwidth:
 the additional bandwidth from the dynamic network in hybrid networks does not provide additional scaling. 
-This is mostly due to a bandwidth bottleneck between a PB and its router, which prevents the PB from requesting multiple elements per cycle.
+This is mostly due to a bandwidth bottleneck between a PU and its router, which prevents the PU from requesting multiple elements per cycle.
 Hybrid networks tend to provide better scaling for time-scheduled architectures; multiple streams can be time multiplexed at each ejection port without losing performance.
 
 \begin{figure}
@@ -476,7 +476,7 @@ Hybrid networks tend to provide better scaling for time-scheduled architectures;
 \begin{figure}
 \centering
   \includegraphics[width=1\columnwidth]{figs/energy.pdf} 
-\caption{(a,d): Normalized performance/watt. (b,e): Percentage of compute and memory PBs utilized for each network configuration. 
+\caption{(a,d): Normalized performance/watt. (b,e): Percentage of compute and memory PUs utilized for each network configuration. 
   (c,f): Total data movement (hop count).}
 \label{fig:energy}
 \end{figure}
@@ -522,20 +522,20 @@ In a few cases (Kmeans and GDA), hybrid networks  provide better performance due
 For compute-bound applications, performance primarily correlates with network bandwidth because more bandwidth permits a higher parallelization factor. 
 
 %Figures~\ref{fig:energy} [1,4] show the normalized performance/watt of the network for pipelined and scheduled
-%architectures. Figure [2,5] show the corresponding PB utilizations in the network. Figure [3,6] summarize the total
+%architectures. Figure [2,5] show the corresponding PU utilizations in the network. Figure [3,6] summarize the total
 %data movement distributed on static vector, static scalar, dynamic vector and dynamic scalar for that network
 %configuration.  
-The highest bandwidth static network uses the most PBs, as shown in Figures~\ref{fig:energy}(b,e), because it permits more parallelization. 
-It also has more data movement, as shown in (c,f), because PBs can be distributed farther apart. 
+The highest bandwidth static network uses the most PUs, as shown in Figures~\ref{fig:energy}(b,e), because it permits more parallelization. 
+It also has more data movement, as shown in (c,f), because PUs can be distributed farther apart. 
 Due to bandwidth limitations, low-bandwidth networks perform best with small unrolling factors---they are unable to support the bisection bandwidth of larger program graphs.
-This is evident in Figures~\ref{fig:energy}(b,e), where networks D-x0-v4-f512 and S-x2 have small PB utilizations.
+This is evident in Figures~\ref{fig:energy}(b,e), where networks D-x0-v4-f512 and S-x2 have small PU utilizations.
 
 With the same static bandwidth, most hybrid networks have better energy efficiency than the corresponding pure static networks, even though routers take more energy than switches to transmit the same amount of data.
 This is a result of allowing a small amount of traffic to escape onto the dynamic network: with the dynamic network as a safety net, static place and route tends to converge to better placements with less overall communication.
 This can be seen in Figures~\ref{fig:energy}(c,f), where most static networks have larger hop counts than the corresponding hybrid network; hop count is the sum of all runtime link traversals, normalized per-application to the network configuration with the most hops.
-Subplots (e,f) show that more PBs are utilized with static networks than hybrid networks.
-%Compared to hybrid networks, (e,f), show larger PB utilization at the same parallelization factor on the purely static network .
-This is because the compiler imposes less stringent IO constraints on PBs when partitioning for the hybrid network (as explained in Section~\ref{sec:partition}), which results in fewer PBs, less data movement, and greater energy efficiency for hybrid networks.
+Subplots (e,f) show that more PUs are utilized with static networks than hybrid networks.
+%Compared to hybrid networks, (e,f), show larger PU utilization at the same parallelization factor on the purely static network .
+This is because the compiler imposes less stringent IO constraints on PUs when partitioning for the hybrid network (as explained in Section~\ref{sec:partition}), which results in fewer PUs, less data movement, and greater energy efficiency for hybrid networks.
 
 In Figure~\ref{fig:radar_best}, we summarize the best perf/watt and perf/area (among network configurations with <10\% performance overhead) for pipelined and scheduled CGRA architectures. 
 Pure dynamic networks are not shown because they perform poorly due to insufficient bandwidth.
@@ -573,7 +573,7 @@ Overall, the hybrid networks deliver better energy efficiency with shorter routi
 %Figure~\ref{fig:slow_down} (a) shows the performance degradation normalized to the ideal network with infinite buffers; all the other design points have an end-point buffer with depth 4 inside the CUs.
 %We found that for memory bandwidth bound applications, the performance is roughly the same across all design points, mostly due to the low CU utilization and lack of congestion. 
 %Although BlackScholes is DRAM bandwidth bound, the inner loop partition introduces lots of CUs communicating their temporary results. 
-%The slow-down with BlackScholes with static network compared to ideal network is due to the pipeline bubbles introduced by VB partitioning as explained in Section \ref{sec:network}. 
+%The slow-down with BlackScholes with static network compared to ideal network is due to the pipeline bubbles introduced by VU partitioning as explained in Section \ref{sec:network}. 
 
 %Overall, the hybrid network with the $v1$ static network has a slowdown of less than 2x overall, while the hybrid network with $v2$ has static-equivalent performance.
 
