@@ -1,4 +1,16 @@
 \section{Placement and Routing (WIP)} \label{sec:mapping}
+The input to the \emph{placement and routing (PaR)} phase is a VUDFG with each VU tagged to a type of PU.
+Before PaR, \name also performs a runtime analysis of the program, and annotate each edge in VUDFG
+with a link priority. The link priority is used to determine the routing order during PaR.
+PaR then iteratively place VUs and route edges in VUDFG onto the global network.
+
+In additional to the original static network in Plasticine, we introduce a dynamic network in
+parallel to the static network, forming a dynamic-static hybrid network.
+Both purely static and purely dynamic network are instances of the parameterized hybrid network.
+The details about the hybrid network will be discussed in \Cref{sec:network}.
+The PaR algorithm needs to handle both network types and multiple network granularity (vector,
+scalar, control) at the same time.
+
 \if 0
 \subsection{Back-tracking + A* search Placement and Routing}
 \begin{figure}[!ht]
@@ -118,7 +130,7 @@ for adjacency between $v$s.
 %also incorporates a topology dependent heuristic cost to speed up A* search. An example heuristic cost
 %for mesh network is the Manhattan distance between the next hop to the final destination.
 
-%\subsection{Iterative Placement}
+\subsection{Iterative Placement}
 
 For purely static networks, the goal is primarily to find a valid placement---because static routes have guaranteed resources reserved, no two routes can conflict, and any placement found is essentially optimal. 
 Some routes may have longer latency, which has a second-order performance impact compared to throughput.
