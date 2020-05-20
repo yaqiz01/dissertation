@@ -1,24 +1,17 @@
 \section{Plasticine Specialization for RNN Serving} \label{sec:rnn_arch}
-To show efficient execution of the loop and parallel pattern constructs,
-  we map our implementation onto a spatial architecture, Plasticine.
-\textbf{Foreach} at Line $17, 19$ and \textbf{Reduce} at Line $22, 23$
-  are mapped to PCUs on Plasticine.
-When the application size is small,
-  these constructs are executed using pipelined SIMD lanes within a single PCU.
-When the application size is large,
-  multiple PCUs can be used to parallelize and pipeline the dot
-  product across PCUs. Element-wise operations can be executed in a deep pipeline
-  formed by chaining multiple PCUs.
+Low-precision inference are commonly used to reduce memory footprint of deep learning models and
+increase compute density of hardware accelerators.
+Plasticine, however, only supports 32-bit operations and datapath.
+Using RNN serving as a motivating example, this section discusses the necessary architecture augmentation and
+specialization needed to efficiently map real-time inference on Plasticine.
 
-To fit an RNN's weights on-chip,
-  we execute our application with low-precision arithmetics.
-In this section,
-  we propose the necessary micro-architectural changes to
+\todo{background on RNN}
+In \Cref{sec:lowprec}, we propose the necessary micro-architectural changes to
   support low-precision arithmetics on Plasticine.
 We also discuss architectural parameter selection for Plasticine
-  to serve RNN applications efficiently.
+  to serve RNN applications efficiently in \Cref{sec:sizing}
 
-\subsection{Mixed-Precision Support}
+\subsection{Mixed-Precision Support} \label{sec:lowprec}
 \label{sec:arch:varprec}
 Previous works \cite{fowers2018configurable, jouppi2017datacenter}
   have shown that low-precision inference can deliver promising performance
@@ -104,7 +97,7 @@ With fused reduced-precision multiplication and reduction, and folded reduction 
   8-bit values using 4 stages.
 All the operations are completed in $2+\log_2(\#_{LANE})+1$ cycles.
 
-\subsection{Sizing Plasticine for RNN Serving}
+\subsection{Sizing Plasticine for RNN Serving} \label{sec:sizing}
 Evaluating an RNN cell containing $N$ hidden units and $N$ input features
   requires $2N^2$ computations and $N^2+N$ memory reads.
 With large $N$, the compute to memory ratio is 2:1.

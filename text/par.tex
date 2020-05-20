@@ -1,4 +1,4 @@
-\section{Placement and Routing (WIP)} \label{sec:par}
+\section{Placement and Routing (Ready)} \label{sec:par}
 The input to the \emph{placement and routing (PaR)} phase is a VUDFG with each VU tagged to a type of PU.
 Before PaR, \name also performs a runtime analysis of the program, annotating each edge in VUDFG
 with a link priority. The link priority is used to determine the routing order during PaR.
@@ -56,7 +56,7 @@ The most active program link sets a lower bound on the program runtime (the high
 %For the heuristic based unplacement, a node's contribution to global route congestion is calculated by adding an estimate of all connected routes' contributions to the global penalty score; the node(s) with the highest scores are unplaced.
 %Similarly, {\sc Place} also can either randomly place an unplaced node, or place it to minimize the Manhattan distance to its logical neighbors. {\sc Score} calculates the heuristics for each node, and {\sc Filter} duplicates the best candidate placements to fill the pool. Because the unplacement and replacement steps can make a placement worse, the best performing placements are frozen in each iteration to ensure that no good placements are thrown away.
 
-\subsection{Congestion-aware routing} \label{sec:route}
+\subsection{Congestion-Aware Routing} \label{sec:route}
 %\info{Somewhere we should mention that placement and routing running interchangeably}
 To achieve optimal performance, we use a routing algorithm that projects congestion and routes around it. 
 Routing starts with the highest-priority routes, as determined by fanout of the broadcast edge and
@@ -90,7 +90,7 @@ their shortest path, which balances the hop count.
 %The algorithm will find a fully static broadcast tree, if one exists, and will only add a non-static route to the broadcast (moving the entire broadcast to the dynamic network) when there are VUs in the tree that cannot be reached from the source VU by \emph{any} static route.
 %\info{does the algorithm routes links from high priority to low from all nodes or it does one node at a time?}
 
-\subsection{VC allocation for deadlock avoidance} \label{sec:vc}
+\subsection{VC Allocation for Deadlock Avoidance} \label{sec:vc}
 Deadlock is a system pathology in dynamic routing where multiple flits form a cyclic holds/waits dependency on each others' buffers and prevent forward progress.
 Most data-flow accelerators use a streaming model, where outputs of a producer are sent over the network to one or more consumers
 without an explicit request; the producer is backpressured when there is insufficient buffer space. 
@@ -170,24 +170,23 @@ to a ratio that receiver expects, which permits data to drain in the network.
 %Practically, this means that no two logical paths may be allowed to conflict at \emph{any} point in the network; to meet this guarantee, buffer allocation is performed to ensure that all logical paths traversing the same physical link are placed into separate virtual channels.
 %Because there are only a finite number of VCs at each router, this is another network constraint to optimize: routes are penalized for exceeding the maximum, which leads to them being moved and a better solution being found.
 
-\subsection{Heuristic Routing Guild Generation} \label{sec:heuristic}
+\subsection{Runtime Analysis for Heuristic Generation} \label{sec:heuristic}
 
 In Spatial, the user can annotate runtime-variable input values to assist compiler analysis.  
-We use these programmer annotations to compute the expected number of iterations for each controller statically; this heuristic guidance helps the placer evenly distribute traffic. 
-However, we do not require exact annotations for efficient placement---a rough estimate of data size is sufficient for the placer to determine the relative importance of links.
-For loop controllers, the number of iterations per parent iteration is $\lceil(max-min)/(step\cdot par)\rceil;$ controllers representing glue logic run once per parent iteration.
-The activation count of a link will be the product of all of its ancestral controllers' iteration counts.
-%Another controller in Spatial runs forever while there are elements in its streaming input buffers. 
-%This construct is analogous to while loop condition on FIFO emptyness in software programming model. 
-%For these, we allow the user to annotate the number of elements coming from the streaming input, and the compiler can derive the activion count of other controllers relative to the streaming controller.
+We use these programmer annotations to compute the expected number of iterations each basic block
+will execute. 
+The execution count on basic block can future used to derive the packet count produced
+by these basic block.
+If the control is data-dependent, the user can annotate the data-dependent loop range, or the
+fraction for how frequently the branches evaluating to true.
+These heuristic guides can help placer to evenly spread out the traffic.
+However, we do not require exact annotations for efficient placement---a rough estimate of 
+data size is sufficient for the placer to determine the relative importance of links.
 
-%The relative enqueue and dequeue rate of each memory relative to its producer and consumer controllers can be computed based on source of the control signal, which usually is the enable or done signal of a counter in the controller branch. 
-%For example, for register \emph{N} in \emph{VU-D}, it is enqueued every cycle when producer \emph{C0-1} is enabled and dequeued every time \emph{C1.done} is high. 
-%Then enqueue rate of register \emph{N} is just 1, while the dequeue rate of \emph{N} is the product if iteration counts of \emph{C4-1}, \emph{C4}, \emph{C3}, and \emph{C1} $\left(\frac{N^2}{tsA \cdot ip \cdot op2 \cdot op1}\right)$.
-%For any link $L$, the total number of active cycles can be computed as activation of its producer devided by the enqueue rate.
-%In absence of streaming controllers, the total number of activation of a controller is just a product of itself and its ancestors's iteration counts. In case of streamiing controller, the number of activation is the links's activation count multiplied by the enqueuing rate.
-
-%Once we know the number of times each link is activated in the application, the placer can prioritize using static network to route links that carry high activation counts to guarantee throughput requirement of the data flow pipeline, and encourage link sharing across virtual links with low activations count without harming the performance. 
-Using the computed activation counts, the placer prioritizes highly used links for allocation to the static network and leaves infrequently used links on the dynamic network. 
-When no annotation is provided, or loop bounds cannot be constant-propagated, the compiler estimates loop iteration counts based on the nesting depth: innermost loops are the most frequently active.
+Using the estimated packet counts, the placer prioritizes highly used links for allocation to the static network and leaves infrequently used links on the dynamic network. 
+When no annotation is provided, or loop bounds cannot be constant-propagated, the compiler estimates
+loop iteration counts based on the nesting depth: packets generated by the innermost loops are 
+the more likely to be frequent.
 This heuristic provides a reasonable estimate of links' priorities for routing purposes.
+
+\todo{Elaborate on how to perform the analysis especially for streaming program}
