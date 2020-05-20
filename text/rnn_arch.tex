@@ -1,11 +1,25 @@
 \section{Plasticine Specialization for RNN Serving} \label{sec:rnn_arch}
+
+Recurrent Neural Networks (RNNs) are a class of sequence models that plays a key role
+  in low-latency,
+  AI-powered services in datacenters \cite{fowers2018configurable, jouppi2017datacenter}.
+In these services,
+  the platforms assume that user requests come in individual samples
+  and need to be served with very stringent latency window
+  for real-time human computer interaction.
+  An example of such workload is
+  Google Translate, where inference happens concurrently when a user types.
+Despite its popularity, RNN model serving is hard to accelerate efficiently.
+Modern software and hardware platforms support optimized BLAS routines.
+
+An efficient execution of RNN requires flexibility in supporting more than BLAS kernels, 
+
 Low-precision inference are commonly used to reduce memory footprint of deep learning models and
 increase compute density of hardware accelerators.
 Plasticine, however, only supports 32-bit operations and datapath.
 Using RNN serving as a motivating example, this section discusses the necessary architecture augmentation and
 specialization needed to efficiently map real-time inference on Plasticine.
 
-\todo{background on RNN}
 In \Cref{sec:lowprec}, we propose the necessary micro-architectural changes to
   support low-precision arithmetics on Plasticine.
 We also discuss architectural parameter selection for Plasticine
