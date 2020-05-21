@@ -70,12 +70,12 @@ class PlasticineModel:
         tab = tab.sort_values(by=idxs)
         tab = tab.interpolate(method='linear', axis=0)
 
-        set_active(tab, "isca2019/RouterStudy/results/router_power28.csv")
+        set_active(tab, "data/router_power28.csv")
         return tab
     
     def loadswitch(self):
         # sweeping from 0 to 100 duty cycle with one design point
-        tab = pd.read_csv("isca2019/RouterStudy/results/switch_power28.csv", header=0, encoding="utf-8-sig")
+        tab = pd.read_csv("data/switch_power28.csv", header=0, encoding="utf-8-sig")
 
         # full result from William at 100% duty cycle
         tab = pd.read_csv("data/switch28_isca2_power.csv", header=0, encoding="utf-8-sig")
@@ -85,7 +85,7 @@ class PlasticineModel:
         tab = pd.concat([tab, lookup(old, WIDTH=32, LINKS_SW=1, drop=False)], axis=0, sort=True)
 
         # sweeping from 0 to 100 duty cycle with one design point
-        set_active(tab, "isca2019/RouterStudy/results/switch_power28.csv")
+        set_active(tab, "data/switch_power28.csv")
         return tab
 
     def get_router_spec(self, header, **conf):

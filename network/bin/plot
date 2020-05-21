@@ -1,4 +1,4 @@
-#!env3/bin/python3
+#!../env/bin/python3
 
 from os import listdir
 from os.path import isfile, isdir, join, splitext, basename, dirname 
@@ -9,17 +9,16 @@ import pickle
 import csv
 import argparse
 from scipy import stats
-import imp
+# import imp
 import cairosvg
 
 import matplotlib
-matplotlib.use('agg')
 from matplotlib import rc
 # from matplotlib.font_manager import _rebuild
 # _rebuild()
-rc('text', usetex=True)
-rc('font',**{'family':'CMU Serif','serif':['Computer Modern Roman'], 
-    'sans-serif':'Computer Modern Sans serif','monospace':'Computer Modern Typewriter'})
+# rc('text', usetex=True)
+# rc('font',**{'family':'CMU Serif','serif':['Computer Modern Roman'], 
+    # 'sans-serif':'Computer Modern Sans serif','monospace':'Computer Modern Typewriter'})
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -326,7 +325,7 @@ def plot_vc():
     ax.set_xticks(xticks)
     appnames = [textbf(a) for a in appnames]
     ax.set_xticklabels(appnames, rotation=40, horizontalalignment='right')
-    plt.ylabel(textbf('\# VC'))
+    plt.ylabel(textbf('# VC'))
     ax.set_xlim(0,len(appnames))
     ax.set_ylim(bottom=0)
     ax.legend(loc=2, ncol=3, fontsize='small')
@@ -929,8 +928,8 @@ def plot_char():
     ax3.set_xticks(vcs)
 
     ax4.set_xlabel('Static Bandwidth')
-    ax5.set_xlabel('\# VC')
-    ax6.set_xlabel('\# VC')
+    ax5.set_xlabel('# VC')
+    ax6.set_xlabel('# VC')
 
     ax1.set_ylabel('Area ($mm^2$)')
     ax4.set_ylabel('Per-bit Flit Energy (pJ)')
@@ -989,8 +988,13 @@ def plot_char():
             marker = '^'
         elif conf['flit_data_width'] == 128:
             marker = 'o'
-        axt.plot(num_message_classes, areas, label=label, linestyle=linestyle, linewidth=linewidth,
-                color=c, marker=marker, markersize=markersize)
+
+        if conf['sim_scalar']:
+            axt.plot([-1], [-1], label=label, linestyle=linestyle, linewidth=linewidth,
+                    color=c, marker=marker, markersize=markersize)
+        else:
+            axt.plot(num_message_classes, areas, label=label, linestyle=linestyle, linewidth=linewidth,
+                    color=c, marker=marker, markersize=markersize)
         axb.plot(num_message_classes, energy, label=label, linestyle=linestyle, linewidth=linewidth,
                 color=c, marker=marker, markersize=markersize)
 
@@ -1017,7 +1021,9 @@ def plot_char():
     ax1.set_title('Switch')
     ax4.legend(loc='upper right', ncol=1, fontsize='small')
     ax2.set_title('Router')
-    ax6.legend(loc='upper right', ncol=1, fontsize='small')
+    ax3.legend(loc='upper right', ncol=1, fontsize='small')
+    ax3.set_ylim(bottom=0)
+    ax3.set_xlim(left=0)
     ax3.set_title('Router (Scalar)')
     fig.tight_layout()
     plt.gcf().subplots_adjust(wspace=0.1)
