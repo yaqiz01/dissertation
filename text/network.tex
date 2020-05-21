@@ -139,10 +139,10 @@ This knowledge allows the compiler to accurately determine which network flows i
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{figs/util_bw2.pdf}
+\includegraphics[width=1\columnwidth]{network/figs/util_bw2.pdf}
 \caption{Physical resource and bandwidth utilization for various applications.}\label{fig:util_bw}
 \centering
-\includegraphics[width=1\columnwidth]{figs/link7.pdf}
+\includegraphics[width=1\columnwidth]{network/figs/link7.pdf}
   \caption{Application communication patterns on pipelined (a,b) and scheduled (c,d) CGRA architectures.
   (a) and (c) show the activation rate distribution of logical links at runtime. 
   Links sorted by granularity, then rate; darker boxes indicate higher rates.
@@ -152,7 +152,7 @@ This knowledge allows the compiler to accurately determine which network flows i
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{figs/graph.pdf}
+\includegraphics[width=1\columnwidth]{network/figs/graph.pdf}
 \caption{Characteristics of program graphs.}\label{fig:graph}
 \end{figure}
 
@@ -353,7 +353,7 @@ where $P_{\text{inactive}},$ $E_{\text{flit}},$ and $\#\text{flit}$ are tabulate
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{figs/sweep.pdf}
+\includegraphics[width=1\columnwidth]{network/figs/sweep.pdf}
   \caption{Switch and router power with varying duty cycle.}\label{fig:sweep}
 \end{figure}
 
@@ -373,7 +373,7 @@ Increasing the number of VCs or buffer depth per VC also significantly increases
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{figs/char.pdf}
+\includegraphics[width=1\columnwidth]{network/figs/char.pdf}
   \caption{Area and per-bit energy for (a,d) switches and (b,c,e,f) routers. 
   (c,f) Subplots (c,f) show area and energy of the vector router when used for scalar values (32-bit).}\label{fig:char}
 \end{figure}
@@ -387,7 +387,7 @@ Figure~\ref{fig:area} summarizes the area breakdown of all the network configura
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{figs/area.pdf}
+\includegraphics[width=1\columnwidth]{network/figs/area.pdf}
   \caption{Area breakdown for all network configurations.}\label{fig:area}
 \end{figure}
 
@@ -426,7 +426,7 @@ size of $14\times14$ end-point PUs. All vector networks use a vectorization fact
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{figs/scale.pdf}
+\includegraphics[width=1\columnwidth]{network/figs/scale.pdf}
 \caption{Performance scaling with increased CGRA grid size for different networks.}\label{fig:scale}
 \end{figure}
 \subsubsection{Bandwidth scaling with network size}\label{sec:scale}
@@ -450,30 +450,30 @@ Hybrid networks tend to provide better scaling for time-scheduled architectures;
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{figs/vc.pdf}
+\includegraphics[width=1\columnwidth]{network/figs/vc.pdf}
   \caption{Number of VCs required for dynamic and hybrid networks. (No VCs indicates that all traffic is mapped to the static network.)}\label{fig:vc}
 \end{figure}
 
 \begin{figure}
   \centering
-\includegraphics[width=0.8\columnwidth]{figs/radar_switch.pdf}
+\includegraphics[width=0.8\columnwidth]{network/figs/radar_switch.pdf}
   \caption{
     Impact of bandwidth and flow control strategies in switches.}\label{fig:radar_switch}
-\includegraphics[width=0.8\columnwidth]{figs/radar_router.pdf}
+\includegraphics[width=0.8\columnwidth]{network/figs/radar_router.pdf}
   \caption{Impact of VC count and flit widths in routers.}\label{fig:radar_router}
-\includegraphics[width=0.8\columnwidth]{figs/radar_best.pdf}
+\includegraphics[width=0.8\columnwidth]{network/figs/radar_best.pdf}
   \caption{Geometric mean improvement for the best network configurations, relative to the worst configuration.}\label{fig:radar_best}
 \end{figure}
 
 \begin{figure*}
 \centering
-\includegraphics[width=1\linewidth]{figs/perf.pdf}
+\includegraphics[width=1\linewidth]{network/figs/perf.pdf}
   \caption{Normalized performance for different network configurations.}\label{fig:perf}
 \end{figure*}
 
 \begin{figure}
 \centering
-  \includegraphics[width=0.8\columnwidth]{figs/energy.pdf} 
+  \includegraphics[width=0.8\columnwidth]{network/figs/energy.pdf} 
 \caption{(a,d): Normalized performance/watt. (b,e): Percentage of compute and memory PUs utilized for each network configuration. 
   (c,f): Total data movement (hop count).}
 \label{fig:energy}

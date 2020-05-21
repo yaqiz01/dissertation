@@ -36,7 +36,8 @@ from pandautil import *
 from radar_util import *
 
 def textbf(s):
-    return '\\textbf{' + s + '}'
+    # return '\\textbf{' + s + '}'
+    return s
 
 def ret(s):
     return s + '\n'
@@ -125,7 +126,7 @@ def plot_util_bw2():
     xticks = range(len(apps)+1)
     ax.set_xticks(xticks)
     ax.set_xticklabels([textbf(a) for a in apps], rotation=40, fontsize=fontsize)
-    plt.ylabel(textbf('Percentage of the Maximum'), fontsize=fontsize)
+    plt.ylabel(textbf('% of the Maximum'), fontsize=fontsize)
     ax.set_xlim(0,len(apps))
     ax.set_ylim(0,100)
     ax.legend(loc=2, ncol=2, fontsize=fontsize,bbox_to_anchor=(0.02, 1.4))
@@ -807,7 +808,7 @@ def plot_link6(backend, ax1, ax2):
     for app in apps:
         atab = tab.loc[app]
         param = atab.param
-        link = 'isca2019/data/link/{}__{}.csv'.format(backend,param)
+        link = 'data/link/{}__{}.csv'.format(backend,param)
         counts_vector[app] = []
         counts_scalar[app] = []
         multi_vec[app] = []
@@ -1087,7 +1088,14 @@ def plot_areas():
         hatch = None
         if tp == 'total_vswitch_area':
             hatch = '////'
-        label = textbf(tp.replace('_','\_'))
+        label = tp
+        # label = textbf(label.replace('_','\_'))
+        if "vswitch" in label:
+            label = "total area for vector swtiches"
+        elif "sswitch" in label:
+            label = "total area for scalar swtiches"
+        elif "router" in label:
+            label = "total area for routers"
         ax.bar(inds, np.array(areas), bottom=bottom, width=barwidth, edgecolor='none', label=label,
                 hatch=hatch)
         bottom += areas 
@@ -1611,7 +1619,7 @@ def plot_radar_flit(fig, patch, scheduled):
     ax = add_radar(fig, patch, tab, linestyle,
         color,label,linewidth,dims=['perf', 'perfarea','perfwatt'])
 
-    ax.legend(loc='upper right', fontsize='small', bbox_to_anchor=(1.2,1.2))
+    ax.legend(loc='upper right', fontsize='small', bbox_to_anchor=(1.3,1.3))
     return ax
 
 def plot_radar_bw(fig, patch, scheduled):
@@ -1648,7 +1656,7 @@ def plot_radar_bw(fig, patch, scheduled):
             color,label,lambda tab:1.5,dims=['perf', 'perfarea','areaeff','powereff','perfwatt'],
             n_ordinate_levels=3)
 
-    ax.legend(loc='upper right', fontsize='small', bbox_to_anchor=(1.2,1.2))
+    ax.legend(loc='center left', fontsize='small', bbox_to_anchor=(-0.43,0.5))
     return ax
 
 def plot_radar_cd(fig, patch, scheduled):
@@ -1672,7 +1680,7 @@ def plot_radar_cd(fig, patch, scheduled):
             color,label,lambda tab:1.5,dims=['perf', 'perfarea','areaeff','powereff','perfwatt'],
             n_ordinate_levels=3
             )
-    ax.legend(loc='upper right', fontsize='small', bbox_to_anchor=(1.2,1.1))
+    ax.legend(loc='lower right', fontsize='small', bbox_to_anchor=(1.35,-0.1))
     return ax
 
 def plot_radar_vc(fig, patch, scheduled):
@@ -1703,7 +1711,7 @@ def plot_radar_vc(fig, patch, scheduled):
     return ax
 
 # [left, bottom, width, height]
-def radar_subplots(nrow, ncol, xside=0.1, xmargin=0.2, yside=0.1, ymargin=0.1): 
+def radar_subplots(nrow, ncol, xside=0.1, xmargin=0.3, yside=0.1, ymargin=0.1): 
     fig = plt.figure()
     iw = (1 - xmargin - xside)/ncol
     ih = (1 - ymargin - yside)/nrow
@@ -1952,7 +1960,7 @@ def plot_scale():
                         linewidth=linewidth(btab), marker=marker(btab), markevery=4, label=netname(btab, ['T','vlink']))
             if s == 0 and a == len(apps)-1:
                 ax.legend(ncol=2, fontsize='small',bbox_to_anchor=(-1.8, 1))
-            ax.set_xlabel('\# PBs')
+            ax.set_xlabel('# PBs')
             tick = np.power(2, range(5,8))
             ax.set_xticks(tick)
             ax.set_xticklabels(tick, fontsize='small')
@@ -2047,11 +2055,11 @@ def plot_radar_best():
     ax = add_radar(fig, ps[0], tab[tab['scheduled']==False], linestyle,
             color,label,linewidth,dims=['perf', 'perfarea', 'perfwatt'])
     ax.set_xlabel('Pipelined')
-    ax.legend(loc='upper right', fontsize='small', bbox_to_anchor=(1.2,1.2))
+    ax.legend(loc='upper right', fontsize='small', bbox_to_anchor=(1.4,1.35))
     ax = add_radar(fig, ps[1], tab[tab['scheduled']==True], linestyle,
             color,label,linewidth,dims=['perf', 'perfarea', 'perfwatt'])
     ax.set_xlabel('Scheduled')
-    ax.legend(loc='upper right', fontsize='small', bbox_to_anchor=(1.2,1.2))
+    ax.legend(loc='upper right', fontsize='small', bbox_to_anchor=(1.4,1.35))
 
     fig.set_size_inches(5,2.6)
     plot_path = 'figs/radar_best.pdf'
@@ -2229,10 +2237,10 @@ def plot_graph():
                 hatch = '\\\\\\\\'
             ax.bar(ind + b*width/numbar , l , barwidth , edgecolor=ec, label=textbf(label), hatch=hatch)
             if a == 0: 
-                ylabel = textbf('\# VB')
+                ylabel = textbf('# VB')
                 ax.legend(loc=2, ncol=1, fontsize='small',bbox_to_anchor=(-0.1, 2))
             elif a == 1: 
-                ylabel = textbf('\# Links')
+                ylabel = textbf('# Links')
             elif a == 2: 
                 ylabel = ret(textbf('Max')) + textbf('In-degree')
             elif a == 3: 
@@ -2261,7 +2269,7 @@ def plot_sweep_duty():
         maxpower = max(tab.power)
         ax.plot(tab.packet_rate, tab['static power (W)'], label='static', marker='o')
         ax.plot(tab.packet_rate, tab.power, label='static+dynamic', marker='^')
-        ax.set_xlabel('Duty Cycle (\\%)')
+        ax.set_xlabel('Duty Cycle (%)')
         ax.set_ylabel('Power (W)')
         ax.set_xlim(0,100)
         ax.set_ylim(bottom=0)
@@ -2289,11 +2297,11 @@ def plot_sweep_duty():
     fig, [ax1,ax2] = plt.subplots(1,2)
 
 
-    tab = pd.read_csv("isca2019/RouterStudy/results/switch_power28.csv", header=0, encoding="utf-8-sig")
+    tab = pd.read_csv("data/switch_power28.csv", header=0, encoding="utf-8-sig")
     plot_sweep(tab, ax1)
     ax1.legend(loc=2, fontsize='small')
 
-    tab = pd.read_csv("isca2019/RouterStudy/results/router_power28.csv", header=0, encoding="utf-8-sig")
+    tab = pd.read_csv("data/router_power28.csv", header=0, encoding="utf-8-sig")
     tab = tab[tab['sim_scalar']==False]
     plot_sweep(tab, ax2)
 
@@ -2362,7 +2370,7 @@ def main():
     # plot_radar_best_googletalk()
 
     # Figures in paper
-    # plot_sweep_duty()
+    plot_sweep_duty()
     # plot_radar_router()
     # plot_radar_switch()
     # plot_radar_best()
@@ -2372,7 +2380,7 @@ def main():
     # plot_perf()
     # plot_energy()
     # plot_scale()
-    plot_char()
+    # plot_char()
     # plot_areas()
     # plot_vc()
 
