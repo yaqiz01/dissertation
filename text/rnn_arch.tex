@@ -1,29 +1,30 @@
 \section{Plasticine Specialization for RNN Serving} \label{sec:rnn_arch}
 
-Recurrent Neural Networks (RNNs) are a class of sequence models that plays a key role
-  in low-latency,
-  AI-powered services in datacenters \cite{fowers2018configurable, jouppi2017datacenter}.
-In these services,
-  the platforms assume that user requests come in individual samples
-  and need to be served with very stringent latency window
-  for real-time human computer interaction.
-  An example of such workload is
-  Google Translate, where inference happens concurrently when a user types.
-Despite its popularity, RNN model serving is hard to accelerate efficiently.
-Modern software and hardware platforms support optimized BLAS routines.
-
-An efficient execution of RNN requires flexibility in supporting more than BLAS kernels, 
-
 Low-precision inference are commonly used to reduce memory footprint of deep learning models and
 increase compute density of hardware accelerators.
 Plasticine, however, only supports 32-bit operations and datapath.
 Using RNN serving as a motivating example, this section discusses the necessary architecture augmentation and
 specialization needed to efficiently map real-time inference on Plasticine.
 
-In \Cref{sec:lowprec}, we propose the necessary micro-architectural changes to
+Recurrent Neural Networks (RNNs) are a class of sequence models that plays a key role
+in low-latency, AI-powered services in datacenters \cite{fowers2018configurable, jouppi2017datacenter}.
+These applications have stringent tail latency requirements, within the window of miliseconds,
+for real-time human computer interactions.
+An example of such workload is
+Google Translate; inference runs concurrently as the user types.
+An efficient acceleration of RNN requires flexible datapath to support global optimizations beyond
+BLAS kernels, which is where dataflow accelerators like Plasticine would shine.
+To meet this low-latency requirement, the other prerequisite is that everything has to stay on-chip.
+To achieve this, we introduce a limited mixed-precision support with changes localized to PCUs. 
+The enhancement supports the commonly used precision in machine learning without introducing massive
+overhead from fine-grained reconfigurability.
+
+In the remaining of this secction, \Cref{sec:lowprec} proposes the necessary micro-architectural changes to
   support low-precision arithmetics on Plasticine.
-We also discuss architectural parameter selection for Plasticine
-  to serve RNN applications efficiently in \Cref{sec:sizing}
+\Cref{sec:foldrt} introduces a folded reduction structure in PCU's SIMD that improves the function
+unit (FU) utilization.
+\Cref{sec:sizing} discusses architectural parameter selection for Plasticine
+  to serve RNN applications efficiently.
 
 \subsection{Mixed-Precision Support} \label{sec:lowprec}
 \label{sec:arch:varprec}
@@ -42,7 +43,7 @@ Both types packs multiple low-precision values into a single precision storage.
 We support only 8 and 16-bit precisions, which are commonly seen in deep learning inference hardwares.
 Users can only access values that are 32-bit aligned.
 This constraint guarantees that the microarchitectual change is only local to the PCU.
-Banking and DRAM access granularity remains intact from the original design.
+PMU and DRAM access granularity remains intact from the original design.
 
 \begin{figure}
   \centering
@@ -53,7 +54,6 @@ Banking and DRAM access granularity remains intact from the original design.
   $3^{nd}$, $4^{th}$ stages of (b).
    }
   \label{fig:lowprec}
-  \vspace*{-0.3in}
 \end{figure}
 Figure \ref{fig:lowprec} (a) shows the original SIMD pipeline in a Plasticine PCU.
 Each FU supports both floating-point and fix-point operations.
@@ -98,18 +98,35 @@ In this way, we can perform the entire low-precision map-reduce in 2 stages
 In order to maximize hardware reuse,
   we assume that it is possible to construct a full precision FU
   using low-precision FUs.
-In addition, we observe that the original reduction network in the SIMD lanes
-  could lead to low FU utilization.
-To improve FU utilization, we fold the entire tree structure in a single stage.
-Figure \ref{fig:lowprec} (c) shows the folded reduction accumulation structure.
-Specifically, latter reductions in the tree are mapped to earlier stages in the pipeline.
-In this setup, the entire reduction plus accumulation
-  is still fully pipelined in $\log_2(\#_{LANE})+1$ cycles
-  with no structural hazard.
-With fused reduced-precision multiplication and reduction, and folded reduction tree,
-  a PCU is able to perform all map-reduce that accumulates $4 \#_{LANE}$
-  8-bit values using 4 stages.
-All the operations are completed in $2+\log_2(\#_{LANE})+1$ cycles.
+
+\subsection{Folded Reduction Tree} \label{sec:foldrt}
+The original reduction tree shown in \Cref{fig:lowprec} (a) requires $\log_2(\#_{LANE})+1$ number of
+stages for $\#_{LANE}$ operations, leading to a low utilization of the FUs in the SIMD pipeline.
+The reduction tree also restricts the SIMD pipeline to have at least 
+$\log_2(\#_{LANE})+1$ stages to compute a full reduction within a PCU.
+For a SIMD pipeline with 16 lanes, the FU utilization is only 53.33\% in reduction stages.
+
+To improve FU utilization, we introduce a folded reduction structure that performs $\#_{LANE}$
+operations entirely within a single stage, pipelined over multiple cycles.
+Figure \ref{fig:lowprec} (c) shows the folded reduce-accumulate structure.
+Instead of feeding the output of the reduction operation to the next stage, 
+this structure folds the output back to the PR of the next unused FU in the 
+same stage. 
+The entire reduction plus accumulation is still fully pipelined in $\log_2(\#_{LANE})+1$ cycles
+with no structural hazard.
+In the original design, only a single register among the PRs have the special reduction tree
+connection.
+The down side of the folded structure is that no other live variables can be propagated after this
+reduction stage, unless adding multiple folded trees. 
+In applications, we rarely see the need of multiple live variables after the reduction operation
+other than the accumulator itself.
+Therefore, it makes the most sense to put the
+folded reduction tree only in the last stage of a SIMD pipeline.
+
+With the fused reduced-precision operations and the folded reduction tree,
+  a PCU is able to perform 64 8-bit map-reduce in 4 stages, and 32 16-bit map-reduce in 3 stages.
+All the operations are still completed in $2+\log_2(\#_{LANE})$ cycles, i.e. 
+8, 7, and 6 cycles for 8-, 16-, and 32-bit operations, respectively.
 
 \subsection{Sizing Plasticine for RNN Serving} \label{sec:sizing}
 Evaluating an RNN cell containing $N$ hidden units and $N$ input features
