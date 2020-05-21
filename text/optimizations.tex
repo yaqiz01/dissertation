@@ -2,11 +2,11 @@
 \name performs many of the standard compiler optimizations,
 such as Dead Code Elimination and Constant Propagation.
 Some of them, however, plays a much more important rule for reconfigurable accelerator because they
-have direct impact on the resource usage.
+have a direct impact on resource usage.
 Other optimizations can be counter-intuitive, as they introduce redundant computation that
-reduces resource without necessarily impacting performance.
+reduces resources without necessarily impacting performance.
 In this discussion, we focus our primary objective on performance.
-Resource is an indirect objective as resource reduction enable larger parallelization factors,
+Saving resource is an indirect objective as resource reduction enable larger parallelization factors,
 which in turn improves performance.
 Other objectives, such as power saving, is left as future work.
 
@@ -43,11 +43,11 @@ the most expensive to the cheapest.
 %We map register accumulation in the program with single-cycle initiation interval to pipeline registers.
 For example, \name maps on-chip array to a scratchpad by default. However, if all of the readers and
 writers of the array index into memory with constant addresses, often as a result of constant propagation of full
-parallelized loops, \name maps the memory to the input buffer of an context, and setup datapath to
+parallelized loops, \name maps the memory to the input buffer of a context, and setup datapath to
 connect the reader and writer directly.
 \Cref{fig:msr} shows an example of strength reduce a scratchpad into an input buffer with additional
 operations.
-Fully parallelized loops is a common outcome of an automatic design space exploration on the parallelization factors.
+Fully parallelized loops are a common outcome of an automatic design space exploration of the parallelization factors.
 We also use it as a way for the user to explicitly program vectorized streaming operation for
 Plasticine.
 
@@ -75,13 +75,12 @@ Plasticine.
 
 \subparagraph{Route-Through Elimination (rtelm).} 
 For patterns where the content of a non-indexable memory (M1) is read and written to another memory
-(M2), \name{} eliminates the intermediate access and feed the output of M1's writer (W1) directly to M2's
-reader (R2) if it can proof the propagation is safe.
-\Cref{fig:rtelm} shows examples of route through opportunities.
+(M2), \name{} eliminates the intermediate access and feeds the output of M1's writer (W1) directly to M2's
+reader (R2) if it can prove the propagation is safe.
+\Cref{fig:rtelm} shows examples of route-through opportunities.
 These patterns are often the
 outcome of multiple levels of compiler lowering and the \emph{msr} optimization. 
-Eliminating route-through
-pattern can simplify control hierarchy and reduce number of basic blocks, which eliminates contexts.
+Eliminating route-through patterns can simplify control hierarchy and reduce the number of basic blocks, which eliminates contexts.
 
 \begin{figure*}
 \centering
@@ -96,7 +95,7 @@ pattern can simplify control hierarchy and reduce number of basic blocks, which 
 \label{fig:retiming}
 \end{figure*}
 \subparagraph{Retiming with scratchpad (retime-mem).} 
-By default, \name{} uses input buffers in PU for retiming purpose. 
+By default, \name{} uses input buffers in PU for retiming purposes. 
 This option enables \name{} to use scratchpad memory to retime paths requiring deep buffers.
 \Cref{fig:retiming} shows VUDFGs after retiming with and without scratchpad retiming. As we can see,
 allowing scratchpad and input buffer for retiming significantly reduces the total number of retiming
@@ -139,11 +138,10 @@ parallelization in the common cases.
 
 Combined with \emph{msr} and \emph{rtelm} mentioned above, \name is able to 
 dramatically reduce the resource usage for certain parallelization factors.
-\Cref{fig:mlp} shows an interesting case study on a MLP presenting performance scaling and resource
+\Cref{fig:mlp} shows an interesting case study on an MLP presenting performance scaling and resource
 increase while scaling up parallelism.
 \Cref{fig:mlp} (b) demonstrates that Plasticine can have resource
-non-linearly increasing with parallelization factors, while having perfect performance 
-scaling, due to compiler optimizations.
+non-linearly increasing with parallelization factors, while having perfect performance scaling, due to compiler optimizations.
 
 \subparagraph{Read address duplication (dupra).} 
 %The long traveling path for BI from the address context to the receiver context showing in memory partitioning
@@ -157,7 +155,7 @@ When parallelizing the memory access, the OR tree in the merge context gets part
 of contexts, which further increases the mismatch in latency between the imbalanced datapaths.
 Instead of retiming BI forwarding path, 
 this compiler flag forces \name to duplicate the BI computation using local states
-within the receiver context, which could use less resources than retiming.
+within the receiver context, which could use fewer resources than retiming.
 
 \subparagraph{Global Merging (merge).}
 After all VUs satisfy the hardware constraint, we perform a global optimization to compact small VUs into larger VUs. 
@@ -167,7 +165,7 @@ Unlike the partitioning problem, which uses a single set of cost metrics to dete
 is valid, the merged partition
 can be mapped to any PU available on-chip, each having a different set of cost metrics and a
 quantity limit.
-%The traversal-based algorithm requires a reference cost from PU to check if the merged VU still satisfy the hardware constraint.
+%The traversal-based algorithm requires a reference cost from PU to check if the merged VU still satisfies the hardware constraint.
 When adding a new VU \emph{m} to a partition \emph{P} in the traversal-based algorithm, 
 we first take the union of the domains of VUs within the current partition, and
 intersect with the domain of \emph{m}.
@@ -211,12 +209,11 @@ eliminates the risk of infeasible assignment due to merging in the traversal-bas
 \label{fig:reversehoisting}
 \end{figure*}
 
-A common loop optimizations on traditional CPU is to move loop-invariant expressions 
+A common loop optimization on traditional CPU is to move loop-invariant expressions 
 outside of the loop body to reduce computation. 
 This transformation, however, can introduce more basic blocks in the program, that translates to
 more contexts on Plasticine.
-Therefore, the reversed loop invariant hoisting, which moves loop-invariant expressions into the 
-loop body, can sometimes saving resources by simplifying the control structure, as shown in 
+Therefore, the reversed loop invariant hoisting, which moves loop-invariant expressions into the loop body, can sometimes save resources by simplifying the control structure, as shown in 
 \Cref{fig:reversehoisting}.
 Because instructions within the basic blocks are pipelined, 
 moving instructions into the loop body increases computation without hurting throughput, which
@@ -238,13 +235,13 @@ Currently, we rely on the user to perform this optimization manually.
 \label{fig:heat}
 \end{figure*}
 
-\Cref{fig:heat} presents the evaluation on performance improvement and resource reduction from
+\Cref{fig:heat} presents the evaluation of performance improvement and resource reduction from
 optimizations discussed in \Cref{sec:des}.
 
 \emph{merge} and \emph{rtelm} are optimizations that gives a consistent resource improvement for most applications.
 \emph{dupra} and \emph{msr} helps \emph{\bf mlp} and \emph{\bf lstm}, which are heavily partitioned during the memory-partitioning stage.
 
 \emph{dupra} significantly reduces unbalancing in the data path caused due to the large merge tree generated by memory partitioning.
-\emph{retime} can have significant impact on performance of the application at the cost of increase in resource usage.
-Using scratchpad as a retiming buffer with \emph{retime-mem} flag can significantly reduce resource usage.
+\emph{retime} can have a significant impact on the performance of the application at the cost of an increase in resource usage.
+Using scratchpad as a retiming buffer with the \emph{retime-mem} flag can significantly reduce resource usage.
 
