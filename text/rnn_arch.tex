@@ -1,4 +1,4 @@
-\section{Plasticine Specialization for RNN Serving} \label{sec:rnn_arch}
+\section{Plasticine Specialization for RNN Serving (Ready)} \label{sec:rnn_arch}
 
 Low-precision inference are commonly used to reduce memory footprint of deep learning models and
 increase compute density of hardware accelerators.
@@ -139,14 +139,13 @@ This provides a 6:1 ratio between
   compute resource and on-chip memory read bandwidth.
 As a result of this layout,
   on-chip memory read bandwidth becomes the bottleneck for accelerating RNN serving applications.
-Given that RNNs cover a wide range of important applications,
-  we select a Plasticine configuration tailored for RNN serving.
+\Cref{fig:rnnarch} shows a specialized Plasticine configuration for RNN serving and general machine
+learning.
 Specifically, we choose a 2 to 1 PMU-PCU ratio with 4 stages in each PCU.
-Figure \ref{fig:arch} shows the layout of this Plasticine variant.
 \begin{figure}
   \centering
   \includegraphics[width=\textwidth]{figs/rnnarch.pdf}
   \caption[Variant Plasticine configuration for RNN serving]{
     Variant Plasticine configuration for RNN serving with 2:1 ratio for PMU and PCU}
-  \label{fig:arch}
+  \label{fig:rnnarch}
 \end{figure}
