@@ -2370,7 +2370,7 @@ def main():
     # plot_radar_best_googletalk()
 
     # Figures in paper
-    plot_sweep_duty()
+    # plot_sweep_duty()
     # plot_radar_router()
     # plot_radar_switch()
     # plot_radar_best()
