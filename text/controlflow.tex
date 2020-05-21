@@ -318,6 +318,20 @@ For register, SRAM, and DRAM, the program order expects that the producer and co
 Since the producer and receiver both have their outer controllers duplicated in their local state, they have independent views for one iteration of the LCA controller, which is when the controller in their ancestors (that is the immediate child of the LCA controller) is completed (\Cref{fig:tokenwhen}(d)).
 The {\em done} signals of these controllers are used to produce and consume the token in contexts, independently.
 
+\paragraph{Specialization for dense on-chip array}
+For a memory with guaranteed {\em single-cycle} access latency, such as registers and statically banked SRAMs that are guaranteed conflict-free, we can simplify the necessary synchronization (\Cref{fig:tokentrick}(c)).
+Instead of synchronizing between $resp_A$ and $reqst_B$, we allocate two stateless contexts $reqst_A'$ and $reqst_B'$ within {\emph the same} VB as the accessed memory that forwards requests from $reqst_A$ and $reqst_B$, respectively.
+Next, we forward the token going from $reqst_A$ to $reqst_B$ to go through $reqst_A'$ to $reqst_B'$ instead, and configure the token buffer in $reqst_B'$ with the depth of one for serialized schedule and depth of M for multi-buffered schedule. 
+We no longer need to insert the LCD token, as the stiff back pressure from the token buffer in $reqst_B'$ will enforce the expected behavior.
+This optimization only works if the sender and receiver of the token buffer are physically in a single VB where the memory is located.
+In this way, when $reqst_B'$ observes $reqst_A'$s token, $reqst_B'$ is guaranteed to observe the memory update from $reqst_A'$ because the memory also has single-cycle access latency.
+
+\paragraph{Specialization for non-indexable memory}
+We perform another specialization on non-indexable memories (registers or FIFOs), whose all accesses have no explicit read enables.
+Instead of treating them as shared memories, \name{} duplicates and maps them to local input buffers in all receivers, no longer requiring tokens.
+The sender actor pushes to the network when the token is supposed to be sent, and the receiver dequeues one element from the input buffer when the token is supposed to be consumed.
+This dramatically reduces the synchronization complexity of non-indexable memory in the common case.
+
 \subsection{Data-Dependent Control Flow (WIP)}
 Using the synchronization discussed in \Cref{sec:sync}, \name can support control constructs that 
 typically are not supported on dataflow accelerators, such as branches and while loops.
@@ -386,17 +400,3 @@ At this point, contexts accessing memory within the while loop will send the tok
 
 After all contexts and shared resources are allocated and synchronized, we simply put each context and shared resources into their own VUs.
 The contexts with a single-cycle special case (\Cref{sec:sync}) must be put in the same VB as the shared memory.
-
-\subparagraph{Specialization for dense on-chip array}
-For a memory with guaranteed {\em single-cycle} access latency, such as registers and statically banked SRAMs that are guaranteed conflict-free, we can simplify the necessary synchronization (\Cref{fig:tokentrick}(c)).
-Instead of synchronizing between $resp_A$ and $reqst_B$, we allocate two stateless contexts $reqst_A'$ and $reqst_B'$ within {\emph the same} VB as the accessed memory that forwards requests from $reqst_A$ and $reqst_B$, respectively.
-Next, we forward the token going from $reqst_A$ to $reqst_B$ to go through $reqst_A'$ to $reqst_B'$ instead, and configure the token buffer in $reqst_B'$ with the depth of one for serialized schedule and depth of M for multi-buffered schedule. 
-We no longer need to insert the LCD token, as the stiff back pressure from the token buffer in $reqst_B'$ will enforce the expected behavior.
-This optimization only works if the sender and receiver of the token buffer are physically in a single VB where the memory is located.
-In this way, when $reqst_B'$ observes $reqst_A'$s token, $reqst_B'$ is guaranteed to observe the memory update from $reqst_A'$ because the memory also has single-cycle access latency.
-
-\subparagraph{Specialization for non-indexable memory}
-We perform another specialization on non-indexable memories (registers or FIFOs), whose all accesses have no explicit read enables.
-Instead of treating them as shared memories, \name{} duplicates and maps them to local input buffers in all receivers, no longer requiring tokens.
-The sender actor pushes to the network when the token is supposed to be sent, and the receiver dequeues one element from the input buffer when the token is supposed to be consumed.
-This dramatically reduces the synchronization complexity of non-indexable memory in the common case.
