@@ -14,8 +14,7 @@
 %Next, we walk through how \name{} achieves this in more concrete detail.
 
 \subsection{Loop Division (Ready)}
-Reviewing the front-end and back-end abstraction of \name, an obvious gap between the two
-abstractions is that the front-end imperative language can contain arbitrary nested control hierarchy, whereas
+Between the front-end and back-end abstraction of \name, an obvious gap between the two abstractions is that the front-end imperative language can contain arbitrarily nested control hierarchy, whereas
 the hardware compute engine can only execute perfectly nested loops.
 To address this issue, we introduce a new type of loop transformation---loop division---for streaming reconfigurable
 accelerators.
@@ -24,8 +23,8 @@ The difference is that loop fission generates a sequence of sequentially execute
 loop division generates loops executing \emph{concurrently}.
 Additionally, loop fission materializes the intermediate results across fissioned loops into arrays,
 while loop division use queue to communicate across loops.
-Each loop generated from loop division can only execute if all of their input queues is not empty.
-\Cref{fig:loopexp1} gives an example of loop fusion vs. loop division.
+Each loop generated from loop division can only execute if all of their input queues are not empty.
+\Cref{fig:loopexp1} gives an example of a loop fusion vs. loop division.
 
 \begin{figure*}
 \centering
@@ -57,21 +56,20 @@ Each loop generated from loop division can only execute if all of their input qu
 When executing loop division on a single-threaded CPU, the CPU must context switching between the
 concurrent loops
 and executing the one with cleared input dependencies.
-Like loop fission, loop division is likely worsen the performance on a processor architecture, as
-the worst case memory footprint of the intermediate result \texttt{tmp} increases from $O(1)$ to $O(N)$.
+Like loop fission, loop division is likely worsening the performance on a processor architecture, as
+the worst-case memory footprint of the intermediate result \texttt{tmp} increases from $O(1)$ to $O(N)$.
 On RDAs, the divided loops are executing
-concurrently in streaming pipelined fashion. The size of the \texttt{tmp} can be limit to a small fixed
+concurrently in a streaming pipelined fashion. The size of the \texttt{tmp} can be limit to a small fixed
 size, efficiently implemented with a hardware FIFO. 
 Although loop transformations are generally optimizations on CPUs,
 loop division is a required transformation to converts an infeasible program to a feasible one for Plasticine.
 
 Loop fission is not always safe, as it may alter the execution order of the program.
-order.
 Loop division, on the other hand, does not change the underlying data-dependency and is always safe.
 To achieve this, loop division needs to introduce additional dummy data dependencies across divided
 loops to enforce the correct execution order.
 \Cref{fig:loopexp2} gives an example of an invalid loop fission and a correct loop division.
-\Cref{fig:sync} gives more detail on how the dummy data-dependency are generated automatically.
+\Cref{fig:sync} gives more detail on how \name automatically generates the dummy data-dependencies.
 
 \begin{figure*}
 \centering
@@ -148,7 +146,7 @@ Example of an illegal loop fission and a legal loop division
 \end{figure*}
 
 As a start, \name allocates one virtual memory to hold each on-chip data structure, and 
-one context to execute each basic block within the inner most controllers. 
+one context to execute each basic block within the innermost controllers. 
 A basic block maps naturally to a context, as instructions within a basic block are control-free. 
 Next, \name makes a copy of all controllers enclosing the basic block in the corresponding context;
 these controllers are later converted to counters and control configurations supported by the
@@ -157,12 +155,10 @@ Effectively, \name performs loop division such that all basic blocks are perfect
 \Cref{fig:contextalloc} shows an example of the context allocation. 
 With these controllers, contexts can repeat execution for expected number iterations. However,
 data-structures written and read by different contexts are accessed in random order.
-The insight is that \emph{as long as all contexts accessing a shared memory with expected program order,
-the final result is identical to a sequentially executed program}.
+The insight is that \emph{as long as all contexts accessing a shared memory with expected program order, the final result is identical to a sequentially executed program}.
 Unlike traditional out-of-order execution, where hardware and compiler look for independent instructions to
 execute concurrently, \name starts with executing \emph{all} basic blocks in a program in \emph{concurrent} contexts.
-Next, \name introduces synchronizations to maintain consistent access order as expected by the 
-program \emph{only} among contexts accessing a shared memory. 
+Next, \name introduces synchronizations to maintain consistent access order as expected by the program \emph{only} among contexts accessing a shared memory. 
 This way, \name introduces minimum p2p synchronizations among small groups of contexts; contexts
 accessing different memories are naturally parallelized without impacting the final output.
 
@@ -172,9 +168,7 @@ Starting with all contexts execute in parallel, \name introduces \term{control t
 to serialize their execution order based on the program order.
 This control token is no different from a regular data-dependency and can be viewed as 
 an access grant to the shared memory across contexts. 
-By controlling {\em where}, {\em how}, and {\em when} to pass the token, \name 
-is able to maintain a consistent update ordering between the pipelined and parallelized contexts that 
-access the shared memory.
+By controlling {\em where}, {\em how}, and {\em when} to pass the token, \name is able to maintain a consistent update ordering between the pipelined and parallelized contexts that access the shared memory.
 
 We refer to an memory access appeared in the input IR as a \emph{declared access}, as supposed to
 memory accesses executed at runtime.
@@ -229,17 +223,15 @@ Whether two declared accesses interfere depends on
 \label{tab:interferetab}
 \end{table*}
 
-\Cref{tab:memtype} lists hardware memories available on reconfigurable architectures and software
-data-structures providing similar program semantics.
+\Cref{tab:memtype} lists hardware memories available on reconfigurable architectures and software data-structures providing similar program semantics.
 The type of the memory matters because they have different programming interface on the hardware.
-For instance, two read accesses does not interfere for DRAM because the DRAM interface permits
+For instance, two DRAM read accesses do not interfere because the DRAM interface permits
 multiple concurrent access streams through multiple DAGs\footnote{All DAGs can access the full DRAM
 address space}. 
 %\gist{mension port virtualization}
-Therefore, from the programmer perspective, users do not need
+Therefore, from the programmer's perspective, users do not need
 to serialize the two contexts reading the same DRAM address. 
-SRAMs, on the other hand, have a single read 
-and write port. Programmers must guarantee that a PMU receives read requests from a single context
+SRAMs, on the other hand, have a single read and write port. Programmers must guarantee that a PMU receives read requests from a single context
 at any point in time for correctness.
 \Cref{tab:interferetab} shows the interference relation between different types of memory across
 accesses.
@@ -278,18 +270,15 @@ for a possible forward dependency, and later in the program order for a possible
 In the example in \Cref{fig:contexteg}, there is a forward data dependency between \texttt{W1} and
 \texttt{R1}, and a write-after-read LCD between \texttt{R1} and \texttt{W1}. 
 \name builds a dependency graph between declared accesses for each memory.
-\Cref{fig:depexp} gives more examples on how \name
+\Cref{fig:depexp} gives more examples of how \name
 determines dependencies based on where these accesses are declared in the control hierarchy.
 
 Enforcing all dependencies in the dependency graph may not be necessary, as enforcing a subset of
 dependencies can be sufficient to enforce the order of the whole graph.
-Therefore, \name performs a transitive reduction (TR) on the graph to keep the minimum number of dependency edges 
-that preserve the same ordering \cite{tr}.
+Therefore, \name performs a transitive reduction (TR) on the graph to keep the minimum number of dependency edges that preserve the same ordering \cite{tr}.
 Since TR on a cyclic graph is NP-hard, \name perform TRs on the forward and backward LCD graphs, separately.
-Notice, dependencies between accesses touching different buffers of a multi-buffered memory is less rigid 
-than accesses touching the same buffer.
-Therefore, we can only remove an edge if all dependencies on the equivalent path have a stronger or equivalent 
-dependency strength than the strength of the removed edge.
+Notice, dependencies between accesses touching different buffers of a multi-buffered memory is less rigid than accesses touching the same buffer.
+Therefore, we can only remove an edge if all dependencies on the equivalent path have a stronger or equivalent dependency strength than the strength of the removed edge.
 
 %Two declared accesses A and B have no dependency if their least-common ancestor (LCA) controller executes only one of the children at anytime (from a branch), or all children in parallel (from an unrolled loop).
 %The LCD exists between B to A, if B occurs later in the program order, and A and B are surrounded by a loop.
@@ -320,12 +309,12 @@ To order a declared access A before a declared access B
 To enforce LCD from access B to access A, \name introduces a token from $resp_B$ to $reqst_A$, and initializes the token buffer (input buffer receiving the token) with one element to enable the execution of the first iteration.
 If the LCD is on a multi-buffered memory, the LCD token is initialized with the buffer depth number of elements to enable A for multiple iterations before blocked by access B.
 
-These are general schemes we use on any types of memory (including DRAM and on-chip memories) with unpredictable access latency.
+These are general schemes we use on any type of memory (including DRAM and on-chip memories) with unpredictable access latency.
 
 \paragraph{When.}
 \name{} configures the contexts to generate the token using their local states at runtime.
 For FIFOs, the token is generated and consumed every cycle when the producer and receiver contexts are active.
-For register, SRAM, and DRAM the program order expects that the producer and consumer writes and inspects the memory once per iteration of their LCA controller, respectively.
+For register, SRAM, and DRAM, the program order expects that the producer and consumer write and inspect the memory once per iteration of their LCA controller, respectively.
 Since the producer and receiver both have their outer controllers duplicated in their local state, they have independent views for one iteration of the LCA controller, which is when the controller in their ancestors (that is the immediate child of the LCA controller) is completed (\Cref{fig:tokenwhen}(d)).
 The {\em done} signals of these controllers are used to produce and consume the token in contexts, independently.
 
@@ -386,7 +375,7 @@ The branch condition is also treated as a data-dependent enable signal of contro
 If the controller is disabled, it is considered {\em done} immediately.
 Output tokens depending on the {\em done} signal will be immediately sent out.
 For a memory written inside a branch statement and read outside the branch (with a branch miss), the
-writer contexts immediately sends out the token to the receiver
+writer contexts immediately send out the token to the receiver
 as soon as the branch condition is resolved. 
 With a branch hit, the controller waits until its inner controller completes before raising the {\em done} signal.
 A similar scheme is used to implement the while loop, where the while condition is a data-dependency of stop signal of controller X. 
@@ -395,8 +384,8 @@ The condition is then broadcast to all other contexts under the same while loop.
 The {\em done} signal of the while loop is raised when the condition's data-dependency evaluates to true.
 At this point, contexts accessing memory within the while loop will send the token to access contexts outside of the while loop, and enable them to access the intermediate memory.
 
-After all contexts and shared resources are allocated and synchronized, we simply put each context and shared resource into their own VBs.
-The contexts with single-cycle special case (\Cref{sec:sync}) must be put in the same VB as the shared memory.
+After all contexts and shared resources are allocated and synchronized, we simply put each context and shared resources into their own VUs.
+The contexts with a single-cycle special case (\Cref{sec:sync}) must be put in the same VB as the shared memory.
 
 \subparagraph{Specialization for dense on-chip array}
 For a memory with guaranteed {\em single-cycle} access latency, such as registers and statically banked SRAMs that are guaranteed conflict-free, we can simplify the necessary synchronization (\Cref{fig:tokentrick}(c)).
