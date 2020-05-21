@@ -139,7 +139,7 @@ spare DAGs, which improves utilization.
 As shown in \Cref{algo:resalloc}, the \emph{resource allocation} phase contains three steps:
 \emph{constraint resolution}, \emph{global merging}, and \emph{virtual to physical assignment}.
 \name uses a VU-PU bipartite graph (\emph{G}) to keep track of potential valid assignments between the two.
-Initially, \emph{G} is initialized to a complete bipartite graph, i.e. all VUs can be assigned to
+Initially, \emph{G} is initialized to a complete bipartite graph, i.e., all VUs can be assigned to
 all PUs.
 We refer to all PUs connected to a VU \emph{v} as the domain of \emph{v} in G, i.e. \emph{dom(v)}.
 
@@ -148,7 +148,7 @@ A list of constraint pruners, each considering a set of on-chip resources,
 incrementally remove the VU-PU edges that violate the resource constraints.
 If a VU \emph{v} has an empty domain after pruning, the pruner attempts to fix the violation by
 decomposing the VU into multiple VUs. 
-Not all resources are composable and the partitioning transformation may fail.
+Not all resources are composable, and the partitioning transformation may fail.
 If succeeded, the partitioner generates a new set of VUs \emph{V'}. \name starts a new complete bipartite
 graph between \emph{V'} and all resources \emph{P}, and recursively prune on \emph{V'}.
 If succeeded, the original graph \emph{G} is updated with \emph{V'} and their pruned resources.
@@ -162,8 +162,7 @@ The in- and out-degree costs are tricker and will be detailed in \Cref{sec:comps
 
 \paragraph{Virtual to Physical Assignment}
 Next, \name performs a quick heuristic check on the bipartite graph to see if there exists a
-possible assignment for all VUs with sufficient PUs (\Cref{algo:check}), and provide feedback on the
-limiting resources, otherwise.
+possible assignment for all VUs with sufficient PUs (\Cref{algo:check}), and provide feedback on the limiting resources, otherwise.
 Finally, \name assigns each VU to a PU type with a backtracking search on the pruned bipartite
 graph.
 
@@ -176,12 +175,10 @@ partitioning in \Cref{sec:compsplit} and memory partitioning in \Cref{sec:memspl
 \subsection{Compute Partitioning} 
 \label{sec:compsplit}
 
-The {\em compute-partitioning} phase addresses VUs using more compute resource than any PU can provide. 
+The {\em compute-partitioning} phase addresses VUs using more compute resources than any PU can provide. 
 If a VU contains multiple contexts, \name{} first moves the contexts into separate VUs.
-If a single context exceeds the resource limit, \name breaks down the dataflow graph in the context into 
-multiple contexts and put them in separate VUs.
-During partitioning, \name maps each subgraph of the large dataflow graph into a new context, 
-mirrors the control states of the original context, and streams live variables in between.
+If a single context exceeds the resource limit, \name breaks down the dataflow graph in the context into multiple contexts and puts them in separate VUs.
+During partitioning, \name maps each subgraph of the large dataflow graph into a new context, mirrors the control states of the original context, and streams live variables in between.
 We can formulate the problem of how to partition in the dataflow graph as an optimization problem, shown in
 \Cref{tab:partprob}.
 The partitioner ``fixes'' the VU \emph{v} based on a single PU specification, albeit there are many potential PUs 
@@ -218,25 +215,25 @@ Formulation of the compute partitioning problem
 
 Because the global network is specialized to handle efficient broadcasts, 
 the in/out-degree of a partition counts the number of unique live-in/out variables, as supposed to
-number of edges across partitions.
+the number of edges across partitions.
 In addition, the partitioned subgraphs cannot form {\em new} cycles; contexts waits for all
 input dependencies and therefore cycles across contexts cause deadlock. 
 Nonetheless, the original graph might contain cycles representing loop-carried dependencies, such as
 accumulation. For these cycles, \name initializes the back edge of the cycle with dummy data to
 enable execution.
 \Cref{fig:parteg} shows examples of valid and invalid partitioning solutions.
-\Cref{fig:partcycleeg} shows another partitioning example for a dataflow graph with cycle.
+\Cref{fig:partcycleeg} shows another partitioning example of a dataflow graph with cycles.
 
 \paragraph{Community Detection}
-The formulation of compute partitioning is similar to the community detection problem\cite{community}, which has similar
-objective. The major difference is that the later often takes the number of output partitions as an
-input to the algorithm, whereas our problem partitions until all subgraphes satisfy all constraints.
+The formulation of compute partitioning is similar to the community detection problem\cite{community}, which has a similar
+objective. The major difference is that the latter often takes the number of output partitions as an
+input to the algorithm, whereas our problem partitions until all subgraphs satisfy all constraints.
 Moreover, community detection algorithms do not enforce the cycle constraints. 
 Finally, the edge connectivity in community detection counts the number of edges across partitions, as supposed to broadcast edges.
 
 \paragraph{Retiming}
 Imbalanced data paths across partitions can cause pipeline stalls at runtime.
-To ensure full-throughput pipelining, \name needs to insert retiming buffers along imbalanced data path across
+To ensure full-throughput pipelining, \name needs to insert retiming buffers along the imbalanced data path across
 partitions.
 \todo{add an example.}
 Retiming introduces new VUs in addition to the partitioned VUs, which attributes to the cost in
@@ -272,7 +269,7 @@ optimization-based algorithm with an optimum solution but long compile time.
 To address the cycle constraint, the traversal-based algorithm performs a topological sort of the dataflow graph.
 The topological traversal ignores the back edges in the graph. 
 Staring from the beginning of the sorted list, the algorithm iteratively adds nodes into a partition
-until it fits no more nodes. The algorithm then repeat the process with a new partition.
+until it fits no more nodes. The algorithm then repeats the process with a new partition.
 This approach guarantees that no cycle is introduced with $O(V+E)$ complexity, 
 where $V$ and $E$ are the numbers of vertices and edges in the dataflow graph.
 
@@ -282,7 +279,7 @@ backward dataflow traversal orders.
 For DFS, we re-sort the remaining list each time we start with a new partition.
 
 \subsubsection{Solver-based Solution}
-The convex optimization solution models the problem as a node to partition assignment problem.
+The convex optimization solution models the problem as a node-to-partition assignment problem.
 \Cref{tab:solver-eqns} gives our formulation.
 At a high-level, we use a boolean matrix $B$ to keep track of the assignment. 
 $B$ has dimension equals to the number of nodes in the dataflow graph by the number of partitions, where$B[i,j]=1$ 
@@ -291,17 +288,16 @@ In \Cref{tab:solver-eqns}, \emph{partition assignment} restricts each node to ha
 The \emph{input and output arity constraints} show the formulations that limit the number of input
 and output for a subgraph.
 These are the two most challenging constraints as we need to identify broadcast edges across partitions.
-To address the cycle constraint, we introduce a delay vector $d_n$ with size equivalent to the number of nodes. 
-The delay vector encodes a schedule to execute each node and the values are selected by the solver.
+To address the cycle constraint, we introduce a delay vector $d_n$ with a size equivalent to the number of nodes. 
+The delay vector encodes a schedule to execute each node, and the values are selected by the solver.
 The \emph{dependency constraint} enforces scheduling a node no earlier than its input dependencies, and
 no later than its output dependents.
-Since the operations within a partition has to be triggered atomically, there is another delay
+Since the operations within a partition have to be triggered atomically, there is another delay
 vector $d_p$ for the partitions. The \emph{delay consistency} enforces the schedule of a node equals to the
 schedule of its assigned partition.
 Finally, \emph{constant validity} limits the range of values the delay vectors can be chosen from.
 In addition to enforcing the cycle constraint, 
-these delay variables are also used to calculate where retiming is required and 
-project the amount of introduced retiming VUs. 
+these delay variables are also used to calculate where retiming is required and project the amount of introduced retiming VUs. 
 Finally, to reduce the solving time, we use the traversal-based solution to warm start the assignment matrix
 $B$.
 
@@ -311,29 +307,27 @@ $B$.
 \todo{Benchmark Table}
 \Cref{fig:split} shows the comparison between the traversal-based and the solver-based solutions for both
 compute partitioning and global merging.
-Global merging is an global optimization merging small VUs into a large VU that can still fit in
+Global merging is a global optimization merging small VUs into a large VU that can still fit in
 a PU. 
 The merging algorithm is very similar to the compute partitioning algorithm, where nodes in the
-dataflow graph correspond to the VUs in a VUDFG. 
+dataflow graph corresponds to the VUs in a VUDFG. 
 The merging problem also has a traversal-based and solver-based solution.
-\Cref{sec:opt} will discuss about merging in more details.
+\Cref{sec:opt} will discuss merging in more detail.
 
-We used a commercial solver Gurobi~\cite{gurobi} for the solver-based solutions. 
-The evaluation is performed on a Intel Xeon E7-8890 CPU at 2.5GHz with 1TB DDR4 RAM. 
-Gurobi is parallelized across 10 threads for each application.
-To speedup convergence, we configured Gurobi with 15\% optimality gap, i.e. the solver is allowed to early 
-stop after the solution is more than 85\% close to the optimum. 
+We used a commercial solver, Gurobi~\cite{gurobi}, for the solver-based solutions. 
+The evaluation is performed on an Intel Xeon E7-8890 CPU at 2.5GHz with 1TB DDR4 RAM. 
+Gurobi is parallelized across ten threads for each application.
+To speed up convergence, we configured Gurobi with a 15\% optimality gap, i.e., the solver is allowed to early stop after the solution is more than 85\% close to the optimum. 
 %To speed up convergence, we use a 15\% optimality gap that stops the solver at a reasonable solution.
-The solving time increase dramatically as getting close to 100\% optimum.
+The solving time increases dramatically as getting close to 100\% optimum.
 
-\Cref{fig:split} (a) shows the normalized resource in number of VUs after partitining and merging.
-We can see that Gurobi provides almost the best solution for all application when it can derive
+\Cref{fig:split} (a) shows the normalized resource in a number of VUs after partitioning and merging.
+We can see that Gurobi provides almost the best solution for all applications when it can derive
 an answer in a reasonable amount of time. The missing solver bar in random forest (\emph{rf}) partitioning
 is due to timeout after a few days.
 The traversal-based algorithms can sometimes match or even outperform the solver slightly.
 However, because the partitioning result is a function of the traversal order, 
-each traversal order has adversarial cases, where they can be up to 1.7x worse in resource 
-than the best possible solution.
+each traversal order has adversarial cases, where they can be up to 1.7x worse in resource than the best possible solution.
 The forward (\emph{fwd}) traversal order schedules nodes as earlier as possible, which reduces the number of
 external live variables; the backward traversal minimizes the number of internal live variables
 across partitions.
@@ -342,30 +336,28 @@ albeit producing more imbalanced paths between partitions.
 On the other hand, breath-first-search (BFS) produces more balanced partitioning with more live variables and partitions.
 
 There are two common graph patterns in applications that require partitioning. 
-The first is a data-flow graph from a large basic block, which contains a small set of external
-live-in and live-out variables and abundant of intermediate temporary variables.
+The first is a dataflow graph from a large basic block, which contains a small set of external
+live-in and live-out variables and abundant intermediate temporary variables.
 Such graphs typically end up with long-live variables across partitions that require retiming.
 \todo{show example and discuss the other pattern.}
 
 \Cref{fig:split} (b) and (c) shows the compile time for these algorithms. The single-threaded
-traversal-based algorithm runs in minutes, which is significantly faster than the parallelized
-solver that takes hours to days.
-In general, the solver runtime becomes quickly unbounded with a large amount of VBs.
+the traversal-based algorithm runs in minutes, which is significantly faster than the parallelized solver that takes hours to days.
+In general, the solver runtime becomes quickly unbounded with a large amount of VUs.
 \todo{show solver time with increasing number of VBs}.
 
 In summary, the solver solution provides a guaranteed close-to-optimum solution at an expensive
 compile time. Nonetheless, the solver-solution treats the retiming and partitioning as a joint optimization,
 whereas the traversal-based solution solves these two problems in two separate passes,
 which is less optimum.
-Moreover, the solver-based solution tends to produce better result for an architecture with tight I/O
+Moreover, the solver-based solution tends to produce a better result for architectures with tight I/O
 bound and relax stage constraint.
 The traversal-based solutions, on the other hand, can produce a decent solution in a short amount of
 time.
 However, the solution is prune to adversarial cases and potentially perform badly for unseen graph
 structures.
 In practice, we can combine the two approaches and invoke the expensive solver only when the
-traversal-based solution is insufficient. The quality of the traversal-based solution can be 
-easily estimated by the resource utilization in each partition.
+traversal-based solution is insufficient. The quality of the traversal-based solution can be easily estimated by the resource utilization in each partition.
 
 \begin{figure*}
 \centering
@@ -438,36 +430,26 @@ partitions to get additional address port on a reconfigurable accelerator, as sh
 \Cref{fig:memmodel} (b).
 Each parallel worker broadcasts the requests to all memory partitions.
 If the data accessed by two parallel workers live in the same bank, the bandwidth will be halved.
-To avoid bank conflicts, an important static analysis often used on reconfigurable accelerators 
-is called static partitioning, or static banking~\cite{poly_cong}.
+To avoid bank conflicts, an important static analysis often used on reconfigurable accelerators is called static partitioning, or static banking~\cite{poly_cong}.
 For most address patterns, the compiler can derive a partitioning scheme such that every partition is accessed by a
 single worker at any time, which guarantees bandwidth at runtime.
 The output of the analysis is an expression for bank ID (BI) and bank offset (BO), both are
 functions of the requested logical memory address.
-BI determines which partition each requests is going to, and BO is the offset within the
+BI determines which partition each request is going to, and BO is the offset within the
 partition.
 
 \begin{figure}
   \centering
   \includegraphics[width=0.6\columnwidth]{figs/memsplit2.pdf}
-  \caption[Memory partitioning]{Example of memory partitioning across physical units. In this
-  example, the program parallelize the outer loop by 2 and vectorized the inner loop by 4, which
-  generates to two vectorized access lanes. We need 8 scratchpad banks to sustain the read bandwidth. 
-  \name groups the 8 banks in two virtual memory partitions, $P_A$ (bank 0-3) and $P_B$ (bank 4-7). The
-  address generation contexts $A_0$ and $A_1$ contains the computation for logical address and address
-  remapping, which output $BI$s and $BO$s. \name allocates one merge context per memory partition
+  \caption[Memory partitioning]{Example of memory partitioning across physical units. In this example, the program parallelizes the outer loop by two and vectorizes the inner loop by 4, which generates two vectorized access lanes. We need eight scratchpad banks to sustain the read bandwidth. 
+  \name groups the 8 banks in two virtual memory partitions, $P_A$ (bank 0-3) and $P_B$ (bank 4-7). The address generation contexts $A_0$ and $A_1$ contains the computation for logical address and address remapping, which output $BI$s and $BO$s. \name allocates one merge context per memory partition
   ($M_A$ and $M_B$),
-  merging requests from all access lanes. Inside the merge context, the shuffle operator converts
-  the BO from access-aligned to bank-aligned. $A_0$, for example, requests offsets 
-  A, B, C, and D ($BO_0$) from banks 1,4,5,and 3 ($BI_0$). The shuffle operator picks the requests
-  belonging to partition A and outputs a BO aligned with bank 0-3. If the bank $i$ in the partition has no
-  request, the $i$th element in the output is marked as invalid.
+  merging requests from all access lanes. Inside the merge context, the shuffle operator converts the BO from access-aligned to bank-aligned. $A_0$, for example, requests offsets 
+  A, B, C, and D ($BO_0$) from banks 1,4,5,and 3 ($BI_0$). The shuffle operator picks the requests belonging to partition A and outputs a BO aligned with bank 0-3. If the bank $i$ in the partition has no request, the $i$th element in the output is marked as invalid.
   The merge context contains one shuffle operator per request lane, and uses a tree of $OR$
   operators to combine all bank-aligned BOs into the final $BO_A$.
   On the receiver side, the memory broadcasts its response to all receiver lanes.
-  The receiver context use a inverse shuffle operator to convert the response from bank-aligned back to
-  access-aligned, using the $BI$ forwarded from the address context. The response is then merged
-  with another OR tree. 
+  The receiver context uses an inverse shuffle operator to convert the response from bank-aligned back to access-aligned, using the $BI$ forwarded from the address context. The response is then merged with another OR tree. 
   }
   \label{fig:memsplit}
 \end{figure}
@@ -475,45 +457,20 @@ partition.
 \Cref{fig:memsplit} shows how static banking is achieved on the Plasticine architecture.
 Banking analysis from Spatial specifies the number of banks required to sustain bandwidth for the
 current parallelization factors, and expressions for BIs and BOs. 
-\name groups the banks into virtual memories, with group size limited by number of banks in a PMU.
+\name groups the banks into virtual memories, with group size limited by the number of banks in a PMU.
 For each access lane, \name allocates a context to compute the logical and remapped address, which
 outputs a vectorized BI and BO for each access lane. BIs and BOs are broadcasted to all memory partitions.
 For each memory partition, \name allocates a merge context, merging BOs from all requesting lanes.
 The merge context uses a shuffle operator to transform the vectorized BO from bank order specified by BI
 (access-aligned) to bank order assigned to the current partition (bank-aligned).
 Because the static banking analysis guarantees no bank conflicts for all banks,
-\name can uses a OR tree to merge the bank-aligned BOs into the final BO that gets send to
-banks in the partition. On the receiver side, \name uses a inverse shuffle to convert responses from
+\name can use a OR tree to merge the bank-aligned BOs into the final BO that gets send to
+banks in the partition. On the receiver side, \name uses an inverse shuffle to convert responses from
 partitions from bank-aligned back to access-aligned.
 \name uses another OR tree to merge the access-aligned responses, which produces the final vector data requested
 by the access lane.
 With large parallelization, both the merge OR tree and the respond OR tree can be
 partitioned across VUs if running out of stages in a VU, and to scale in the network bandwidth.
-
-%\name{} can use multiple banks within a PU to form a larger virtual bank.
-%However, if a virtual bank in VU exceeds the total capacity of all physical banks within a PU, \name{} further partitions the large virtual banks into multiple sub-banks, such that each sub-bank can fit into the aggregated capacity of a PU.
-%To do so, \name{} injects additional calculation to derive the sub-bank ID and sub-bank offset from the BO, and flattens the sub-bank ID with the previous BI to form the new BI and the new BO.
-
-%The number of banks required in VU increases with parallelization of the program to increase memory access bandwidth.
-%The memory is further multi-buffered to enable coarse-grained pipelining across loop nests\cite{sptial}.
-%The total amount of banks required is the product of the number of banks along all dimensions.
-%The capacity per bank is the capacity of the logical memory divided by the number of banks.
-
-%So we use the first bit of the 32-bit BO to indicate invalid accesses (0 is invalid), which is also used to explicitly disabled access from the program.
-%Next, the merger context uses a tree of bit-wise OR operators to combine all bank-aligned BOs, and send the combined request vector to its partition.
-%The requests can be trivially ORed because static banking (\Cref{sec:background}) guarantees that no two requesters access the same bank in the same cycle.
-%Next, the memory partitions broadcast the respond to all receiver contexts.
-%A receiver takes response from all partitions, using the same shuffle operators to align each response back to the requested order in BI, and uses another OR tree to merge the response. 
-%The BI is forwarded from the requester to the receiver for the reverse shuffling.
-
-%The alternative approach is to reverse the respond to access ordering within the memory partitions before sending them to the requester.
-%This approach does not scale with network bandwidth, as the memory partitions need to send the receiver number of distinct outputs.
-%(The number of receivers is a function of the parallelization factor.) 
-%As a result, the amount of output bandwidth at the memory partition limits how much the program can be parallelized, which causes underutilization of the accelerators.
-%In our scheme, each partition sends a single broadcast to all receivers, which is efficiently handled by the network.
-
-%The request trees for memory partition and receiver can have high fan-in, which can 
-%be partitioned into a tree of VU during the compute partitioning phase in \Cref{sec:compsplit}.
 
 \todo{Talk about what if banking fails.}
 
@@ -523,7 +480,7 @@ partitioned across VUs if running out of stages in a VU, and to scale in the net
 %\yz{Cut this if out of the space}
 %This step illustrates an example of integrating a customized partitioner for composable IP available on
 %the architecture.
-%The cost metrics and partition rule is specific to each IP.
+%The cost metrics and partition rule are specific to each IP.
 %The example IP is a merge buffer, which can merge two sorted vector streams into a single stream with
 %one vector per cycle throughput.
 %The merge buffer pruner uses a tree of 2-way merge buffers across PUs to compose a multi-way merge buffer declared in the program.
