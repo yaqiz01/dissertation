@@ -415,7 +415,7 @@ size of $14\times14$ end-point PUs. All vector networks use a vectorization fact
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{network/figs/scale.pdf}
+\includegraphics[width=0.8\columnwidth]{network/figs/scale.pdf}
 \caption{Performance scaling with increased CGRA grid size for different networks.}\label{fig:scale}
 \end{figure}
 \subsubsection{Bandwidth scaling with network size}\label{sec:scale}
@@ -437,38 +437,14 @@ the additional bandwidth from the dynamic network in hybrid networks does not pr
 This is mostly due to a bandwidth bottleneck between a PU and its router, which prevents the PU from requesting multiple elements per cycle.
 Hybrid networks tend to provide better scaling for time-scheduled architectures; multiple streams can be time multiplexed at each ejection port without losing performance.
 
-\begin{figure}
-\centering
-\includegraphics[width=1\columnwidth]{network/figs/vc.pdf}
-  \caption{Number of VCs required for dynamic and hybrid networks. (No VCs indicates that all traffic is mapped to the static network.)}\label{fig:vc}
-\end{figure}
+\subsubsection{Bandwidth and flow control in switches}
 
 \begin{figure}
   \centering
-\includegraphics[width=0.8\columnwidth]{network/figs/radar_switch.pdf}
+\includegraphics[width=0.7\textwidth]{network/figs/radar_switch.pdf}
   \caption{
     Impact of bandwidth and flow control strategies in switches.}\label{fig:radar_switch}
-\includegraphics[width=0.8\columnwidth]{network/figs/radar_router.pdf}
-  \caption{Impact of VC count and flit widths in routers.}\label{fig:radar_router}
-\includegraphics[width=0.8\columnwidth]{network/figs/radar_best.pdf}
-  \caption{Geometric mean improvement for the best network configurations, relative to the worst configuration.}\label{fig:radar_best}
 \end{figure}
-
-\begin{figure*}
-\centering
-\includegraphics[width=1\linewidth]{network/figs/perf.pdf}
-  \caption{Normalized performance for different network configurations.}\label{fig:perf}
-\end{figure*}
-
-\begin{figure}
-\centering
-  \includegraphics[width=0.8\columnwidth]{network/figs/energy.pdf} 
-\caption{(a,d): Normalized performance/watt. (b,e): Percentage of compute and memory PUs utilized for each network configuration. 
-  (c,f): Total data movement (hop count).}
-\label{fig:energy}
-\end{figure}
-
-\subsubsection{Bandwidth and flow control in switches}
 
 In this section, we study the impact of static network bandwidth and flow control mechanism (per-hop vs. end-to-end credit-based). 
 On the left side of Figure~\ref{fig:radar_switch}, we show that increased static bandwidth results in a linear performance increase and a superlinear increase in area and power. 
@@ -484,6 +460,17 @@ In this experiment, we study the area-energy-performance trade-off between route
 in Section~\ref{sec:net_char}, using many VCs increases both network area and energy.
 However, using too few VCs may force roundabout routing on the dynamic network or result in VC allocation failure when the network is heavily utilized.
 Nonetheless, the left side of Figure~\ref{fig:radar_router} shows minimal performance improvement from using more VCs. 
+\begin{figure}
+  \centering
+\includegraphics[width=0.7\textwidth]{network/figs/radar_router.pdf}
+  \caption{Impact of VC count and flit widths in routers.}\label{fig:radar_router}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.75\textwidth]{network/figs/vc.pdf}
+  \caption{Number of VCs required for dynamic and hybrid networks. (No VCs indicates that all traffic is mapped to the static network.)}\label{fig:vc}
+\end{figure}
 
 Therefore, for each network design, we use a VC count equal to the maximum number of VCs required to map all applications to that network. 
 Figure~\ref{fig:vc} shows that the best hybrid network configurations with 2x and 3x static bandwidth require at most 2 VCs, whereas the pure dynamic network requires 4 VCs to map all applications.
@@ -501,12 +488,26 @@ The right side of Figure~\ref{fig:radar_router} shows that, for a hybrid network
 
 \subsubsection{Static vs. hybrid vs. dynamic networks}
 
+\begin{figure*}
+\centering
+\includegraphics[width=1\linewidth]{network/figs/perf.pdf}
+  \caption{Normalized performance for different network configurations.}\label{fig:perf}
+\end{figure*}
+
 Figure~\ref{fig:perf} shows the normalized performance for each application running on several network configurations.
 %For some applications, the ideal configuration could not be placed and routed onto a static network with 1x bandwidth; missing bars for S-x1 are the result of these failures.
 For some applications, the bar for S-x1 is missing; this indicates that place and route failed for all unrolling factors.
 For DRAM-bound applications, the performance variation between different networks is trivial because only a small fraction of the network is being used. 
 In a few cases (Kmeans and GDA), hybrid networks  provide better performance due to slightly increased bandwidth.
 For compute-bound applications, performance primarily correlates with network bandwidth because more bandwidth permits a higher parallelization factor. 
+
+\begin{figure}
+\centering
+  \includegraphics[width=0.9\textwidth]{network/figs/energy.pdf} 
+\caption{(a,d): Normalized performance/watt. (b,e): Percentage of compute and memory PUs utilized for each network configuration. 
+  (c,f): Total data movement (hop count).}
+\label{fig:energy}
+\end{figure}
 
 %Figures~\ref{fig:energy} [1,4] show the normalized performance/watt of the network for pipelined and scheduled
 %architectures. Figure [2,5] show the corresponding PU utilizations in the network. Figure [3,6] summarize the total
@@ -524,6 +525,12 @@ Subplots (e,f) show that more PUs are utilized with static networks than hybrid 
 %Compared to hybrid networks, (e,f), show larger PU utilization at the same parallelization factor on the purely static network .
 This is because the compiler imposes less stringent IO constraints on PUs when partitioning for the hybrid network (as explained in Section~\ref{sec:partition}), which results in fewer PUs, less data movement, and greater energy efficiency for hybrid networks.
 
+\begin{figure}
+  \centering
+\includegraphics[width=0.7\textwidth]{network/figs/radar_best.pdf}
+  \caption{Geometric mean improvement for the best network configurations, relative to the worst configuration.}\label{fig:radar_best}
+\end{figure}
+
 In Figure~\ref{fig:radar_best}, we summarize the best perf/watt and perf/area (among network configurations with <10\% performance overhead) for pipelined and scheduled CGRA architectures. 
 Pure dynamic networks are not shown because they perform poorly due to insufficient bandwidth.
 On the pipelined CGRA, the best hybrid network provides a 6.4x performance increase, 2.3x better energy efficiency, and a 6.9x perf/area increase over the worst network configuration. 
@@ -537,7 +544,7 @@ Overall, the hybrid networks deliver better energy efficiency with shorter routi
 
 %\begin{figure}[ht]
 %\centering
-%\includegraphics[width=\columnwidth]{figs/area.pdf}
+%\includegraphics[width=\textwidth]{figs/area.pdf}
 %\caption{Area breakdown of network architectures}\label{fig:area}
 %\end{figure}
 

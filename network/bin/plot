@@ -329,7 +329,7 @@ def plot_vc():
     plt.ylabel(textbf('# VC'))
     ax.set_xlim(0,len(appnames))
     ax.set_ylim(bottom=0)
-    ax.legend(loc=2, ncol=3, fontsize='small')
+    ax.legend(loc=2, ncol=3)
     fig.subplots_adjust(bottom=0.35, left=0.15)
     fig.set_size_inches(6,2.5)
     plot_path = 'figs/vc.svg'
@@ -1326,9 +1326,10 @@ def plot_perf():
     fig.tight_layout()
 
     plot_bars(axs, apps, cols, backends(tab))
-    axs[0].legend(loc=2, ncol=5, fontsize='small', bbox_to_anchor=(0,1))
-    plt.gcf().subplots_adjust(left=0.1,bottom=0.25)
-    fig.set_size_inches(11,3.5)
+    axs[0].legend(loc="upper center", ncol=4, bbox_to_anchor=(0.5,1.7))
+    plt.gcf().subplots_adjust(left=0.12,bottom=0.24,top=0.8)
+    scale = 0.8
+    fig.set_size_inches(9*scale,4.5*scale)
     plot_path = 'figs/perf.svg'
     plt.savefig(plot_path, dpi=900)
     print('Generate {}'.format(plot_path))
@@ -1366,11 +1367,11 @@ def plot_energy():
 
     plot_bars(axs, apps, cols, backends(tab))
 
-    axs[0].legend(loc=2, ncol=3, fontsize='small', bbox_to_anchor=(-0.05,1.7))
-    axs[3].legend(loc=2, ncol=3, fontsize='small', bbox_to_anchor=(-0.05,1.7))
-    plt.gcf().subplots_adjust(bottom=0.12, left=0.19, top=0.91, right=0.98)
+    axs[0].legend(loc="upper center", ncol=4, fontsize='small', bbox_to_anchor=(0.48,1.6))
+    axs[3].legend(loc="upper center", ncol=4, fontsize='small', bbox_to_anchor=(0.48,1.6))
+    plt.gcf().subplots_adjust(bottom=0.1, left=0.15, top=0.91, right=0.98)
     scale = 0.8
-    fig.set_size_inches(6*scale,9.3*scale)
+    fig.set_size_inches(8.5*scale,11*scale)
     plot_path = 'figs/energy.svg'
     plt.savefig(plot_path, dpi=900)
     print('Generate {}'.format(plot_path))
@@ -2378,9 +2379,9 @@ def main():
     # plot_util_bw2()
     # plot_graph()
     # plot_perf()
-    # plot_energy()
+    plot_energy()
     # plot_scale()
-    plot_char()
+    # plot_char()
     # plot_areas()
     # plot_vc()
 
