@@ -32,28 +32,38 @@ loop iterators used in the datapath.
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.4\textwidth}
-    \inputminted{python}{code/context.py}
-    \caption{Imperative configuration}
+    \inputminted{python}{code/context_dec_simple.py}
+    \caption{Declarative configuration with automatic register allocation}
     \label{fig:contextb}
+    \inputminted{python}{code/context_imp.py}
+    \caption{Equivalent imperative program}
+    \label{fig:contextc}
   \end{subfigure}
   \caption[Example PCU configuration]{
     Pseudo PCU configuration.
     (a) shows the simplified declarative-style configuration for the SIMD pipeline context in a PCU.
     Each PCU context can produce a set of output streams as a function of input streams and counter
     values.
+    Each stage contains multiple pipeline registers (PRs) that can propogate results across stages.
+    A stage can read PRs from the previous stage and write to PRs in its current stage.
+    Only the first stage can read streams and counter values and the last stage can write streams. 
+    Other stages need to propogate the required values through PRs.
+    (b) shows a simplified configuration where registers are implicitly allocated.
     By configuring when each stream is enqueued and dequeued using signals from the chained counters, 
     these streams are effectively read and written within different loop bodies.
-    (b) shows the equivalent configuration in a imperative-style on the right.
-    On the left, the \texttt{valid} signal of the inner most counter \texttt{j} is high whenever the context is
+    (c) shows the effective execution achieved in an imperative program.
+    In (b), the \texttt{valid} signal of the inner most counter \texttt{j} is high whenever the context is
     enabled. The context is implicitly triggered whenever its input streams \texttt{streamA},
     \texttt{streamB}, and \texttt{streamC} are non-empty and output stream \texttt{outputD} is ready.
-    The declarative configuration also specifies a pipeline register (PR) to holds output of each stage
-    and explicitly forward live variables across stages. 
-    For simplicity, these details are omitted in the imperative-style on the right and
-    \Cref{sec:regalloc} gives more details on register allocation for the SIMD pipeline.
-    In (b), we move the definitions of streams outside of the context, so they can be written by
-    other contexts. However, these streams represent the input buffers of the context, where each
-    stream can have exactly one writer and one reader.
+    %The declarative configuration also specifies a pipeline register (PR) to holds output of each stage
+    %and explicitly forward live variables across stages. 
+    %For simplicity, these details are omitted in the imperative-style on the right and
+    %\Cref{sec:regalloc} gives more details on register allocation for the SIMD pipeline.
+    In (b) and (c), we move the definitions of streams outside of the context, so they can be written by
+    other contexts. 
+    Each stream can have exactly one writer. 
+    If a stream has more than one reader, effectively the
+    writer broadcasts the result to both input buffers of the receiver contexts.
   }
   \label{fig:context}
 \end{figure}
@@ -69,7 +79,7 @@ The counter bounds (i.e., min, max, and stride) can also be data-dependent using
 branch statements, across contexts even though individual contexts can only execute instructions that are
 control-free}. 
 
-\Cref{fig:contextb} represents the effective execution achieved in an imperative-style program.
+\Cref{fig:contextc} represents the effective execution achieved in an imperative-style program.
 For simplicity, we will use the imperative-style configuration in the later discussion.
 However, it is important to realize the instructions in the imperative-style configurations are not
 executed in time, but rather in space.

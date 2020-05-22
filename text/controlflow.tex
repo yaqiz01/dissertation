@@ -170,7 +170,7 @@ This control token is no different from a regular data-dependency and can be vie
 an access grant to the shared memory across contexts. 
 By controlling {\em where}, {\em how}, and {\em when} to pass the token, \name is able to maintain a consistent update ordering between the pipelined and parallelized contexts that access the shared memory.
 
-We refer to an memory access appeared in the input IR as a \emph{declared access}, as supposed to
+We refer to a memory access appeared in the input IR as a \emph{declared access}, as supposed to
 memory accesses executed at runtime.
 \texttt{W1} and \texttt{R1} are examples of two declared accesses in \Cref{fig:contexteg}
 In the rest of this section, we will walk through how \name allocates control tokens
@@ -332,13 +332,18 @@ Instead of treating them as shared memories, \name{} duplicates and maps them to
 The sender actor pushes to the network when the token is supposed to be sent, and the receiver dequeues one element from the input buffer when the token is supposed to be consumed.
 This dramatically reduces the synchronization complexity of non-indexable memory in the common case.
 
-\subsection{Data-Dependent Control Flow (WIP)}
+\subsection{Data-Dependent Control Flow (Ready)}
 Using the synchronization discussed in \Cref{sec:sync}, \name can support control constructs that 
 typically are not supported on dataflow accelerators, such as branches and while loops.
-To enable this, the control path of the architecture must permit data dependencies.
-\Cref{fig:dynrange} shows an example of data-dependent loop ranges. \name uses a context to compute
-the loop bound, and the loop bounds are treated as input dependency to the context mapping the loop
-body.
+Most dataflow accelerators do not support control divergence. SIMT architectures, like GPUs,
+implement branches with predications and pay the latency penalty of both branch cases.
+To enable these flexible control, the control path of the architecture must permit data dependencies.
+\Cref{fig:controlarch} details the required changes in the control path to support these features.
+
+\paragraph{Dynamic Loop Range}
+\Cref{fig:dynrange} shows an example of loops with data-dependent ranges. 
+\name uses a context to compute the loop bounds, which are treated as input dependency to the context 
+that maps the loop body.
 \begin{figure*}
 \centering
 \begin{subfigure}[b]{0.4\textwidth}
@@ -361,6 +366,7 @@ body.
 
 \begin{figure*}
 \centering
+  \vspace{-1cm}
 \begin{subfigure}[b]{0.45\textwidth}
 \inputminted{python}{code/branch.py}
 \caption{Input program}
@@ -371,32 +377,149 @@ body.
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
 \inputminted{python}{code/branchctx.py}
-\caption{Context graph}
+\caption{Context configuration}
 \end{subfigure}
 \\
   \vspace{0.2cm}
 \begin{subfigure}[b]{\textwidth}
   \centering
 \includegraphics[width=0.8\textwidth]{figs/branchtiming.pdf}
-\caption{Context configuration}
+\caption{Timing}
 \end{subfigure}
 \caption[Branching example]{
+  An example program with a branch. 
+  (d) shows the timing of execution with $A=4$, $D=3$, and $F=2$.
 }
-\label{fig:dynrange}
+\label{fig:branch} 
 \end{figure*}
-The branch condition is also treated as a data-dependent enable signal of controllers under branch clauses.
 
-If the controller is disabled, it is considered {\em done} immediately.
+\paragraph{Branch Condition}
+\name supports both predictions and actual branches.
+Branches within the innermost loops are implemented with predications so that the loop can still be
+vectorized across SIMD lanes.
+This is very similar to a SIMT architecture, where all lanes execute the \emph{if} clause followed by the \emph{else} clause, masking off the memory access for the disabled lanes.
+The total number of stages required is the total operations in both the \emph{if} and the \emph{else} clauses.
+
+For an actual branch in an outer loop,
+the branch condition is treated as a data-dependent enable signal for controllers under the branch clauses.
+If the controller is disabled, its \emph{done} signal raises to high immediately.
 Output tokens depending on the {\em done} signal will be immediately sent out.
-For a memory written inside a branch statement and read outside the branch (with a branch miss), the
-writer contexts immediately send out the token to the receiver
-as soon as the branch condition is resolved. 
-With a branch hit, the controller waits until its inner controller completes before raising the {\em done} signal.
-A similar scheme is used to implement the while loop, where the while condition is a data-dependency of stop signal of controller X. 
-The producer of the while condition also consumes its own output as an LCD. 
-The condition is then broadcast to all other contexts under the same while loop. 
-The {\em done} signal of the while loop is raised when the condition's data-dependency evaluates to true.
-At this point, contexts accessing memory within the while loop will send the token to access contexts outside of the while loop, and enable them to access the intermediate memory.
+This way, the controller under a branch condition does not need to execute if the outer branch
+evaluates to false.
 
-After all contexts and shared resources are allocated and synchronized, we simply put each context and shared resources into their own VUs.
-The contexts with a single-cycle special case (\Cref{sec:sync}) must be put in the same VB as the shared memory.
+\Cref{fig:branch} shows an example with a branch statement.
+The input program in (a) writes and reads the memory \emph{mem} on even and odd cycles of
+the outer loop \emph{A}, respectively. 
+\name maps the three basic blocks in the program in three
+contexts, \emph{ctxB}, \emph{ctxD}, and \emph{ctxF}, as shown in (b) and (c). 
+For the read and write accesses, \name
+allocates a context \emph{respW} to accumulate write acknowledgments and a context \emph{rqstR} 
+to generate read requests. 
+\emph{ctxB} generates the branch conditions for both the \emph{if} and the \emph{else} clauses.
+The conditions are sent as data dependencies to contexts mapping the basic blocks under the branch conditions.
+
+\Cref{fig:branch} (d) shows the timing of execution.
+As \emph{ctxB} has no dependencies, \emph{ctxB} computes the conditions for all iterations of
+\emph{A} in
+pipelined fashion and broadcasts the conditions to the receiver contexts.
+The \emph{if} contexts (\emph{ctxD}+\emph{rspdW}) receives a \texttt{true} condition for the first
+iteration of \emph{A} ($A_0$), 
+executing all iterations of D, and passes a token to the \emph{else} (\emph{rqstR}+\emph{ctxF}) contexts.
+Because \emph{mem} is double-buffered, the credit is initialized with two elements in the
+receiver's input buffer, enabling the \emph{if} contexts to execute two iterations of outer loop
+\emph{A} before
+waiting for the \emph{else} contexts. For the second iteration of loop \emph{A} ($A_1$), the \emph{if} contexts
+receives a \texttt{false} condition for branch \emph{C}.
+Therefore, the enclosing loop controller \emph{D}'s \emph{done} signal is immediately high, sending the
+token to \emph{rqstR} context right away.
+On the other side, the $A_0$ of the \emph{else} contexts is blocked by the token from
+the \emph{if} contexts. 
+As soon as the token arrives, the \emph{else} contexts send out the credit immediately,
+Next, the \emph{else} contexts check for the second token, 
+and executes loop \emph{F} for $A_1$.
+
+Both the \emph{if} and the \emph{else} contexts only execute if their enclosed branch clauses are
+evaluated to be true. More interestingly, \Cref{fig:branch} (d) shows a overlapping execution of the
+\emph{if} and \emph{else} clauses across iterations of A. 
+The hardware for both \emph{if} and \emph{else} clauses are active almost all time.
+If the latency of loop \emph{D} and \emph{F} are both $L$, 
+the total runtime for $N$ iterations of loop \emph{A} would be on the order of $\frac{N}{2}L+L$
+on Plasticine, assuming L and N are large.
+\emph{This is almost twice as fast as a traditional coarse-grained pipelining with hierarchical FMS
+schedulers}, like Spatial's FPGA back-end, whose runtime is $NL+L$.
+
+\paragraph{Do While Loops}
+
+\begin{figure*}
+\centering
+  \vspace{-1cm}
+\begin{subfigure}[b]{0.45\textwidth}
+\inputminted{python}{code/dowhile.py}
+\caption{Input program}
+  \vspace{0.2cm}
+\includegraphics[width=0.8\textwidth]{figs/dowhile.pdf}
+\caption{Dataflow graph}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+\inputminted{python}{code/dowhilectx.py}
+\caption{Context configuration}
+\end{subfigure}
+\\
+  \vspace{0.2cm}
+\begin{subfigure}[b]{\textwidth}
+  \centering
+\includegraphics[width=0.6\textwidth]{figs/dowhiletiming.pdf}
+\caption{Timing}
+\end{subfigure}
+\caption[Do while example]{
+  An example program for do while loop. 
+  Loop \emph{A} in (a) is a loop running forever, with a conditional \emph{stop} variable.
+  The break statements in (c) corresponds to configuring the stop signal of the enclosing controller \emph{A}
+  to the output of the stop input buffer. The stop buffer is dequeued every cycle controller \emph{A} is active.
+}
+\label{fig:dowhile} 
+\end{figure*}
+
+The \emph{do while} construct is very useful to express iterative convergence algorithms or handle external
+data stream with a last-bit signal that terminates the execution.
+A \emph{do while} loop works very similarly to a loop with dynamic range, except the loop has a very long
+initialization interval. The earliest starting time for the second iteration of the loop is when the while condition is resolved.
+The while condition is a data-dependency to all contexts mapping the basic blocks enclosed by the while loop.
+%This while condition is a loop carried dependency, assuming the first value is produced after the first
+%iteration.
+There is a loop-carried dependency between the producer of the condition within the while loop body
+and the loop controller that consumes a value of condition every iteration.
+\Cref{fig:dowhile} shows an example with a do-while loop.
+
+%The break statement in (a) translates to a \emph{stop} register associated with the controller of loop
+%\emph{A}. 
+Loop \emph{A} reads and block \emph{C} writes a value of stop for every iteration of loop
+\emph{A}.
+\Cref{fig:dowhile} (b) shows the dataflow graph, mapping each basic block to a context.
+\emph{ctxC} computes the stop condition, which is used by both \emph{ctxC} and \emph{ctxB}.
+There is a loop-carried dependency between the reader of \emph{stop} from loop \emph{A} and the
+writer of stop from block \emph{C}. Therefore, the stop streams in (c) are initialized with 
+\texttt{False} to enable the execution of the first iteration.
+The \emph{accum} variable in (a) has two readers in block \emph{B} and block \emph{D}; one has a
+loop-carried dependency with the writer (line 9) and the other has a forward data-dependency (line
+11). 
+Therefore, the variable is mapped to two copies of \emph{accum}, one for each reader. 
+Because the accumulate operation is a single operation ADD, the accumulator gets optimized to the special
+accumulate pipeline register \emph{accum1}, 
+Without this optimization, \emph{accum1} would be another \texttt{ScalarStream} with an initial
+element 0.
+The other \emph{accum} becomes a scalar stream \emph{accum2}, written by \emph{ctxB} when loop \emph{A}
+is done.
+(d) shows the timing of execution. As we can see, the initialization interval across iterations of
+A in the steady-state is bounded by the latency to evaluate \emph{stop}, which is the number of
+operations in stop expression rounded up to a multiple of 6 stages because the data must
+propagate to the end of each SIMD pipeline.
+
+\subsection{Virtual Unit Allocation (Ready)}
+After all contexts and shared memory are allocated and synchronized, 
+\name moves the remaining floating contexts into their own VUs, indicating the boundary of the physical units.
+Certain contexts mentioned in dense SRAM specialization might already belong to the same VU the
+memory locates at to ensure the synchronization has a single cycle latency.
+In the resource allocation phase, \name might partition the big contexts into multiple VUs, and small contexts into a single VU. When contexts are merged into a single VU, they are still
+separate contexts triggered independently.

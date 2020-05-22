@@ -1,5 +1,5 @@
 bufferA = VecSteram() 
-bufferB = ScalSteram()
+bufferB = ScalarStream()
 bufferC = VecSteram()
 outputD = VecSteram()
 
@@ -10,4 +10,4 @@ with Context() as ctx:
         for j in range(0, 3, 1)
             a = bufferA.deq()
             expr = a * b + c
-            outputD.enq(data=expr)
+            outputD.enq(expr)
