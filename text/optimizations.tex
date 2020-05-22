@@ -104,9 +104,9 @@ units.
 \subparagraph{Crossbar datapath elimination (xbar-elm).}
 Although in the general cases described in \Cref{sec:memsplit}, 
 crossbar data paths between accessors and memory partitions are very expensive, 
-the BI can often be statically resolved to a constant vector for certain
+the BA can often be statically resolved to a constant vector for certain
 parallelization factors and address patterns.  
-When BI is a constant, \name{} can use this information to intelligently 
+When BA is a constant, \name{} can use this information to intelligently 
 group banks into memory partitions that reduce the crossbar to a partial 
 or a point-to-point connection.
 This is an important optimization that prevents resource scaling quadratically with increasing
@@ -144,17 +144,17 @@ increase while scaling up parallelism.
 non-linearly increasing with parallelization factors, while having perfect performance scaling, due to compiler optimizations.
 
 \subparagraph{Read address duplication (dupra).} 
-%The long traveling path for BI from the address context to the receiver context showing in memory partitioning
+%The long traveling path for BA from the address context to the receiver context showing in memory partitioning
 %\Cref{sec:memsplit} \Cref{fig:memsplit} can cause pipeline stalls due to the imbalance datapath between
-%the BI forwarding path and the memory data path.
+%the BA forwarding path and the memory data path.
 Between the address context and receiver contexts in memory partitioning shown in \Cref{sec:memsplit}
 \Cref{fig:memsplit},
-the imbalance datapaths between BI forwarding and request datapath can cause significant pipeline
+the imbalance datapaths between BA forwarding and request datapath can cause significant pipeline
 stalls, limiting the overall application performance to a small fraction of the ideal throughput.
 When parallelizing the memory access, the OR tree in the merge context gets partitioned into a tree
 of contexts, which further increases the mismatch in latency between the imbalanced datapaths.
-Instead of retiming BI forwarding path, 
-this compiler flag forces \name to duplicate the BI computation using local states
+Instead of retiming BA forwarding path, 
+this compiler flag forces \name to duplicate the BA computation using local states
 within the receiver context, which could use fewer resources than retiming.
 
 \subparagraph{Global Merging (merge).}

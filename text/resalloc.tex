@@ -433,35 +433,35 @@ If the data accessed by two parallel workers live in the same bank, the bandwidt
 To avoid bank conflicts, an important static analysis often used on reconfigurable accelerators is called static partitioning, or static banking~\cite{poly_cong}.
 For most address patterns, the compiler can derive a partitioning scheme such that every partition is accessed by a
 single worker at any time, which guarantees bandwidth at runtime.
-The output of the analysis is an expression for bank ID (BI) and bank offset (BO), both are
+The output of the analysis is an expression for bank address (BA) and bank offset (BO), both are
 functions of the requested logical memory address.
-BI determines which partition each request is going to, and BO is the offset within the
+BA determines which partition each request is going to, and BO is the offset within the
 partition.
 
 \begin{figure}
   \centering
   \includegraphics[width=0.6\columnwidth]{figs/memsplit2.pdf}
   \caption[Memory partitioning]{Example of memory partitioning across physical units. In this example, the program parallelizes the outer loop by two and vectorizes the inner loop by 4, which generates two vectorized access lanes. We need eight scratchpad banks to sustain the read bandwidth. 
-  \name groups the 8 banks in two virtual memory partitions, $P_A$ (bank 0-3) and $P_B$ (bank 4-7). The address generation contexts $A_0$ and $A_1$ contains the computation for logical address and address remapping, which output $BI$s and $BO$s. \name allocates one merge context per memory partition
+  \name groups the 8 banks in two virtual memory partitions, $P_A$ (bank 0-3) and $P_B$ (bank 4-7). The address generation contexts $A_0$ and $A_1$ contains the computation for logical address and address remapping, which output $BA$s and $BO$s. \name allocates one merge context per memory partition
   ($M_A$ and $M_B$),
   merging requests from all access lanes. Inside the merge context, the shuffle operator converts the BO from access-aligned to bank-aligned. $A_0$, for example, requests offsets 
-  A, B, C, and D ($BO_0$) from banks 1,4,5,and 3 ($BI_0$). The shuffle operator picks the requests belonging to partition A and outputs a BO aligned with bank 0-3. If the bank $i$ in the partition has no request, the $i$th element in the output is marked as invalid.
+  A, B, C, and D ($BO_0$) from banks 1,4,5,and 3 ($BA_0$). The shuffle operator picks the requests belonging to partition A and outputs a BO aligned with bank 0-3. If the bank $i$ in the partition has no request, the $i$th element in the output is marked as invalid.
   The merge context contains one shuffle operator per request lane, and uses a tree of $OR$
   operators to combine all bank-aligned BOs into the final $BO_A$.
   On the receiver side, the memory broadcasts its response to all receiver lanes.
-  The receiver context uses an inverse shuffle operator to convert the response from bank-aligned back to access-aligned, using the $BI$ forwarded from the address context. The response is then merged with another OR tree. 
+  The receiver context uses an inverse shuffle operator to convert the response from bank-aligned back to access-aligned, using the $BA$ forwarded from the address context. The response is then merged with another OR tree. 
   }
   \label{fig:memsplit}
 \end{figure}
 
 \Cref{fig:memsplit} shows how static banking is achieved on the Plasticine architecture.
 Banking analysis from Spatial specifies the number of banks required to sustain bandwidth for the
-current parallelization factors, and expressions for BIs and BOs. 
+current parallelization factors, and expressions for BAs and BOs. 
 \name groups the banks into virtual memories, with group size limited by the number of banks in a PMU.
 For each access lane, \name allocates a context to compute the logical and remapped address, which
-outputs a vectorized BI and BO for each access lane. BIs and BOs are broadcasted to all memory partitions.
+outputs a vectorized BA and BO for each access lane. BAs and BOs are broadcasted to all memory partitions.
 For each memory partition, \name allocates a merge context, merging BOs from all requesting lanes.
-The merge context uses a shuffle operator to transform the vectorized BO from bank order specified by BI
+The merge context uses a shuffle operator to transform the vectorized BO from bank order specified by BA
 (access-aligned) to bank order assigned to the current partition (bank-aligned).
 Because the static banking analysis guarantees no bank conflicts for all banks,
 \name can use a OR tree to merge the bank-aligned BOs into the final BO that gets send to

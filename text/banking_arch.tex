@@ -1,1 +1,56 @@
-\section{Generic Banknig Support (WIP)} \label{sec:banking_arch}
+\section{Generic Banknig Support (Ready)} \label{sec:banking_arch}
+
+To support Spatial's generic banking scheme for on-chip SRAM mentioned in \Cref{sec:memsplit}, 
+we need to introduce a few microarchitectural changes to Plasticine's datapath.
+As a background, the static banking analysis searches an address remapping scheme, which we refer as
+banking scheme, that remaps the logical address space into partitions, such that addresses accessed
+in parallel belongs to different partitions. 
+Each partition corresponds to a physical memory bank that comes with an additional address port.
+If the compiler can find a way to partition the data such that all parallel workers are sent to
+different physical banks, the memory is guaranteed to feed all workers at full-throughput, which
+scales performance with parallelism.
+To search for the banking schemes, the compiler analyzes the access patterns of the memory.
+An access pattern refers to groups of address expressions that can be queried concurrently.
+For each access pattern, there can be multiple banking schemes that can sustain the access bandwidth.
+However, not all schemes cost the same amount of resources; some are more expensive in logic, and
+others are more expensive in memory.
+
+The partitioning logic are two parametrizable equations for the bank address (BA) and the bank offset (BO),
+both are functions of the original user-requested logical addresses.
+BA is an expression that selects the partition for each request, and BO is the offset within the partition.
+The banking analyzer searches the parameters in the equation and injects these computations to
+memory accesses in the program. 
+The first addition to Plasticine is the ability to compute independent BI and BO for each vector
+lanes. 
+We introduce vectorized address pipelines in PMUs, which was originally a scalar pipeline.
+
+The generic banking scheme also requires a full crossbar datapath between all access lanes (workers) and
+physical banks. To support this, we introduce the shuffle operator shown in \Cref{fig:memsplit}.
+The shuffle operator takes three vectorized operands: a from address $\overrightarrow{FA}$, a to address
+$\overrightarrow{TA}$, and a base $\overrightarrow{B}$.
+The output $O$ equals to $B$ shuffled from the order specified in $\overrightarrow{FA}$ to the order in
+$\overrightarrow{BA}$. 
+Specifically,
+\begin{align}
+\forall i \in [1,|\overrightarrow{O}|],
+O_i &= \begin{cases}
+B_j, \text{if $\exists$ $TA_i = FA_j$}\\
+0
+\end{cases} \\
+|\overrightarrow{FA}| &= |\overrightarrow{B}| \\
+|\overrightarrow{TA}| &= |\overrightarrow{O}|
+\end{align}
+\Cref{fig:memsplit} gives concrete examples of inputs and outputs of the shuffle operator.
+On the requester side, $BA$ is the $FA$, a vector constant corresponding to the banks statically
+assigned to the partition is the $TA$, and $BO$ is the base.
+On the receiver side, the vector constant is the $FA$, the $BA$ is the $TA$, and the data response
+$D$ is the base.
+If a lane in the $TA$ is not in the $FA$, the corresponding lane is marked as invalid with value
+$0$. As a result, an invalid vector ORed with a valid vector is still the valid vector.
+For address going to the scratchpad, we use the first bit of the 32-bit address as the predication
+bit of the access; if the predicate bit equals zero, the request will be dropped by the memory.
+Therefore, a valid address zero would be xF0000000 to distinguish with an invalid address 0.
+
+The shuffle operator can be expensive, requiring a $16\times16$ 32-bit crossbar with parallel
+integer comparators for equality. We expect to add one or two shuffle operators per SIMD pipeline,
+and the operator can be pipelined across multiple stages to meet timing.
