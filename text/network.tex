@@ -294,7 +294,8 @@ performance, area, and energy in our evaluations.
 
 \begin{table}
 \footnotesize
-\begin{tabular*}{\columnwidth}{p{1cm} p{7cm}}
+  \centering
+\begin{tabular*}{0.65\textwidth}{p{1cm} p{8cm}}
   \bottomrule
   \textbf{Notation} & \textbf{Description} \\\midrule
   $[$S,H,D$]$ & Static, hybrid, and dynamic network \\\midrule
@@ -456,21 +457,15 @@ This is the result of imbalanced data-flow pipelines in the program: when there 
 Because performance is our most important metric, credit-based flow control is not feasible, especially because the impact of bubbles increases with communication distance, and therefore network size.
 
 \subsubsection{VC count and reduced flit width in routers}
-In this experiment, we study the area-energy-performance trade-off between routers with different VC counts. As shown
-in Section~\ref{sec:net_char}, using many VCs increases both network area and energy.
-However, using too few VCs may force roundabout routing on the dynamic network or result in VC allocation failure when the network is heavily utilized.
-Nonetheless, the left side of Figure~\ref{fig:radar_router} shows minimal performance improvement from using more VCs. 
 \begin{figure}
   \centering
 \includegraphics[width=0.7\textwidth]{network/figs/radar_router.pdf}
   \caption{Impact of VC count and flit widths in routers.}\label{fig:radar_router}
 \end{figure}
-
-\begin{figure}
-\centering
-\includegraphics[width=0.75\textwidth]{network/figs/vc.pdf}
-  \caption{Number of VCs required for dynamic and hybrid networks. (No VCs indicates that all traffic is mapped to the static network.)}\label{fig:vc}
-\end{figure}
+In this experiment, we study the area-energy-performance trade-off between routers with different VC counts. As shown
+in Section~\ref{sec:net_char}, using many VCs increases both network area and energy.
+However, using too few VCs may force roundabout routing on the dynamic network or result in VC allocation failure when the network is heavily utilized.
+Nonetheless, the left side of Figure~\ref{fig:radar_router} shows minimal performance improvement from using more VCs. 
 
 Therefore, for each network design, we use a VC count equal to the maximum number of VCs required to map all applications to that network. 
 Figure~\ref{fig:vc} shows that the best hybrid network configurations with 2x and 3x static bandwidth require at most 2 VCs, whereas the pure dynamic network requires 4 VCs to map all applications.
@@ -478,6 +473,12 @@ Figure~\ref{fig:vc} shows that the best hybrid network configurations with 2x an
 %specific to streaming architectures, second, communication is much infrequent to incur bandwidth penalty on dynamic network. 
 Because dynamic network communication is infrequent, hybrid networks with fewer VCs provide both better energy and area efficiency than networks with more VCs, even though this constrains routing on the dynamic network.
 %The improvement is less significant in a time-scheduled architecture because of an overall reduction in required bandwidth.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.75\textwidth]{network/figs/vc.pdf}
+  \caption{Number of VCs required for dynamic and hybrid networks. (No VCs indicates that all traffic is mapped to the static network.)}\label{fig:vc}
+\end{figure}
 
 We also explore the effects of reducing dynamic network bandwidth by using smaller routers;
 as shown in Section~\ref{sec:net_char}, routers with smaller flits have a much smaller area.
