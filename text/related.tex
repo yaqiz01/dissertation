@@ -49,7 +49,8 @@ Second, the Plasticine compiler assigns a single memory PB for each logical memo
 Hence, it could not handle the case where a logical memory exceeds the capacity or bank limits of the physical PBs.
 Third, the Plasticine compiler only supports polyhedral memory partitioning at the first dimension of the on-chip memory. 
 Hence, its applicability to data-intensive applications with high-dimension tensor algebra is questionable.
-Last, compared to \name{}'s separate allocation and assignment phases described in \Cref{sec:control} and \Cref{sec:decompose},
+Last, compared to \name{}'s separate allocation and assignment phases described in
+\Cref{sec:control} and \Cref{sec:resalloc},
 the Plasticine compiler allocates one VB for a specific type of PB and underutilizes resources within PBs.
 
 

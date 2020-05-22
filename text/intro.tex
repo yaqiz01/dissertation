@@ -4,3 +4,20 @@ With the end of Dennard Scaling~\cite{dennard}, the amount of performance one ca
 To provide general-purpose flexibility, CPU spends the majority of energy on overheads, including dynamic-instruction execution, branch prediction, and a cache hierarchy, and less than 20\% of the energy on the actual computation~\cite{mark}.
 Even worse, the power wall is limiting the entire multicore family
 to reach the doubled performance improvement per generation enabled by technology scaling in the past\cite{multicorescale}.
+
+Spatially reconfigurable architectures are programmable, energy efficient application accelerators offering the flexibility of software and the efficiency of hardware.
+Architectures such as Field Programmable Gate Arrays (FPGAs) achieve energy efficiency by providing statically reconfigurable compute elements and on-chip memories in a bit-level programmable interconnect; this interconnect can be configured to implement arbitrary datapaths. FPGAs are used to deploy services commercially~\cite{microsoft, baidu, deephi}
+and can be rented on the AWS F1 cloud~\cite{aws}. However, FPGAs suffer from overhead incurred by fine-grained reconfigurability; their long compile times
+and relatively low compute density have hampered widespread adoption for several years~\cite{bolsens, calhoun, fpgaPower, fpgaSurvey}. 
+Therefore, recent spatial architectures use
+increasingly coarse-grained building blocks, such as ALUs, register files, and memory controllers, distributed in a programmable, word-level static interconnect.
+Several of these Coarse-Grained Reconfigurable Arrays (CGRAs) have recently been proposed \cite{adres, kress, dyser, piperench, tartan, hrl, ti, hycube, plasticine}.
+
+CGRAs need the right amount of interconnect flexibility to achieve high resource utilization; an inflexible interconnect constrains the space of
+valid application mappings and hinders resource utilization. Furthermore, in the quest to increase compute density, CGRA data paths now 
+contain increasingly coarse-grained processing blocks such as pipelined, vectorized functional units~\cite{plasticine, piperench, xilinx-acap}.
+These data paths typically have a vector width of 8--16x~\cite{plasticine}, which necessitates coarser communication and higher on-chip interconnect bandwidth to avoid
+creating performance bottlenecks. 
+Although many hardware accelerators with large, vectorized data paths have fixed local networks~\cite{brainwave}, there is a need for more
+flexible global networks to adapt to future applications.
+Consequently, interconnect design for these CGRAs involves achieving a balance between the often conflicting requirements of high bandwidth and high flexibility.

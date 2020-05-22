@@ -1,51 +1,49 @@
 \section{On-chip Network (WIP)}
 
-%\subsection{Communication Patterns on Spatial Data-flow Accelerators}
-%Unlike traditional processor-based architectures, where applications are executed in time and communication only occurs when accessing overlapping shared address space, communications on spatial architectures differ fundamentally in the following ways:
-This section discusses communication characteristics common in
-applications that have been spatially mapped to CGRAs. %In this paper, we explore a wide variety of interconnection network designs for CGRAs.
-Because CGRAs encompass a broad range of architectures, we first describe the abstract machine model
-of our target CGRA for this study, shown in  Figure~\ref{fig:arch}.
-The CGRA contains Physical Units (PUs) corresponding to distributed hardware resources, including compute units, scratchpads, and DRAM controllers.
-The communication between PUs, sent over a reconfigurable network, is purely streaming.
-Compute PUs have a simple control mechanism: they wait on input data dependencies and stall for backpressure from the network. 
-%The compute can have simple state machine allow rate matching between dependencies.
-The network guarantees exactly-once, in-order delivery with variable latency, and communication between PUs can have varying granularities (e.g., 512-bit vector or 32-bit scalar).
+Achieving scalable performance using spatial architectures while supporting diverse applications requires a flexible, high-bandwidth interconnect.
+  %Unfortunately, bandwidth and flexibility are often conflicting goals; static interconnects guarantee bandwidth but lack flexibility due to poor sharing.
+  %Dynamic interconnects provide flexibility with better resource sharing, but can cause bandwidth bottlenecks due to congestion, while requiring more area and power.
+ Because modern CGRAs support vector units with wide datapaths, designing an interconnect that balances dynamism, communication granularity, and programmability is a challenging task.
 
-%\subsection{CGRA Characteristics} 
-In this study, we focus on two categories of CGRA architectures.
-The first architecture uses pipelining in compute PUs, as shown in Figure~\ref{fig:arch}.
-To provide high throughput, each stage of the pipeline exploits SIMD parallelism, and multiple SIMD operations are pipelined within a PU.
-Plasticine, a recently proposed CGRA, is an example of a pipelined architecture \cite{plasticine}.
-%Since computations are laid out in space, pipelined communication forms between data producers and consumers.  
-%Due to the pipelined computation, performance is less sensitive to the latency of the communication. 
-%Therefore, high-bandwidth network resource such as static network, is required to sustain throughput of the application. 
-%Elsewhere, coarse-grained pipelines introduce communications that are far less frequent; these include loading data from DRAM to on-chip SRAMs.
-%Example of coarse-grained communication includes initialization of the on-chip memory where off-chip load and on-chip compute are overlapped to hide DRAM latency, and reading of loop invariant variables from inner loop pipeline. 
-%The network requirements depend on the pipeline granularity. 
-%In the case of fine-grained pipelining, which happens if the long body of an inner-most loop is mapped across different computation tiles, the communication occurs every cycle and is highly throughput (but not latency) sensitive.
-%Such communications are tolerant of lower network throughput, which reveals the opportunity of link sharing.
+On-chip interconnects can be classified into two broad categories: \emph{static} and \emph{dynamic.}
+ {Static interconnects} use switches programmed at compile time to reserve high-bandwidth links between communicating units for the lifetime of the application.
+CGRAs traditionally employ static interconnects~\cite{cgraSurvey1, cgraSurvey2}.
+In contrast, {dynamic interconnects}, or NoCs, contain routers that allow links to be shared between more than one pair of communicating units.
+NoC communication is typically packet-switched, and routers use allocators to fairly share links between multiple competing packets.
+Although static networks are fast, they require over-provisioning bandwidth and can be underutilized when a dedicated static link is reserved for a logical link that is not 100\% active. 
+While dynamic networks allow link sharing, the area and energy cost to transmit one bit of data is higher for routers than for switches, making bandwidth scaling more expensive in dynamic networks than in static networks.
 
-%\subsubsection{Time-Shared Computation}
-%Instead of spreading a computation over multiple compute units, it is also possible to distribute it over several cycles:
-%in such a CGRA, variables are not loaded into each compute unit every cycle.
-%By keeping more computation in a single compute unit, the total amount of network communication is reduced and there are more opportunities for link sharing than with the pipelined network.
-%Figure~\ref{fig:link}(a) shows the activation rate of all communications in the program. About 40\% of the links are firing at more than 50\% of the time for most of the compute bound applications, such as GDA, GEMM, and Kmeans. On the other hand, about half of the links activate at very low frequency, where link sharing can improve overall link utilization.
-The second architecture uses time-scheduled execution, where each PU executes a small loop of instructions (e.g., 6) repeatedly. 
-The scheduling window is small enough that instructions are stored as part of the configuration fabric, without dynamic instruction fetch overhead. 
-This execution model creates more interleaved pipelining across PUs with communication that is tolerant of lower network throughput, which provides an opportunity to share links.
-%Many proposed CGRAs and domain-specific architectures use this \emph{time-scheduled} form of computation, including Brainwave~\cite{brainwave} and DaDianNao~\cite{dadiannao}.
+In this section, we explore the space of spatial architecture interconnect dynamism, granularity, and programmability.
+We start by characterizing several benchmarks' communication patterns and showing links' imbalanced
+bandwidth requirements, fanout, and data width in \Cref{sec:appchar}. 
+Using these insights, we describe a hybrid network with both static and dynamic capabilities to enable both high bandwidth traffic and high resource sharing.
+\Cref{sec:network} identifies a space of interconnection networks with static and dynamic capabilities, at multiple granularities. 
+Next, We explain our methodology on performance, area, and power modeling in \Cref{sec:net_char}.
+Finally, \Cref{sec:net_dse} perform a detailed evaluation across the identified design space for a variety of benchmarks.
 
-\subsection{Application Characteristics}
+Because CGRAs encompass a broad range of architectures, we narrow our study on tiled-based CGRAs with
+a streaming dataflow execution model, like Plasticine.
+At high-level, the architecture may contain a pool of heterogeneous compute and memory tiles (we
+refer as physical units (PUs)) with a global network.
+The network guarantees exactly-once, in-order delivery with variable latency, and communication 
+between PUs can have varying granularities (e.g., 512-bit vector or 32-bit scalar).
+
+To generalize the study, we introduce a variant processing engine (PE) style than Plasticine's
+pipeline SIMD unit.
+The alternative style uses time-scheduled execution, where each PU 
+contains a vector function unit (FU) that can executes a small loop of instructions repeatedly in
+time.
+The scheduling window is small enough that instructions are stored as part of the configuration fabric, 
+without dynamic instruction fetch overhead. 
+Compared to the pipelined architecture, 
+this execution model creates more interleaved pipelining across PUs with communication that is tolerant of lower network throughput, which provides an opportunity to share links.
+
+\subsection{Application Characteristics} \label{sec:appchar}
 The requirements of an interconnection network are a function of the communication pattern of the
 application, underlying CGRA architecture, and compilation process.
-%To motivate our study, we characterized the communication pattern of a set of benchmarks.
-We 
-%evaluated communication patterns using an ideal network with infinite bandwidth and buffering, %to study the communication requirement in absence of network bottlenecks, 
-%and 
-identify the following key characteristics of spatially mapped applications:
+We identify the following key characteristics of spatially mapped applications:
 
-\subsubsection{Vectorized communication}
+\paragraph{Vectorized communication}
 Recent hardware accelerators use large-granularity compute tiles (e.g., vectorized compute units and SIMD pipelines) for
 SIMD parallelism~\cite{plasticine, xilinx-acap}, which improves compute density while minimizing control and configuration overhead. 
 Coarser-grained computation typically increases the size of communication, but glue logic, reductions, and loops with carried dependencies (i.e., non-parallelizable loops) contribute to scalar communications. 
@@ -63,38 +61,19 @@ This variation in communication motivates specialization for optimal area- and e
 %However, because not all loops can be vectorized, there are effectively two classes of network traffic, with different bandwidth requirements.
 %In Plasticine, these are 512bit vectors and 32bit scalars.
 
-\subsubsection{Broadcast and incast communication} 
-A key optimization for spatial reconfigurable accelerators is the parallelization of execution across PUs.
-This parallelization involves unrolling outer loop nests in addition to the vectorization of the inner loop.
-For neural network accelerators, this corresponds to parallelizing one layer across different channels. 
-%, balancing the throughput
-%between coarse-grained pipeline stages.
-%Because any data from the outer loop is shared between several inner loop bodies, it is communicated using one-to-many broadcasts.
-%Similarly, the results from each unrolled inner loop may need to be aggregated; this results in a many-to-one reduction. 
-%Because the reduction tree involves computation, it is implemented using compute resources instead of network resources.
-By default, pipeline parallelism involves one-to-one communication between dependent stages.
-However, when a consumer stage is parallelized, the producer sends a one-to-many broadcast to all of its consumers.
-Similarly, when a producer stage is parallelized, all partial results are sent to the consumer, forming a many-to-one incast link. 
+\paragraph{Broadcast and incast communication} 
+A key optimization to achieve good performance on spatial reconfigurable accelerators is to explore multiple levels
+of parallelization and pipelining, within and across PUs.
+By default, pipeline parallelism across PUs introduces high-bandwidth one-to-one communication between dependent stages.
+To balance the pipeline throughput, we often need to parallize the pipeline stage with the most
+computation, resulting in one-to-many communication when the receiver stage is parallelized, and
+many-to-one communication when the producer stage is parallelized.
 When both the producer and the consumer are parallelized, 
-%the intermediate memory must be banked to scale throughput.
-the worst case is many-to-many communication, because the parallelized producers may dynamically alternate between parallelized receivers. 
-%In some special cases, the compiler can analyze the access pattern between 
-%consumers and producers and transform the many-to-many communication into either multiple many-to-one or one-to-many communications. 
-%However, it might not be possible to statically resolve banking and determine
- %which producers communicate with which consumers, leaving the many-to-many communication.
-%there can be a many-to-many communication between the
-%unrolled stages, when banking can not be statically resolved between readers and writers to decides
-%which writers 
-%Compute bound applications such as SGD, Kmeans, and GEMM, which can benefit from loop unrolling, tend to have a small portion of the links
-%(around 5\%) with large fanout (>10) as shown in Figure~\ref{fig:link}(b).
-%The other source of broadcast communication comes from partitioning a
-%large basic block inside the inner most loop across multiple compute tiles. A temporary variable computed
-%by one compute partition is subsequently consumed by many other partitions.
-%; an example is
-%BlackScholes, which has a complicated inner loop body. % as shown in Figure~\ref{fig:link}. 
-%Because the incast communication has a large potential impact on performance, our compiler optimizes it by splitting nodes to form a tree.
-%This is not a necessary optimization, however, and has no impact on generality.
-\subsubsection{Compute to memory communication}
+the worst case is many-to-many communication, as illustrated in \Cref{sec:memsplit}.
+These broadcast and incast patterns introduce challenges in high-performance on-chip network, as
+their bandwidth demands scale quadratically with chip size in the worst case.
+
+\paragraph{Compute to memory communication}
 To encourage better sharing of on-chip memory capacity, many accelerators have shared scratchpads, either distributed throughout the chip or on its periphery~\cite{plasticine, brainwave, streamdataflow}.
 Because the compute unit has no local memory to buffer temporary results, the results of all computations are sent to memory through the network.
 %This means the compute unit has no local memory to buffer temporary result, and immediate output of any computation will be sent to memory through the network. 
@@ -103,14 +82,6 @@ This differs from the NoCs used in multi-processors, where each core has a local
 Studies have shown that for large-scale multi-processor systems, network latency---not throughput---is the primary performance limiter~\cite{noc}.
 %In fact, studies have shown that network latency, as supposed to throughput, is the major performance constraint on a large-scale multi-processor system~\cite{noc}. 
 For spatial accelerators, however, compute performance is limited by network throughput, and latency is comparatively less important.
-
-\if 0
-\subsubsection{Imbalanced pipeline introduced by partitioning of basic block}
-Another consequence of partitioning is pipeline imbalance: consider a broadcast output sent through a high latency pipeline, and a low latency pipeline, before being merged.
-The buffer at the end of the fast pipeline will fill up, stalling the producer.
-The congestion will not be resolved until the computation in the high latency pipeline completes.
-This can be fixed by providing more buffering on the low-latency pipeline; with enough buffer space, the latencies of the two pipelines will be matched.
-\fi
 
 %The other consequence of partitioning is forming of unbalanced pipeline. 
 %For example if output of $VU-A$ is send to $VU-B$ and $VU-D$.
@@ -121,16 +92,19 @@ This can be fixed by providing more buffering on the low-latency pipeline; with 
 %alleviated with designs with more buffering along routes, such as double-buffer static network and
 %dynamic network. 
 
-\subsubsection{Communication-aware compilation}
+\paragraph{Communication-aware compilation}
 %\gist{Due to compiler transformation, such as unrolling, banking, and splitting, compiler has static
 %information on communication pattern. These information can be used to guide place and route}
 %Because the applications run on CGRAs have inherently simple control flow patterns, we are able to
 %perform effective static analysis on them. % someone might question this
 %\yaqi{
 Unlike the dynamic communication of multi-processors, communication on spatial architectures is created statically by compiling and mapping the compute graph onto the distributed PU resources.
-As the compiler performs optimization passes, such as unrolling and banking, it has static knowledge about communication generated by
-these transformations.
-This knowledge allows the compiler to accurately determine which network flows in the transformed design correspond to throughput-critical inner-loop traffic and which correspond to low-bandwidth outer-loop traffic.
+As the compiler performs optimization passes, such as loop unrolling and memory partitioning, it has 
+static knowledge about communication generated by these transformations.
+This knowledge enables compiler optimizations to improve network congestion, such as explained in
+\Cref{sec:heuristic}.
+%This knowledge allows the compiler to accurately determine which network flows in the transformed 
+%design correspond to throughput-critical inner-loop traffic and which correspond to low-bandwidth outer-loop traffic.
 %}
 %Furthermore, links on data flow accelerators are streaming: communication is statically determined by the compiler. 
 %We also detail the deadlock considerations due to the streaming network, a
@@ -139,24 +113,44 @@ This knowledge allows the compiler to accurately determine which network flows i
 
 \begin{figure}
 \centering
-\includegraphics[width=1\columnwidth]{network/figs/util_bw2.pdf}
-\caption{Physical resource and bandwidth utilization for various applications.}\label{fig:util_bw}
+\includegraphics[width=0.8\columnwidth]{network/figs/util_bw2.pdf}
+\caption[Resource and bandwidth utilization]{
+  Physical resource and bandwidth utilization for various applications.}\label{fig:util_bw}
 \centering
-\includegraphics[width=1\columnwidth]{network/figs/link7.pdf}
-  \caption{Application communication patterns on pipelined (a,b) and scheduled (c,d) CGRA architectures.
+\includegraphics[width=0.8\columnwidth]{network/figs/link7.pdf}
+  \caption[Application communication patterns]{Application communication patterns on pipelined (a,b) and scheduled (c,d) CGRA architectures.
   (a) and (c) show the activation rate distribution of logical links at runtime. 
   Links sorted by granularity, then rate; darker boxes indicate higher rates.
   The split between green and pink shows the ratio of logical vector to scalar links. (b) and (d) show the distribution of broadcast link fanouts.
  }\label{fig:link}
 \end{figure}
 
-\begin{figure}
+\begin{table*}
 \centering
-\includegraphics[width=1\columnwidth]{network/figs/graph.pdf}
-\caption{Characteristics of program graphs.}\label{fig:graph}
-\end{figure}
+  \footnotesize
+  \begin{tabular*}{6.25in}{p{0.75in} p{3in} p{2.5in}}
+    \bottomrule
+    \textbf{Benchmark} & \textbf{Description} & \textbf{Data Size} \\ \midrule
+    DotProduct & Inner product & $1048576$ \\ \midrule
+    OuterProduct & Outer product &$1024$ \\ \midrule
+    BlackScholes & Option pricing &$1048576$ \\ \midrule
+    TPCHQ6 & TPC-H query 6 &$1048576$ \\ \midrule
+    Lattice & Lattice regression~\cite{garcia2009lattice} &$1048576$\\ \midrule
+    GDA & Gaussian discriminant analysis &$127\times1024$ \\ \midrule
+    GEMM & General matrix multiply &$256\times256\times256$ \\ \midrule
+    Kmeans & K-means clustering &k=64, dim=64, n=8192, iter=2 \\ \midrule
+    LogReg & Logistic regression &$8192\times128$, iter=4\\ \midrule
+    SGD & Stochastic gradient descent for a single layer neural network &$16384\times64$, epoch=10 \\ \midrule
+    LSTM & Long short term memory recurrent neural network &1 layer, 1024 hidden units, 10 time steps \\ \midrule
+    GRU & Gated recurrent unit recurrent neural network &1 layer, 1024 hidden units, 10 time steps \\ \midrule
+    LeNet & Convolutional neural network for character recognition& 1 image\\ \midrule
+  \end{tabular*}
+  \caption{Benchmark summary}
+  \label{tab:benchmark}
+\end{table*}
 
-We select a mix of applications from domains where hardware accelerators have shown promising performance and energy-efficiency benefits, such as linear algebra, databases, and machine learning.
+To study the communication patterns, 
+we select a mix of applications from domains where hardware accelerators have shown promising performance and energy-efficiency benefits, such as linear algebra, databases, and machine learning.
 Table~\ref{tab:benchmark} lists the applications and their data size.
 Figure~\ref{fig:util_bw} shows, for each design, which resource limits performance: compute, on-chip memory, or DRAM bandwidth. 
 %Variations in these application characteristics introduce different on-chip network requirements.
@@ -175,11 +169,23 @@ On the contrary, time-scheduled architectures, shown in Figure~\ref{fig:link}(c,
 lower bandwidth requirements due to the lower throughput of individual compute PUs. 
 Even applications limited by on-chip resources have less than a 30\% firing rate on the busiest logical links; this reveals an opportunity for link sharing without sacrificing performance.
 
-Figure~\ref{fig:graph} shows statistics describing the VU dataflow graph before and after partitioning.
-The blue bars show the number of VUs, number of logical links, and maximum VU input/output degrees in the original parallelized program; the yellow and green bars show the same statistics after partitioning. 
-Fewer VUs are partitioned for hybrid networks and dynamic networks with the time-scheduled architecture, as explained in Section~\ref{sec:partition}. 
-The output degree does not change with partitioning because most outputs with a large degree are from broadcast links.
+\begin{figure}
+\centering
+\includegraphics[width=0.9\columnwidth]{network/figs/graph.pdf}
+\caption{Characteristics of program graphs.}\label{fig:graph}
+\end{figure}
 
+Figure~\ref{fig:graph} shows statistics describing the VU dataflow graph (VGDFG) before and after
+the partitioning described in \Cref{sec:resalloc}. 
+The blue bars show the number of VUs, number of logical links, and maximum VU input/output degrees in the original parallelized program; the yellow and green bars show the same statistics after partitioning. 
+Fewer VUs are partitioned for hybrid networks and dynamic networks with the time-scheduled
+architecture.
+When a VU in a pipelined CGRA consumes too many inputs or produces too many \emph{distinct} outputs,
+\name partitions it to reduce its degree and meet the input/output bandwidth constraints of a purely static network. 
+For dynamic and hybrid networks, partitioning is not strictly necessary, but it improves performance
+by decreasing congestion at the network ejection port associated with a PU.
+We do not partition broadcasts with high output degrees because they are handled natively within the network. 
+Finally, the output degree does not change with partitioning because most outputs with a large degree are from broadcast links.
 
 \subsection{Design Space for Network Architectures} \label{sec:network}
 
@@ -293,31 +299,6 @@ When the packet size is greater than the flit size, the transmission of a single
 %\info{is it worth mentioning how large flit are transmitted on small flit routers? are they just treated as packet?}
 %We simulate the priority VC functionality by determining which packets will traverse non-priority VCs using the generated placement.
 %These packets are scaled, to account for the smaller effective flit size and therefore the need to send multiple flits.
-
-\begin{table*}
-\centering
-  \footnotesize
-  \begin{tabular*}{6.25in}{p{0.75in} p{3in} p{2.5in}}
-    \bottomrule
-    \textbf{Benchmark} & \textbf{Description} & \textbf{Data Size} \\ \midrule
-    DotProduct & Inner product & $1048576$ \\ \midrule
-    OuterProduct & Outer product &$1024$ \\ \midrule
-    BlackScholes & Option pricing &$1048576$ \\ \midrule
-    TPCHQ6 & TPC-H query 6 &$1048576$ \\ \midrule
-    Lattice & Lattice regression~\cite{garcia2009lattice} &$1048576$\\ \midrule
-    GDA & Gaussian discriminant analysis &$127\times1024$ \\ \midrule
-    GEMM & General matrix multiply &$256\times256\times256$ \\ \midrule
-    Kmeans & K-means clustering &k=64, dim=64, n=8192, iter=2 \\ \midrule
-    LogReg & Logistic regression &$8192\times128$, iter=4\\ \midrule
-    SGD & Stochastic gradient descent for a single layer neural network &$16384\times64$, epoch=10 \\ \midrule
-    LSTM & Long short term memory recurrent neural network &1 layer, 1024 hidden units, 10 time steps \\ \midrule
-    GRU & Gated recurrent unit recurrent neural network &1 layer, 1024 hidden units, 10 time steps \\ \midrule
-    LeNet & Convolutional neural network for character recognition& 1 image\\ \midrule
-  \end{tabular*}
-  \caption{Benchmark summary}
-  \label{tab:benchmark}
-\end{table*}
-
 
 \subsubsection{Area and power}
 % Elaborate more here since reviewers were confused
