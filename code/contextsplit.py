@@ -4,11 +4,11 @@ credit = ControlStream(init=2)
 
 with Context() as ctxB:
     |\CL{A:}| for i in range(A):
-        |\CL{B:}| for j in range(B):
-            addr1, data1 = ...
-            mem.addr.enq(addr1)
-            mem.data.enq(data1)
         credit.deq()
+        |\CL{B:}| for j in range(B):
+            waddr, wdata = ...
+            mem.waddr.enq(waddr)
+            mem.wdata.enq(wdata)
 with Context() as respW1:
     |\CL{A:}| for i in range(A):
         |\CL{B:}| for j in range(B):
@@ -17,13 +17,13 @@ with Context() as respW1:
 
 with Context() as rqstR1:
     |\CL{A:}| for i in range(A):
-        |\CL{C:}| for k in range(C):
-            addr2 = ...
-            mem.reqst.enq(addr2)
         token.deq()
+        |\CL{C:}| for k in range(C):
+            raddr = ...
+            mem.raddr.enq(raddr)
 with Context() as ctxC:
     |\CL{A:}| for i in range(A):
         |\CL{C:}| for k in range(C):
-            data2 = mem.resp.deq()
+            rdata = mem.rdata.deq()
             ...
         credit.enq()
