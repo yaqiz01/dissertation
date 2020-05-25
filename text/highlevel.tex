@@ -37,14 +37,21 @@ call on a spatial architecture.
 Without lost of generality, we use python-style pseudo code to represents the front-end programming
 abstraction the the rest of our discussion.
 
-The input to \name is the backend of the Spatial IR, which is an control hierarchy after loop
-unrolling.
+Most compilers for CPU uses a control flow graph to represent the control of a imperative program.
+The control flow graph implicitly assumes the program is executed in time, which make it unsuitable
+for analysis of a reconfigurable architecture that executes the program in space. 
+Spatial uses a control hierarchy in the IR to captures the scheduling of the program.
+The control hiearchy uses a tree structure to represent the nested control constructs, making it
+easier to search the LCA of two controllers.
+\Cref{fig:spatialegpar} shows an example of a control flow graph vs. a control hiearchy.
 The controller at each level of the hierarchy corresponds to a control primitive, such as a loop, or
-a branch statement. A basic block is attached to each \emph{inner most} controller including instructions
+a branch statement. 
+A basic block is attached to each \emph{inner most} controller including instructions
 and memory accesses to user declared data-structures.
-\Cref{fig:spatialegpar} shows an example of a program and a schematic Spatial output IR.
-If the program has instructions outside a outer loop, Spatial automatically inserts a \emph{unit}
-controller that wraps the floating instructions.
+If the program has instructions in a outer loop, Spatial automatically inserts a \emph{unit}
+controller to wrap the floating instructions.
+\name takes the backend of Spatial IR as the input, which is an control hierarchy after loop
+unrolling.
 
 \begin{figure*}
 \centering

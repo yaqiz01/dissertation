@@ -130,7 +130,7 @@ def plot_gpu_slide():
     ax.set_ylabel("Improvement over V100")
     ax.legend()
 
-    fig.subplots_adjust(bottom=0.2)
+    fig.subplots_adjust(bottom=1.2)
     fig.set_size_inches(7,3.5)
     plot_path = 'figs/slide_gpu.pdf'
     print("Generate {}".format(plot_path))
@@ -209,10 +209,10 @@ def plot_dep():
         G.bedge(R1,W1,**edgeattr)
 
     with DGraph('figs/dep1.pdf') as G:
-        W0 = G.node("W0", **nodeattr)
-        R0 = G.node("R0", **nodeattr)
-        W1 = G.node("W1", **nodeattr)
-        R1 = G.node("R1", **nodeattr)
+        W0 = G.node("W0",label="<W<sub>0</sub>>", **nodeattr)
+        R0 = G.node("R0",label="<R<sub>0</sub>>", **nodeattr)
+        W1 = G.node("W1",label="<W<sub>1</sub>>", **nodeattr)
+        R1 = G.node("R1",label="<R<sub>1</sub>>", **nodeattr)
 
         G.edge(W0,R0,**edgeattr)
         G.bedge(R0,W0,**edgeattr)
@@ -220,10 +220,10 @@ def plot_dep():
         G.bedge(R1,W1,**edgeattr)
 
     with DGraph('figs/dep2.pdf', prog='neato') as G:
-        W0 = G.node("W0", pos=(0,1), **nodeattr)
-        R0 = G.node("R0", pos=(0,0), **nodeattr)
-        W1 = G.node("W1", pos=(1,1), **nodeattr)
-        R1 = G.node("R1", pos=(1,0), **nodeattr)
+        W0 = G.node("W0",label="<W<sub>0</sub>>",pos=(0,1), **nodeattr)
+        R0 = G.node("R0",label="<R<sub>0</sub>>",pos=(0,0), **nodeattr)
+        W1 = G.node("W1",label="<W<sub>1</sub>>",pos=(1,1), **nodeattr)
+        R1 = G.node("R1",label="<R<sub>1</sub>>",pos=(1,0), **nodeattr)
 
         G.edge(W0,R0,**edgeattr)
         G.bedge(R0,W0,**edgeattr)
@@ -235,15 +235,89 @@ def plot_dep():
         G.bedge(R1,W0,**edgeattr)
 
     with DGraph('figs/dep3.pdf') as G:
+        W0 = G.node("W0", **nodeattr)
         W1 = G.node("W1", **nodeattr)
-        W2 = G.node("W2", **nodeattr)
+        R0 = G.node("R0", **nodeattr)
         R1 = G.node("R1", **nodeattr)
 
-        G.edge(W1,W2,**edgeattr)
+        G.edge(W0,W1,**edgeattr)
+        G.edge(W0,R0,**edgeattr)
+        G.bedge(W1,W0,**edgeattr)
+        G.bedge(R0,W0,**edgeattr)
+        G.bedge(R0,W1,**edgeattr)
+        G.bedge(W1,R0,**edgeattr)
+        G.edge(W0,R1,**edgeattr)
         G.edge(W1,R1,**edgeattr)
-        G.bedge(W2,W1,**edgeattr)
-        G.bedge(R1,W1,**edgeattr)
 
+def plot_graphred():
+    nodeattr = {}
+    nodeattr['shape']="circle"
+    nodeattr['penwidth']=2
+    nodeattr['fillcolor']="white"
+    nodeattr['style']="filled"
+    nodeattr['fontcolor']="black"
+    nodeattr['fontname']="DejaVu Sans"
+    edgeattr = {}
+    edgeattr['penwidth'] = 2
+    edgeattr['arrowhead'] = "vee"
+
+    with DGraph('figs/graphred1.pdf', prog='neato') as G:
+        W1 = G.node("W1", pos=(0,2), **nodeattr)
+        R1 = G.node("R1", pos=(1,1.5), **nodeattr)
+        W2 = G.node("W2", pos=(1,0.5), **nodeattr)
+        R2 = G.node("R2", pos=(0,0), **nodeattr)
+
+        G.edge(W1,R1,**edgeattr)
+        G.edge(W1,W2,**edgeattr)
+        G.edge(W1,R2,**edgeattr)
+        G.edge(R1,W2,**edgeattr)
+        G.edge(R1,R2,**edgeattr)
+        G.edge(W2,R2,**edgeattr)
+        G.bedge(R2,W2,color="blue",**edgeattr)
+        G.bedge(R2,R1,color="blue",**edgeattr)
+        G.bedge(R2,W1,color="blue",**edgeattr)
+        G.bedge(W2,R1,color="red",**edgeattr)
+        G.bedge(W2,W1,color="blue",**edgeattr)
+        G.bedge(R1,W1,color="blue",**edgeattr)
+
+    with DGraph('figs/graphred1_after.pdf', prog='neato') as G:
+        W1 = G.node("W1", pos=(0,2), **nodeattr)
+        R1 = G.node("R1", pos=(1,1.5), **nodeattr)
+        W2 = G.node("W2", pos=(1,0.5), **nodeattr)
+        R2 = G.node("R2", pos=(0,0), **nodeattr)
+
+        G.edge(W1,R1,**edgeattr)
+        G.edge(R1,W2,**edgeattr)
+        G.edge(W2,R2,**edgeattr)
+        G.bedge(R2,W1,color="blue",**edgeattr)
+        G.bedge(W2,R1,color="red",**edgeattr)
+
+    with DGraph('figs/graphred2.pdf', prog='neato') as G:
+        W1 = G.node("W1", pos=(0,2), **nodeattr)
+        R1 = G.node("R1", pos=(1,1.5), **nodeattr)
+        R2 = G.node("R2", pos=(1,0.5), **nodeattr)
+        W2 = G.node("W2", pos=(0,0), **nodeattr)
+
+        G.edge(W1,R1,**edgeattr)
+        G.edge(W1,R2,**edgeattr)
+        G.edge(W1,W2,**edgeattr)
+        G.edge(R1,W2,**edgeattr)
+        G.edge(R2,W2,**edgeattr)
+        G.bedge(R2,W1,color="blue",**edgeattr)
+        G.bedge(R1,W1,color="blue",**edgeattr)
+
+    with DGraph('figs/graphred2_after.pdf', prog='neato') as G:
+        W1 = G.node("W1", pos=(0,2), **nodeattr)
+        R1 = G.node("R1", pos=(1,1.5), **nodeattr)
+        R2 = G.node("R2", pos=(1,0.5), **nodeattr)
+        W2 = G.node("W2", pos=(0,0), **nodeattr)
+
+        G.edge(W1,R1,**edgeattr)
+        G.edge(W1,R2,**edgeattr)
+        G.edge(R1,W2,**edgeattr)
+        G.edge(R2,W2,**edgeattr)
+        G.bedge(R2,W1,color="blue",**edgeattr)
+        G.bedge(R1,W1,color="blue",**edgeattr)
 
 partnodeattr = {}
 partnodeattr['shape']="circle"
@@ -454,9 +528,10 @@ def plot_merge():
 
 def main():
 
-    plot_mlp()
+    # plot_mlp()
     # plot_gpu_slide()
     # plot_dep()
+    plot_graphred()
 
     # plot_part_dfg()
     # plot_part()

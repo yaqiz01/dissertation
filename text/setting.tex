@@ -47,7 +47,8 @@
 
 \usepackage[hidelinks]{hyperref}
 \usepackage[capitalise]{cleveref}
-\renewcommand{\thesubfigure}{(\alph{subfigure})}% dotted version
+\captionsetup[subfigure]{subrefformat=simple,labelformat=simple}
+    \renewcommand\thesubfigure{(\alph{subfigure})}
 
 \usepackage{xspace} 
 \usepackage{todonotes}
