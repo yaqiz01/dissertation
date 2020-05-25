@@ -30,10 +30,6 @@ compiler to have the global view all access patterns on a data structure.
 Therefore, modeling the data structures as disjoint memory space is much more suitable 
 than pointers to a shared memory for reconfigurable architectures.
 
-Spatial currently does not capture procedure calls in the IR; all functions are inlined and does not
-share resources. A future work is to use synchronization mechanism in \name to implement true procedure
-call on a spatial architecture.
-
 Without lost of generality, we use python-style pseudo code to represents the front-end programming
 abstraction the the rest of our discussion.
 
