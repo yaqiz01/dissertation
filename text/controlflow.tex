@@ -10,7 +10,7 @@
 %The minimum required synchronization to produce the correct result is to ensure that the computations access the intermediate results in a consistent matter as if the control schedule is strictly enforced. 
 %This can be achieved via p2p synchronizations \emph{only} between computations that access a particular shared memory.
 %The execution order of computations that access different memories does not need to be enforced, as they do not impact the program outcome.
-%Therefore, as long as the compututation is executed with the expected number of iterations and the memories are updated consistently, there is no need for any extra synchronization.
+%Therefore, as long as the computation is executed with the expected number of iterations and the memories are updated consistently, there is no need for any extra synchronization.
 %Next, we walk through how \name{} achieves this in more concrete detail.
 
 \subsection{Loop Division (Ready)}
@@ -191,8 +191,8 @@ Example of an illegal loop fission and a legal loop division
 
 At high-level, \name executes the entire program in a pipelined fashion, where each basic block
 in the program is a pipeline stage.
-As a start, \name allocate a virtual memory to hold each data-structures, and 
-a context to execute each basic blocks within the innermost controllers. 
+As a start, \name allocates a virtual memory to hold each data-structures, and 
+a context to execute each basic block within the innermost controllers. 
 A basic block maps naturally to a context, as instructions within a basic block are control-free. 
 \name makes a copy of all controllers enclosing the basic block in the corresponding context;
 these controllers are later converted to counters and control configurations supported by the
@@ -258,16 +258,14 @@ enforcing the program order.
 \paragraph{How.} 
 The first question is how do we enforce the access order of a memory from two remotely distributed contexts, given the
 global network and the memory itself can introduce unpredictable latency.
-The memory interface on Plasticine can take a stream of read or write requests, providing response
+The memory interface on Plasticine can take a stream of read or write requests, providing a response
 packet for each request packet.
 Within a single stream, the requests are guaranteed to be served in order. 
-Therefore, the read response is a stream of data (not tagged with request address) and the write 
-response is a stream of control tokens without any payload.
-To eliminate the round-trip latency, \name divides each memory access in the input IR into 
-a requesting and a receiving context, as shown in \Cref{fig:contextalloc} (c). 
+Therefore, the read response is a stream of data (not tagged with request address) and the write response is a stream of control tokens without any payload.
+To eliminate the round-trip latency, \name divides each memory access in the input IR into a requesting and a receiving context, as shown in \Cref{fig:contextalloc} (c). 
 For a read access, \name maps the address generation in a separate requesting context, streaming
 addresses to the memory and streaming the data to the receiving context.
-Similarly for a write access, \name allocates a receiving context to accumulate acknowledgments 
+Similarly, for a write access, \name allocates a receiving context to accumulate acknowledgments 
 for synchronizations.
 
 %We refer to a memory access appeared in the input IR as a \emph{declared access}, as supposed to
@@ -286,19 +284,17 @@ forward and the backward token to enforce two accesses under a loop. The initial
 token breaks the cyclic dependency. 
 Borrowing the flow-control
 terminology\cite{credit}, we refer to a backward token as a credit.
-If the memory is multi-buffered, the credit is initialized with buffer depth $D$ number of credit, 
+If the memory is multi-buffered, the credit is initialized with buffer-depth $D$ number of credit, 
 enabling the first access to execute $D$ iterations of the enclosed loop before back-pressured.
 
 \name wires up the enqueue/dequeue enable of a token with signals from the duplicated controllers 
 in the writer/reader context.
-For a token representing the dependency of a queue, the token should be generated/consumed every cycle 
-when the producer/receiver context is active; to achieve this, \name configures the enqueue/dequeue signal
+For a token representing the dependency of a queue, the token should be generated/consumed every cycle when the producer/receiver context is active; to achieve this, \name configures the enqueue/dequeue signal
 to the \emph{valid} signal of the innermost controller in the requesting/receiving context.
 For a token corresponding to a scalar variable or an array, the program expects the producer/consumer
 to update/inspect the memory for every iteration of their LCA controller.
 \name finds the LCA controller between the writer and the reader contexts of a token,
-connecting the \emph{done} signal of LCA's immediate child in the writer/reader context's 
-ancestor controllers to the enqueue/dequeue enable of the token.
+connecting the \emph{done} signal of LCA's immediate child in the writer/reader context's ancestor controllers to the enqueue/dequeue enable of the token.
 \Cref{fig:contextalloc} (c) shows an example of how the enqueue and dequeue signals are configured.
 
 By controlling \emph{when} a token is produced and consumed, \name is able to achieve the complex
@@ -306,13 +302,13 @@ and nesting control flows in an imperative program on a dataflow accelerator.
 \Cref{sec:datactrl} dives into more complex control constructs with 
 data-dependent control flows.
 
-The requesting and receiving contexts pair are general schemes we we use on any type of memory with 
+The requesting and receiving contexts pair are general schemes we use on any type of memory with 
 multiple cycle access latencies, such as the off-chip DRAM.
-In the common cases, we can simplify the synchronization logic for certain on-chip memory types.
+In common cases, we can simplify the synchronization logic for certain on-chip memory types.
 
 \subparagraph{Specialization for dense on-chip scratchpad}
-Spatial can statically analyze the dense access pattern of a on-chip array and partitions the memory
-to avoid bank conflicts. These memory has a guaranteed single cycle access latency, 
+Spatial can statically analyze the dense access pattern of on-chip arrays and partitions the memories
+to avoid bank conflicts. These memories have a guaranteed single-cycle access latency, 
 which simplifies the synchronization.
 \name allocates $rqst_A$ and $rqst_B$ contexts \emph{in the same} VB as the accessed memory.
 Instead of synchronizing between $resp_A$ and $rqst_B$, \name sends the forward token and the
@@ -359,7 +355,7 @@ the accessing contexts to enforce a program-consistent accessing order.
 would require $N^2$ tokens for a memory with $N$ accesses ($2N^2$ with LDCs) in the input IR, which can be
 unnecessarily expensive.
 The second question is how can we minimize the number of inserted token while ensuring a correct execution.
-To tackle this problem, \name builds a dependency graph between all accesses of an memory in the input IR; 
+To tackle this problem, \name builds a dependency graph between all accesses of a memory in the input IR; 
 the dependency graph is \emph{per data-structure} without unnecessary ordering across different memories.
 Next, \name removes edges in the dependency graph, if the removed edge does not relax the ordering
 across accesses.
@@ -453,18 +449,16 @@ types.
   In (b) and (c),
   \emph{$W_0$} and \emph{$W_1$} are unrolled accesses for $W$ in lane 0 and 1 of loop \emph{A}
   in (a), respectively.
-  (b) is the dependency graph if the memory is mapped to a on-chip memory and (d)
-  is the dependency graph if the memory is mapped to a off-chip memory.
+  (b) is the dependency graph if the memory is mapped to an on-chip memory and (d)
+  is the dependency graph if the memory is mapped to an off-chip memory.
   The on-chip version does not need the cross-lane synchronization because 
   lane 0 and 1 are implicitly ordered when \name partitions \emph{mem} 
   (discussed later in \Cref{sec:memsplit}).
-  In (d), there is no forward dependency between \emph{W1} and \emph{R0} because LCA controller of
-  the two accesses is branch \emph{C}, which means the two accesses cannot happen concurrently in
+  In (d), there is no forward dependency between \emph{W1} and \emph{R0} because the LCA controller of the two accesses is branch \emph{C}, which means the two accesses cannot happen concurrently in
   the same iteration of \emph{A}.
   There is, however, loop-carried dependencies between \emph{R0} and \emph{W1}. 
   Loop-carried
-  dependency on the same access (such as between \emph{R0} and itself across iterations of loop
-  \emph{A}) does not need to be enforced as the streaming memory interface preserves ordering
+  dependency on the same access (such as between \emph{R0} and itself across iterations of loop \emph{A}) does not need to be enforced as the streaming memory interface preserves ordering
   within a single requesting stream from the same access.
   For each iteration of \emph{A}, \emph{R0} and \emph{W1} will produce and consume a credit from
   each other no matter what value the condition takes. 
@@ -547,13 +541,13 @@ types.
 backward dependencies separately.
 
 For forward dependencies, \name performs a transitive reduction (TR)\cite{tr} on the forward dependency
-graph. TR keeps the minimum of edges in a graph that preserve the connectivity of the original
+graph. TR keeps the minimum of edges in a graph that preserves the connectivity of the original
 graph, enforcing the same ordering as the original dependency graph.
 
 Next, \name checks if each backward edge can be removed without breaking the execution order between
 accesses. 
 Each backward edge represents a loop-carried dependency (LCD) and is tagged with the associated loop.
-An backward edge can be removed if after removing the edge, there is a path from the source to the
+A backward edge can be removed if after removing the edge, there is a path from the source to the
 destination node of the edge; the path may contain any forward edges remained from the TR pass,
 with \emph{a single} backward edge tagged with the same loop as the removed edge.
 \Cref{fig:graphred} shows examples of dependency graph reduction.
@@ -644,7 +638,7 @@ vectorized across SIMD lanes.
 This is very similar to a SIMT architecture, where all lanes execute the \emph{if} clause followed by the \emph{else} clause, masking off the memory access for the disabled lanes.
 The total number of SIMD stages required is the total operations in both the \emph{if} and the \emph{else} clauses.
 
-For an branch in an outer loop,
+For a branch in an outer loop,
 the branch condition is treated as a data-dependent enable signal for controllers under the branch clauses.
 If the controller is disabled, its \emph{done} signal raises to high immediately.
 Output tokens depending on the {\em done} signal will be immediately sent out.
@@ -762,17 +756,17 @@ propagate to the end of each SIMD pipeline.
 
 \paragraph{Procedure Calls}
 Our front-end language Spatial currently does not capture procedure calls; 
-all functions are inlined in the IR and does not share resources. 
-In the future work, we can extend \name's token mechanism to handle procedure call easily. 
+all functions are inlined in the IR and do not share resources. 
+In future work, we can extend \name's token mechanism to handle the procedure call easily. 
 The reused hardware corresponding for a function call 
-can be viewed as a shared resource like memoires; contexts with callers and callees of the procedure call
+can be viewed as a shared resource like memories; contexts with callers and callees of the procedure call
 must pass tokens to serialize their access order.
 
 \subsection{Virtual Unit Allocation (Ready)}
 After all contexts and shared memory are allocated and synchronized, 
 \name moves each floating context into a VU, which later maps to a PU.
 In the resource allocation phase, \name might partition the big contexts into multiple VUs, and small contexts into a single VU. 
-Contexts created with dense dense specialization mentioned earlier must stay in the same VU as their
+Contexts created with dense specialization mentioned earlier must stay in the same VU as their
 memory during partitioning.
 When contexts are merged into a single VU, they are still
 separate contexts triggered independently.
