@@ -1,4 +1,4 @@
-mem = OnchipArray(dims=[100])
+mem = array(dims=[100])
 |\CL{A:}| for i in range(A,|\CK{par}|=2):
     |\CL{B:}| for j in range(B,|\CK{vec}|=16):
         waddr, wdata = ...

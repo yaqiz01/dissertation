@@ -1,18 +1,53 @@
 \chapter{Introduction (WIP)}
 
+\section{The Rising of Hardware Acceleration}
+
 With the end of Dennard Scaling~\cite{dennard}, the amount of performance one can extract from a CPU is reaching a limit.
 To provide general-purpose flexibility, CPU spends the majority of energy on overheads, including dynamic-instruction execution, branch prediction, and a cache hierarchy, and less than 20\% of the energy on the actual computation~\cite{mark}.
 Even worse, the power wall is limiting the entire multicore family
 to reach the doubled performance improvement per generation enabled by technology scaling in the past\cite{multicorescale}.
 
+For this reason, many recent efforts are spent on leveraging application domain knowledge in hardware design to enable 
+continued performance scaling while meeting the power budget\cite{turinglecture}.
+Examples include widely adopted General-Purpose Graphics Processing Units (GPGPUs) in the deep-learning domain and machine learning (ML) accelerators, such as Tensor Processing Units~\cite{tpu} and EIE~\cite{eie}, providing orders of magnitude acceleration over a CPU.
+However, massive threads in GPU and the highly specialized datapath in ML accelerators often cause severe
+underutilization of the hardware due to variation in application and data characteristics\cite{tz_rnn}.
+
+Reconfigurable spatial architectures overcome this limitation by changing its datapath based on applications' needs.
+Applications are configured at the circuit-level without dynamic instruction fetching and decoding, hence improving energy-efficiency.
+In addition to instruction, data, and task-level parallelism explored by processor architectures, spatial architectures also explore instruction and task-level
+pipelining that further increase the compute throughput.
+Pipelining at various granularity enables spatial architectures to achieve high throughput on program phases without massive parallel workload, and allocate resource proportional to compute intensities of program phases.
+
+One example of a reconfigurable spatial architecture is Field Programmable Gate Arrays (FPGAs) that support fine-grain, 
+bit-level reconfiguration with a soft logic fabric~\cite{fpga-survey}.
+The flexible interconnect and lookup table-based logic gate can be configured to implement arbitrary
+datapath.
+FPGAs are used to deploy services commercially~\cite{microsoft, baidu, deephi} and can be rented on the AWS F1 cloud~\cite{aws}. 
+Although around for a long time, FPGAs are not broadly used on high-level applications due to their low-level 
+programming interface and long compilation time.
+Fine tuning applications on FPGAs requires expertise in digital design knowledge and takes a long
+development cycle, which hinders their accessibility to general software programmers.
+As an application-level accelerator, FPGAs also suffers from overhead incurred by fine-grained reconfigurability; 
+studies have shown that an FPGA can have over 
+have hampered widespread adoption for several 
+years~\cite{bolsens, calhoun, fpgaPower, fpgaSurvey}. 
+
+Lately, Reconfigurable Dataflow Accelerators (RDAs)~\cite{plasticine, ti} are emerging as a new class of spatial accelerators that retain the desired level of flexibility and energy efficiency without the fine-grained reconfigurability overhead.
+RDA provides high resource density and compute throughput with a hierarchical streaming network, operating at a fixed and high clock frequency at large chip sizes.
+Recent studies~\cite{plasticine} have demonstrated a promising acceleration of dense, sparse, and streaming applications using RDAs.
+
 Spatially reconfigurable architectures are programmable, energy efficient application accelerators offering the flexibility of software and the efficiency of hardware.
-Architectures such as Field Programmable Gate Arrays (FPGAs) achieve energy efficiency by providing statically reconfigurable compute elements and on-chip memories in a bit-level programmable interconnect; this interconnect can be configured to implement arbitrary datapaths. FPGAs are used to deploy services commercially~\cite{microsoft, baidu, deephi}
-and can be rented on the AWS F1 cloud~\cite{aws}. However, FPGAs suffer from overhead incurred by fine-grained reconfigurability; their long compile times
+Architectures such as Field Programmable Gate Arrays (FPGAs) achieve energy efficiency by providing statically reconfigurable compute elements and on-chip memories in a bit-level programmable interconnect; this interconnect can be configured to implement arbitrary datapaths. 
+FPGAs are used to deploy services commercially~\cite{microsoft, baidu, deephi}
+and can be rented on the AWS F1 cloud~\cite{aws}. 
+However, FPGAs suffer from overhead incurred by fine-grained reconfigurability; their long compile times
 and relatively low compute density have hampered widespread adoption for several years~\cite{bolsens, calhoun, fpgaPower, fpgaSurvey}. 
 Therefore, recent spatial architectures use
 increasingly coarse-grained building blocks, such as ALUs, register files, and memory controllers, distributed in a programmable, word-level static interconnect.
 Several of these Coarse-Grained Reconfigurable Arrays (CGRAs) have recently been proposed \cite{adres, kress, dyser, piperench, tartan, hrl, ti, hycube, plasticine}.
 
+\section{The Need of Flexible Interconnects}
 CGRAs need the right amount of interconnect flexibility to achieve high resource utilization; an inflexible interconnect constrains the space of
 valid application mappings and hinders resource utilization. Furthermore, in the quest to increase compute density, CGRA data paths now 
 contain increasingly coarse-grained processing blocks such as pipelined, vectorized functional units~\cite{plasticine, piperench, xilinx-acap}.
@@ -21,3 +56,17 @@ creating performance bottlenecks.
 Although many hardware accelerators with large, vectorized data paths have fixed local networks~\cite{brainwave}, there is a need for more
 flexible global networks to adapt to future applications.
 Consequently, interconnect design for these CGRAs involves achieving a balance between the often conflicting requirements of high bandwidth and high flexibility.
+
+\section{}
+Recent years has seen a raise in interests in researching in hardware accelerators, primarily
+motivated by AI applications. 
+On one hand, huge success of adoption of AI in various domain has motivated various machine learning
+specialized hardware in the architecture community.
+On the other hand, research in machine learning algorithms has been expedited by the increasing
+powerful hardware accelerators, enabling the next-level algorithms that was not feasible in just
+decades ago.
+Research in software infrastructure for these accelerators, however, are just emerging.
+Unlike CPUs, these accelerators do not support a standard ISAs, alleviating the overhead from
+layers of abstractions and the burden of backward compatibility. 
+Nonetheless, lack of a common abstraction makes it very hard to sharing compiler infrastructure
+across accelerators. 

@@ -13,7 +13,7 @@ In Plasticine, PMUs and DAGs have specialized compute pipelines for address calc
 less capable than the compute pipeline in PCUs.
 However, heterogeneity tends to reduce average utilization because different applications, and even the same
 application with different data sizes, can vary highly in the desired ratio among different
-resource~\cite{lstml}.
+resource~\cite{tz_rnn}.
 A compute-bound application, for example, can heavily underutilize the DAGs and PMUs.
 To address this problem, \name models the virtual to physical assignment as a constraint satisfaction problem; 
 each VU consumes a set of resources and can only be assigned to a PU if the PU processes the required resources. 

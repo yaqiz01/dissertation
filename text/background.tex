@@ -1,26 +1,37 @@
 \chapter{Background (WIP)}
 
-\section{Execution Schedule of Spatial Architectures} 
+\section{Execution Schedule of Reconfigurable Architectures} 
 \begin{figure*}
+\begin{subfigure}[b]{0.34\textwidth}
+\inputminted{python}{code/spatialeg2.py}
+\caption {
+}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.65\textwidth}
 \centering
 \includegraphics[width=1.0\textwidth]{figs/pipeexec.pdf}
+\caption {
+}
+\end{subfigure}
 \caption[Hiearchical pipelining and parallelization on spatial architecture]{
-Hiearchical pipelining and parallelization in spatial architecture.
-(a) illustrates the runtime and throughput of a hiearchically pipelined and parallelized program on
+Hierarchical pipelining and parallelization in spatial architecture.
+(a) illustrates the runtime and throughput of a hierarchically pipelined and parallelized program on
 a reconfigurable spatial architecture. 
 At inner level, instructions within each basic
 block are fine-grained pipelined across iterations of the inner most loop. 
-At outer level, the inner loops are coarse-grained pipeliend across the outer loop iterations.
-Exploting multiple levels of pipeline parallelism gives a total throughput of $x+y$ operations per cycle.
+At outer level, the inner loops are coarse-grained pipelined across the outer loop iterations.
+Exploiting multiple levels of pipeline parallelism gives a total throughput of $x+y$ operations per
+  cycle, where \emph{x} and \emph{y} are number of operations in the basic blocks.
 (b) Vectorizing the inner most loops B and C by \texttt{n} increases the throughput to $(x+y)n$.
-(c) Parallelizing the outer loop A by \texttt{m} furhter increases the throughput to $(x+y)mn$.
+(c) Parallelizing the outer loop A by \texttt{m} further increases the throughput to $(x+y)mn$.
 }
 \label{fig:pipeexec}
 \end{figure*}
 
 \begin{figure*}
 \centering
-\includegraphics[width=0.6\textwidth]{figs/peakutil.pdf}
+\includegraphics[width=0.4\textwidth]{figs/peakutil.pdf}
 \caption[Average utilization vs. peak compute density tradeoff]{
  Average utilization vs. peak compute density tradeoff among different architectures.
 }
@@ -36,36 +47,64 @@ High-level performance model of spatial architectures
 \label{fig:perfmodel}
 \end{figure*}
 
-The biggest advantage of reconfigurable accelerators, compared to processor-based architectures 
-such as CPUs and GPUs, is the ability to explore pipeline parallelism at multiple granularity. 
-
-In traditional Von Neumann architectures, a computer consists of a processing unit that performs
+The key advantage of reconfigurable spatial accelerators, compared to processor-based architectures, 
+is the ability to explore multiple levels of pipeline parallelism. 
+In traditional Von Neumann architectures~\cite{vonneumann}, like CPUs and GPUs,
+a computer consists of a processing unit that performs
 computation, a memory unit that stores the program states, and a control unit that tracks execution
-states and fetch the instruction to execute. This computing model inheritely assumes that
-instructions with in a program are executed in time. 
+states and fetch the instruction to execute. This computing model inherently assumes that
+instructions with in a program are executed in-time, maximizing the flexibility to 
+context switching between different workloads dynamically.
 
-Unlike traditional Von Neumann architectures, which inheritely assumes program is executed in time, 
-reconfigurable data-flow architecutes can statically program 
-\gist{pipelined access reduce off-chip access. HBM small capacity}
-\gist{scratchpad improves effective bandwidth and capacity}
+Reconfigurable accelerators are a direct violation of the von Neumann execution model; 
+instructions are statically imbedded in the datapath and executed in-space as supposed to in-time.
+One of the disadvantage of reconfigurable hardware is paying the resource cost for infrequently
+executed instructions, making it unsuitable for control-heavy workloads that traditional
+processors are efficient at.
+On the other hand, RDAs are particularly competitive in providing high-throughput, 
+low-latency, and energy-efficiency acceleration for these applications.
+Data-analytical workloads encompass a wide domains of applications, including image processing,
+recognition, machine translation, digital signal processing, network processing, etc.
+These applications exhibits a rich amount of data-level parallelism with relatively static control
+flow.
 
-\Cref{fig:pipeexec} shows an example program executed on the 
+\Cref{fig:pipeexec} shows an example of exploiting hierarchical parallization and pipelining on
+a spatial architecture, where overall throughput equals to the product of total parallelization factors 
+and pipelining depth.
+By exploring multiple dimensions of concurrency in the program, spatial architecture is more likely
+to achieve a good compute throughput for a wide range of applications.
+For applications that are expensive to parallelize due to irregular access patterns, spatial
+architectures can increase concurrency on the pipelining dimension.  For application with
+embarrassingly parallel workloads, reconfigurable accelerator can 
 
+Another benefit of pipelined execution is easier to achieve good memory performance.
+Data accessed by different stage of the pipelines are stored in discrete scratchpads 
+instead of a shared cache; improving the effective on-chip bandwidth and capacity.
+Using explicitly managed scratchpad also tends to improve locality and 
+eliminate cache performance issues, such thrashing.
+Across kernels, pipelined execution reduces the amount of off-chip accesses for intermediate
+data.
+SIMT architectures, like GPUs, relying on high-bandwidth DRAM technology, such has HBM, to sustain
+the compute throughput of massively parallelized threads.
+While providing over 10x more bandwidth than traditional DDR technologies, HBM is very limited in
+capacity, around 16GB as supposed to on the orders of TB for DDR.
+As a result, the limited off-chip capacity often restricts the type of applications that
+GPUs can support.
 
-\begin{table*}
-  \centering
-\begin{tabular}{lccc}
-  \toprule
- Concurrency Level & Instruction & Data & Task/Kernel  \\ \midrule
- Parallelsim & CPU,\rda & CPU,GPU,\rda & CPU,\rda  \\
- Pipelining & \rda & \rda & \rda \\
- \bottomrule
-\end{tabular}
-\caption[Concurrency level explored by different architectures]{
-  Concurrency level explored by different architectures
-}
-\label{tab:conclevel}
-\end{table*}
+%\begin{table*}
+  %\centering
+%\begin{tabular}{lccc}
+  %\toprule
+ %Concurrency Level & Instruction & Data & Task/Kernel  \\ \midrule
+ %Parallelsim & CPU,\rda & CPU,GPU,\rda & CPU,\rda  \\
+ %Pipelining & \rda & \rda & \rda \\
+ %\bottomrule
+%\end{tabular}
+%\caption[Concurrency level explored by different architectures]{
+  %Concurrency level explored by different architectures
+%}
+%\label{tab:conclevel}
+%\end{table*}
 
 \section{Plasticine}
 
@@ -80,18 +119,19 @@ reconfigurable data-flow architecutes can statically program
 
 \begin{figure}
 \centering
-\newsavebox{\outerProduct}
-\begin{lrbox}{\outerProduct}
-\lstinputlisting[language=Spatial,linewidth=0.91\columnwidth]{code/OuterProduct.scala}
-\end{lrbox}
-\begin{tabular}{m{0.01cm} l} & \usebox{\outerProduct}\\ \end{tabular}
-  %\inputminted[fontsize=\footnotesize]{Scala}{code/OuterProduct.scala}
-  \caption{Example of outer product in Spatial pseudocode.}
+%\newsavebox{\outerProduct}
+%\begin{lrbox}{\outerProduct}
+\lstinputlisting[language=Spatial,linewidth=0.6\columnwidth]{code/OuterProduct.scala}
+%\end{lrbox}
+%\begin{tabular}{m{0.01cm} l} & \usebox{\outerProduct}\\ \end{tabular}
+  %\inputminted[fontsize=\footnotesize]{scala}{code/OuterProduct.scala}
+  \caption{Example of Outer Product in Spatial.}
 \label{fig:spatial_app}
 \end{figure}
 
 %To target spatial architectures, we use Spatial, an open source domain specific language for reconfigurable accelerators \cite{spatial_koeplinger}.
-We use Spatial, an open source domain specific language for reconfigurable accelerators, to target spatial architectures \cite{spatial_koeplinger}.
+We use Spatial~\cite{spatial_koeplinger}, an domain specific language for reconfigurable accelerators, 
+as the front-end of Plasticine.
 Spatial describes applications with nested loops and an explicit memory hierarchy that captures data movement on-chip and off-chip. 
 This exposes design parameters that are essential for achieving high performance on spatial architectures, including blocking size, loop unrolling factors, inner-loop pipelining, and coarse-grained pipelining of arbitrarily nested loops. 
 To enable loop-level parallelization and pipelining, Spatial automatically banks and buffers intermediate memories between loops. 
