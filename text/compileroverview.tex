@@ -1,4 +1,61 @@
-\section{\name Compiler Overview (Ready)}
+\section{\name Compiler Overview} \label{sec:compileroverview}
+
+In this section, we introduce the compiler framework---\name---that targets Plasticine
+architecture from high-level programs described in the Spatial language. 
+There are two challenges to map Spatial applications to Plasticine. 
+
+First, unlike a FPGA, Plasticine cannot map arbitrary RTL functionality.
+In the Spatial abstraction, the execution order of the program is organized by a control hierarchy, where
+each level of the controller schedules the execution of the next level controllers.
+When mapping the example in \Cref{fig:spatialegpar} onto a FPGA, the outer controller \emph{A}
+sends an enable signal to each child controller, signaling back the parent controller when
+completed. If the user choose to sequentially execute the outer loop \emph{A}, the parent
+controller enables the child controllers one at a time; if the user choose to metapipeline
+(coase-grain pipeline) the outer loop \emph{A}, the outer controllers enables multiple child
+controllers in a pipelined fashion.
+
+\begin{figure*}
+\centering
+  \centering
+\includegraphics[width=0.6\textwidth]{figs/centralctrl.pdf}
+\caption{Timing on Plasticine for dense on-chip memory}
+\label{fig:centralctrl}
+\end{figure*}
+
+To achieve the same execution schedule on Plasticine in a na\"ive approach, 
+we can map each controller in the hierarchy into a PU
+, sending control signals to schedule the next level 
+controllers distributed in other PUs, as shown in \Cref{fig:centralctrl}.
+This strategy suffers from the expensive network round-trip delays between the parent and child controllers.
+To be scalable at a high clock frequency, Plasticine networks are pipelined at each switch,
+introducing multiple cycles of network delay across PUs on the control path.
+Therefore, the multi-cycle handshaking signal between the parent and the child can introduce significant pipeline bubbles
+that undermines performance.
+Additionally, this scheme creates a communication hotspot around the parent controller \emph{A} as
+loop \emph{A} gets unrolled, which is devastating for a coarse-grained reconfigurable architecture
+like Plasticine that has much less routing resource than a FPGA.
+Furthermore, synchronizing the compute only is insufficient to ensure memory effects are observed by
+the remotely distributed accessors, as shown in \Cref{fig:centralctrl}.
+
+To address this challenge, we want to eliminate any of the centralized schedulers for the outer
+controllers.
+At high-level, \name achieves this by performing loop division for each outer controller, such that
+all innermost controllers are perfectly nested, as shown in \Cref{fig:splitctrl}.
+\name then allocates synchronization tokens across distributed innermost controllers.
+All innermost controllers have their own copies of the outer controllers, which are used
+to control when to send and consume the control tokens.
+These control token ensures the execution order of the inner controllers is the same as if they are
+scheduled by a centralized outer controller. Instead of synchronizing all inner controllers under an
+outer controllers, we only synchronize the ones accessing the same memory, such as \emph{B} and
+\emph{C} in \Cref{fig:spatialegpar}. This allow us to limit the synchronization among a small set of distributed nodes, 
+making our design much more scalable.
+
+The second challenge in this mapping process is that controllers in the spatial hierarchy
+can consume arbitrary amount of compute and memory resources, exceeding the capacity of individual
+PUs. For example, a user might write a memory multiple times throughput the program, 
+where the writers will be mapped to different PUs. The physical scratchpad, however, only has a single write
+port. \name needs to virtualize resources, composing or time sharing them when software usage
+exceeds the hardware limit.
 
 \begin{figure*}
 \centering
@@ -7,21 +64,14 @@
 \label{fig:flow}
 \end{figure*}
  
-In this section, we describe a systematic approach to compile applications described in an
-imperative front-end language with a purely declarative and distributed dataflow graph that can
-run on Plasticine.
-\Cref{fig:flow} shows the compilation flow to perform this translation between the two paradigms.
-At high-level, \name allocates distributed on-chip resources to execute the program in spatially parallelized and
-pipelined fashion.
-\name automatically generates synchronization across distributed units to provide strong memory consistency for an imperative program, on an architecture that does not guarantee memory
-ordering across multiple access streams.
-This synchronization is purely point-to-point, introducing minimum performance overhead, which
-maximizes the scalability of the architecture.
-\name further virtualizes resource allocation and hides the underlying resource constrains on
-this hierarchical architecture from the programmers.
+In the following sections, we describe a systematic approach to compile applications described in an
+imperative front-end language to a purely declarative and distributed dataflow graph that can
+run on Plasticine. \Cref{fig:flow} shows \name's compilation flow.
 
-First, \name takes the input Spatial IR and performs the \term{imperative to streaming
-transformation}.
+\Cref{sec:control} expands on the \term{imperative to streaming transformation} that
+addresses the first challenge.
+\name allocates distributed on-chip resources to execute the program in spatially parallelized and
+pipelined fashion with approperate synchronizations.
 A virtual unit (VU) is our intermediate representation that captures computations 
 %that will be
 %mapped onto 
@@ -29,13 +79,16 @@ within the boundary of
 a physical unit (PU), such as a PCU and PMU.
 Each VU can contain multiple contexts, if their aggregated resources usage can fit in a PU.
 The hardware can limit the maximum number of contexts a PU can support and has resources that cannot be split across contexts.
-Additionally, messages across VUs are mapped across the global network, which must tolerate an arbitrary amount of network latencies; messages within a single VU across contexts takes only a single cycle.
+Most importantly, \name needs to ensure messages across VUs, which are mapped across the global network, must tolerate an arbitrary amount of network latencies; messages within a single VU across contexts takes only a single cycle.
 The transformation phase generates a virtual unit dataflow graph (VUDFG) with appropriate
 synchronizations, such that a streaming pipelined execution over distributed on-chip resources produces the same result as a
 parallelized program executed in time.
-
 At the end of the allocation phase, a virtual unit can consume as much resources as the program
-requires. The second phase is \term{resource allocation}, where \name assign each VU to a
+requires. 
+
+\name further virtualizes resource allocation and hides the underlying resource constrains on
+this hierarchical architecture from the programmers.
+\Cref{sec:resalloc} dives into the \term{resource allocation} phase, where \name assign each VU to a
 PU that processes the required resources. If no PU can execute a VU, \name partitions the
 VU into multiple VUs to eliminate constraint violations. If there is insufficient PU or the VU cannot be partitioned, the mapping process fails with appropriate hints to the programmer for the
 limiting resources.
@@ -44,10 +97,12 @@ Throughout the first two phases, \name introduces various \term{optimizations} t
 resource cost of the VUDFG, or alleviates potential performance bottleneck in the streaming
 pipeline.
 After all VU fits in at least one type of PU, \name performs a global optimization that merges small VUs into a larger VU to reduce resource fragmentations.
+\Cref{sec:opt} enumerates the optimizations \name perform.
 
 The output of the resource allocation phase is a VUDFG with a tagged PU type for each VU.
 It is up to the
 \term{placement and routing (PaR)} phase to determine where the VU will be finally placed.
 Right before PaR, \name performs static analysis on the traffic pattern and generate heuristic guild
 for the placer to reduce routing congestion.
+\Cref{sec:par} details the PaR algorithm and heuristic-guild generated by \name.
 
