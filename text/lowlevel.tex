@@ -9,20 +9,36 @@
 
 %Like high-level synthesis tools for FPGAs, \name starts with a high-level imperative programming
 %abstraction and synthesizes the program to execute on a reconfigurable accelerator. Targeting an \rda, however,
-%is more challenging than targeting FPAGs, due to \rda's stringent mapping constraints. 
+%is more challenging than targeting FPGAs, due to \rda's stringent mapping constraints. 
 %Unlike FPGAs, \rdas cannot map arbitrary RTL functionality. 
 
 %Taking Plasticine as an example, 
 %the hardware has a collection of memory tiles (PMUs) and compute tiles (PCUs). 
-%The global mesh network can be statically configured to connect any tiles with guaranteed in-order 
-%transmission of packets over arbitrary network latency.
-Plasticine is a tiled-based reconfigurable dataflow accelerator designed for wide ranges of data-intensive
+Plasticine is a tile-based reconfigurable dataflow accelerator designed for a wide range of data-intensive
 workloads.
 With an area footprint of $113mm^2$ at 28-nm process, Plasticine packs 12.3 TFLOPS of compute
 throughput and 16 MB of on-chip memory. 
-Plasticine runs at 1GHz with a thermal design power at 49W. 
-Previous work has shown a up to 77X performance-per-watt improvement from Plasticine over a Stratix V FPGA.
+Without bit-level reconfiguration overhead,
+Plasticine runs a higher clock frequency than most FPGAs, running at 1GHz 
+with a thermal design power at 49W. 
+Previous work has shown a up to 77X performance-per-watt improvement from Plasticine over a Stratix
+V FPGA~\cite{plasticine}.
 \Cref{fig:plasticine} shows the chip-level design of Plasticine.
+
+At high-level, Plasticine contains an array of resource tiles connected by a global interconnect.
+The mesh network is statically configured, providing a guaranteed in-order transmission
+of packet streams between any tiles.
+The network comes with three granularity: a 512-bit vector data bus, a 32-bit scalar data bus, and a
+single-bit control bus.
+The data networks contain a single valid bit traveled along with the data;
+the control network has only the valid bit without a payload, transmitting control pulses across tiles.
+There are three types of configurable units: the pattern compute units (PCUs) perform the most
+heavy lifting computation on Plasticine; the pattern memory units (PMUs) contain all distributed
+scratchpad on-chip; and the DRAM Address Generation Unit (AG) that generates DRAM requests going to
+the off-chip memory.
+
+For the rest of this section, we will explain the native programming interfaces of the three
+configurable units.
 
 \subsubsection{Pattern Compute Unit (PCU)}
 As the major compute workhorse of the architecture, a PCU contains a 6-stage SIMD pipeline with 16 SIMD lanes. 
@@ -108,7 +124,7 @@ perfectly nested (only accesses to streams can occur in the outer loops).
 There is no global scheduler to orchestrate the execution order among contexts---the execution is purely
 streaming and dataflow driven. 
 The only way to order the execution of two independent contexts is to introduce a control \term{token} between two contexts acting like a dummy data-dependency.
-This restriction eliminates the need for long-traveling wires and communication hot spots caused by a
+This restriction eliminates the possible long-traveling wires and communication hot spots caused by a
 centralized scheduler, which again improves the clock frequency and scalability of the architecture.
 
 \subsubsection{Pattern Memory Unit (PMU)}
@@ -134,7 +150,7 @@ by eliminating hardware complexity and overhead to support complex cache coheren
 On the other hand, however, the burden of maintaining a consistent view of a logical memory mapped
 across distributed scratchpads is left to the software.
 The software must explicitly configure synchronizations across PCUs and PMUs, taking into account
-that the network can introduce unpredictable latency on both control and data path.
+that the network can introduce unpredictable latency on both control and data paths.
 One of the major contributions of \name is to hide these synchronization burdens from the programmer and still provide a programming abstraction of logical memories with configurable bandwidth and arbitrary capacity that fits on-chip.
 
 \subsubsection{DRAM Interface}
