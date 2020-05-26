@@ -1,6 +1,6 @@
 \chapter{Background (WIP)}
 
-\section{Execution Schedule of Reconfigurable Architectures} 
+\section{Execution Schedules of Reconfigurable Architectures} 
 \begin{figure*}
 \begin{subfigure}[b]{0.34\textwidth}
 \inputminted{python}{code/spatialeg2.py}
@@ -53,11 +53,11 @@ In traditional Von Neumann architectures~\cite{vonneumann}, like CPUs and GPUs,
 a computer consists of a processing unit that performs
 computation, a memory unit that stores the program states, and a control unit that tracks execution
 states and fetch the instruction to execute. This computing model inherently assumes that
-instructions with in a program are executed in-time, maximizing the flexibility to 
+instructions with in a program are executed in time, maximizing the flexibility to 
 context switching between different workloads dynamically.
 
 Reconfigurable accelerators are a direct violation of the von Neumann execution model; 
-instructions are statically imbedded in the datapath and executed in-space as supposed to in-time.
+instructions are statically imbedded in the datapath and executed in space as supposed to in time.
 One of the disadvantage of reconfigurable hardware is paying the resource cost for infrequently
 executed instructions, making it unsuitable for control-heavy workloads that traditional
 processors are efficient at.
@@ -105,13 +105,4 @@ GPUs can support.
 %}
 %\label{tab:conclevel}
 %\end{table*}
-
-\section{Plasticine}
-
-\begin{figure*}
-\centering
-\includegraphics[width=0.8\textwidth]{figs/plasticine.pdf}
-\caption[Plasticine chip-level architecture]{Plasticine chip-level architectural diagram}
-\label{fig:plasticine}
-\end{figure*}
 

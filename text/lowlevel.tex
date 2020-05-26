@@ -1,13 +1,28 @@
-\section{Low-level Native Programming Interface of Plasticine (Ready)}
-Like high-level synthesis tools for FPGAs, \name starts with a high-level imperative programming
-abstraction and synthesizes the program to execute on a reconfigurable accelerator. Targeting an \rda, however,
-is more challenging than targeting FPAGs, due to \rda's stringent mapping constraints. 
-Unlike FPGAs, \rdas cannot map arbitrary RTL functionality. 
+\section{The Plasticine Architecture and its Programming Interface}
 
-Taking Plasticine as an example, 
-the hardware has a collection of memory tiles (PMUs) and compute tiles (PCUs). 
-The global mesh network can be statically configured to connect any tiles with guaranteed in-order 
-transmission of packets over arbitrary network latency.
+\begin{figure*}
+\centering
+\includegraphics[width=0.7\textwidth]{figs/plasticine.pdf}
+\caption[Plasticine chip-level architecture]{Plasticine chip-level architectural diagram}
+\label{fig:plasticine}
+\end{figure*}
+
+%Like high-level synthesis tools for FPGAs, \name starts with a high-level imperative programming
+%abstraction and synthesizes the program to execute on a reconfigurable accelerator. Targeting an \rda, however,
+%is more challenging than targeting FPAGs, due to \rda's stringent mapping constraints. 
+%Unlike FPGAs, \rdas cannot map arbitrary RTL functionality. 
+
+%Taking Plasticine as an example, 
+%the hardware has a collection of memory tiles (PMUs) and compute tiles (PCUs). 
+%The global mesh network can be statically configured to connect any tiles with guaranteed in-order 
+%transmission of packets over arbitrary network latency.
+Plasticine is a tiled-based reconfigurable dataflow accelerator designed for wide ranges of data-intensive
+workloads.
+With an area footprint of $113mm^2$ at 28-nm process, Plasticine packs 12.3 TFLOPS of compute
+throughput and 16 MB of on-chip memory. 
+Plasticine runs at 1GHz with a thermal design power at 49W. 
+Previous work has shown a up to 77X performance-per-watt improvement from Plasticine over a Stratix V FPGA.
+\Cref{fig:plasticine} shows the chip-level design of Plasticine.
 
 \subsubsection{Pattern Compute Unit (PCU)}
 As the major compute workhorse of the architecture, a PCU contains a 6-stage SIMD pipeline with 16 SIMD lanes. 
@@ -125,9 +140,9 @@ One of the major contributions of \name is to hide these synchronization burdens
 \subsubsection{DRAM Interface}
 The Plasticine architecture provides access to four DDR channels on the two sides of the
 tiled array, as shown in \Cref{fig:plasticine}. 
-Each side has a column of DRAM address generator (DAG) specialized in generating off-chip
-requests. Like compute pipeline in PMUs, the pipeline in DAG is also non-vectorized with integer
-arithmetics. Each DAG can generate a load or a store request streams to the off-chip memory. All
+Each side has a column of DRAM address generator (AG) specialized in generating off-chip
+requests. Like compute pipeline in PMUs, the pipeline in AG is also non-vectorized with integer
+arithmetics. Each AG can generate a load or a store request streams to the off-chip memory. All
 streams can access the entire address space of the DRAM, with in-order responses within each stream
 and no ordering guaranteed across streams. 
 In streaming pipelined execution, the program can use multiple streams for DRAM accesses appeared in
