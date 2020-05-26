@@ -62,20 +62,22 @@ One of the disadvantage of reconfigurable hardware is paying the resource cost f
 executed instructions, making it unsuitable for control-heavy workloads that traditional
 processors are efficient at.
 On the other hand, RDAs are particularly competitive in providing high-throughput, 
-low-latency, and energy-efficiency acceleration for these applications.
+low-latency, and energy-efficiency acceleration for data-analytical workloads.
 Data-analytical workloads encompass a wide domains of applications, including image processing,
 recognition, machine translation, digital signal processing, network processing, etc.
 These applications exhibits a rich amount of data-level parallelism with relatively static control
 flow.
 
-\Cref{fig:pipeexec} shows an example of exploiting hierarchical parallization and pipelining on
-a spatial architecture, where overall throughput equals to the product of total parallelization factors 
-and pipelining depth.
+\Cref{fig:pipeexec} shows an example of hierarchical parallelism and pipelining exploit by
+a spatial architecture.
+The overall compute throughput of a parallelized and pipelined program is 
+the product of the total parallelization factors and pipelining depth.
 By exploring multiple dimensions of concurrency in the program, spatial architecture is more likely
 to achieve a good compute throughput for a wide range of applications.
 For applications that are expensive to parallelize due to irregular access patterns, spatial
-architectures can increase concurrency on the pipelining dimension.  For application with
-embarrassingly parallel workloads, reconfigurable accelerator can 
+architectures can increase on the pipelining dimension;
+for application with embarrassingly parallel workloads, spatial architecture can budget most
+resource on increasing parallelism.
 
 Another benefit of pipelined execution is easier to achieve good memory performance.
 Data accessed by different stage of the pipelines are stored in discrete scratchpads 
