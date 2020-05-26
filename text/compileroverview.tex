@@ -17,15 +17,26 @@ controllers in a pipelined fashion.
 \begin{figure*}
 \centering
   \centering
-\includegraphics[width=0.6\textwidth]{figs/centralctrl.pdf}
-\caption{Timing on Plasticine for dense on-chip memory}
+\includegraphics[width=0.8\textwidth]{figs/centralctrl.pdf}
+\caption{
+  (a) A na\"ive mapping strategy to map the control hierarchy onto Plasticine.
+  All units are distributed across an on-chip network that can introduce unpredictable latency.
+  The number on the edges indicate the order of event.
+  Here we show a scenario where read requests from \emph{C} do not observe the write requests from
+  \emph{B} that appears earlier in the program order due to network latency between \emph{B} and
+  \emph{mem}.
+  (b) Distributed controllers in \name. Each innermost controller makes a copy of all enclosing
+  controllers. The signals from these controller are used to generate synchronization between
+  distributed compute unit. To address the problem in (a), the memory also needs to provide an write
+  acknowledgment per write request for synchronization.
+}
 \label{fig:centralctrl}
 \end{figure*}
 
 To achieve the same execution schedule on Plasticine in a na\"ive approach, 
 we can map each controller in the hierarchy into a PU
 , sending control signals to schedule the next level 
-controllers distributed in other PUs, as shown in \Cref{fig:centralctrl}.
+controllers distributed in other PUs, as shown in \Cref{fig:centralctrl} (a).
 This strategy suffers from the expensive network round-trip delays between the parent and child controllers.
 To be scalable at a high clock frequency, Plasticine networks are pipelined at each switch,
 introducing multiple cycles of network delay across PUs on the control path.
@@ -35,27 +46,27 @@ Additionally, this scheme creates a communication hotspot around the parent cont
 loop \emph{A} gets unrolled, which is devastating for a coarse-grained reconfigurable architecture
 like Plasticine that has much less routing resource than a FPGA.
 Furthermore, synchronizing the compute only is insufficient to ensure memory effects are observed by
-the remotely distributed accessors, as shown in \Cref{fig:centralctrl}.
+the remotely distributed accessors, as shown in \Cref{fig:centralctrl} (a).
 
 To address this challenge, we want to eliminate any of the centralized schedulers for the outer
 controllers.
 At high-level, \name achieves this by performing loop division for each outer controller, such that
-all innermost controllers are perfectly nested, as shown in \Cref{fig:splitctrl}.
+all innermost controllers are perfectly nested, as shown in \Cref{fig:centralctrl} (b).
 \name then allocates synchronization tokens across distributed innermost controllers.
 All innermost controllers have their own copies of the outer controllers, which are used
 to control when to send and consume the control tokens.
 These control token ensures the execution order of the inner controllers is the same as if they are
 scheduled by a centralized outer controller. Instead of synchronizing all inner controllers under an
-outer controllers, we only synchronize the ones accessing the same memory, such as \emph{B} and
-\emph{C} in \Cref{fig:spatialegpar}. This allow us to limit the synchronization among a small set of distributed nodes, 
+outer controllers, \name only synchronizes the ones accessing the same memory, such as \emph{B} and
+\emph{C} in \Cref{fig:spatialegpar}. This limits the synchronization among a small set of distributed nodes, 
 making our design much more scalable.
 
 The second challenge in this mapping process is that controllers in the spatial hierarchy
 can consume arbitrary amount of compute and memory resources, exceeding the capacity of individual
-PUs. For example, a user might write a memory multiple times throughput the program, 
-where the writers will be mapped to different PUs. The physical scratchpad, however, only has a single write
+PUs. For instance, a user might write a memory multiple times throughput the program with writers 
+mapped to different PUs. The physical scratchpad, however, only has a single write
 port. \name needs to virtualize resources, composing or time sharing them when software usage
-exceeds the hardware limit.
+exceeding the hardware limit.
 
 \begin{figure*}
 \centering
