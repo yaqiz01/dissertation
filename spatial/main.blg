@@ -1,0 +1,156 @@
+This is BibTeX, Version 0.99d (TeX Live 2019/MacPorts 2019.50896_2)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: main.aux
+The style file: ACM-Reference-Format.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Database file #1: references.bib
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Warning--no key, author in awsf1
+Warning--no author, editor, organization, or key in awsf1
+Warning--to sort, need author or key in awsf1
+Warning--no key, author in wavecomp
+Warning--no author, editor, organization, or key in wavecomp
+Warning--to sort, need author or key in wavecomp
+Warning--no key, author in nervana
+Warning--no author, editor, organization, or key in nervana
+Warning--to sort, need author or key in nervana
+Warning--no key, author in vivadohls
+Warning--no author, editor, organization, or key in vivadohls
+Warning--to sort, need author or key in vivadohls
+Warning--no key, author in opencl_sdk
+Warning--no author, editor, organization, or key in opencl_sdk
+Warning--to sort, need author or key in opencl_sdk
+Warning--no key, author in vivado_userguide
+Warning--no author, editor, organization, or key in vivado_userguide
+Warning--to sort, need author or key in vivado_userguide
+Warning--no key, author in myhdl
+Warning--no author, editor, organization, or key in myhdl
+Warning--to sort, need author or key in myhdl
+Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
+Reallocated global_strs (elt_size=20001) to 20 items from 10.
+Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Warning--no key, author in awsf1
+Warning--no key, author in awsf1
+Warning--no key, author in myhdl
+Warning--no key, author in myhdl
+Warning--no key, author in nervana
+Warning--no key, author in nervana
+Warning--no key, author in opencl_sdk
+Warning--no key, author in opencl_sdk
+Warning--no key, author in vivado_userguide
+Warning--no key, author in vivado_userguide
+Warning--no key, author in vivadohls
+Warning--no key, author in vivadohls
+Warning--no key, author in wavecomp
+Warning--no key, author in wavecomp
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Warning--no key, author in myhdl
+Warning--no author, editor, organization, or key in myhdl
+Warning--empty author in myhdl
+Warning--no key, author in vivado_userguide
+Warning--no author, editor, organization, or key in vivado_userguide
+Warning--empty author in vivado_userguide
+Warning--no key, author in vivadohls
+Warning--no author, editor, organization, or key in vivadohls
+Warning--empty author in vivadohls
+Warning--no key, author in awsf1
+Warning--no author, editor, organization, or key in awsf1
+Warning--empty author in awsf1
+Warning--no key, author in opencl_sdk
+Warning--no author, editor, organization, or key in opencl_sdk
+Warning--empty author in opencl_sdk
+Warning--no key, author in nervana
+Warning--no author, editor, organization, or key in nervana
+Warning--empty author in nervana
+Warning--no key, author in wavecomp
+Warning--no author, editor, organization, or key in wavecomp
+Warning--empty author in wavecomp
+Warning--empty publisher in chisel
+Warning--empty address in chisel
+Warning--empty publisher in Bodin2016:PACT16
+Warning--empty address in Bodin2016:PACT16
+Warning--page numbers missing in both pages and numpages fields in Bodin2016:PACT16
+Warning--numpages field, but no articleno or eid field, in legup
+Warning--empty publisher in chugh2016dsl
+Warning--empty address in chugh2016dsl
+Warning--can't use both author and editor fields in DeSutter2013
+Warning--articleno or eid field, but no numpages field, in sequoia
+Warning--page numbers missing in both pages and numpages fields in sequoia
+Warning--articleno or eid, but no pages or numpages field in sequoia
+Warning--empty publisher in dhdl
+Warning--empty address in dhdl
+Warning--page numbers missing in both pages and numpages fields in dhdl
+Warning--empty publisher in veriscala
+Warning--empty address in veriscala
+Warning--empty publisher in NardiBSVDK17
+Warning--empty address in NardiBSVDK17
+Warning--page numbers missing in both pages and numpages fields in NardiBSVDK17
+Warning--empty publisher in nardi2015introducing
+Warning--empty address in nardi2015introducing
+Warning--page numbers missing in both pages and numpages fields in nardi2015introducing
+Warning--empty booktitle in baidu
+Warning--empty publisher in baidu
+Warning--empty address in baidu
+Warning--page numbers missing in both pages and numpages fields in baidu
+Warning--numpages field, but no articleno or eid field, in ti
+Warning--empty publisher in scnn
+Warning--empty address in scnn
+Warning--empty publisher in plasticine
+Warning--empty address in plasticine
+Warning--page numbers missing in both pages and numpages fields in halidefpga
+Warning--numpages field, but no articleno or eid field, in catapult
+Warning--numpages field, but no articleno or eid field, in pldi13halide
+Warning--empty publisher in Saeedi_ICRA_2017
+Warning--empty address in Saeedi_ICRA_2017
+Warning--page numbers missing in both pages and numpages fields in Saeedi_ICRA_2017
+Warning--empty address in genesis2
+Warning--empty publisher in aladdin
+Warning--empty address in aladdin
+Warning--empty publisher in delite-tecs14
+Warning--empty address in delite-tecs14
+Warning--page numbers missing in both pages and numpages fields in delite-tecs14
+Warning--numpages field, but no articleno or eid field, in scaledeep
+Warning--numpages field, but no articleno or eid field, in Wang_banking
+You've used 45 entries,
+            5794 wiz_defined-function locations,
+            1591 strings with 26898 characters,
+and the built_in function-call counts, 57260 in all, are:
+= -- 6100
+> -- 2927
+< -- 0
++ -- 1009
+- -- 1144
+* -- 4839
+:= -- 6287
+add.period$ -- 212
+call.type$ -- 45
+change.case$ -- 417
+chr.to.int$ -- 43
+cite$ -- 175
+duplicate$ -- 4549
+empty$ -- 3206
+format.name$ -- 1102
+if$ -- 12850
+int.to.chr$ -- 4
+int.to.str$ -- 1
+missing$ -- 139
+newline$ -- 420
+num.names$ -- 302
+pop$ -- 1942
+preamble$ -- 1
+purify$ -- 817
+quote$ -- 0
+skip$ -- 1557
+stack$ -- 0
+substring$ -- 4081
+swap$ -- 392
+text.length$ -- 320
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 1196
+warning$ -- 102
+while$ -- 245
+width$ -- 0
+write$ -- 836
+(There were 102 warnings)
