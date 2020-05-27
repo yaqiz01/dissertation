@@ -1,7 +1,7 @@
 \section{Resource Allocation (Ready)} \label{sec:resalloc}
 
 The output of the transformation (\Cref{sec:control}) is a VUDFG that 
-can execute on a Plasticine with infinite-sized physical units (PUs).
+can execute on a Plasticine with physical units (PUs) that have infinite resources.
 The \emph{Resource Allocation} phase enforces and addresses constraint violations given 
 the specification of the Plasticine units. 
 At the end of this phase, \name assigns each VU in the VUDFG graph to a PU type with required
@@ -241,7 +241,7 @@ Retiming introduces new VUs in addition to the partitioned VUs, which attributes
 
 In the following sections, we present two algorithms to solve this problem:
 a traversal-based algorithm providing a decent solution with fast compile time, and a convex
-optimization-based algorithm with an optimum solution but long compile time.
+optimization-based algorithm with an optimal solution but long compile time.
 
 \begin{figure}
   \centering
@@ -344,7 +344,7 @@ Such graphs typically end up with long-live variables across partitions that req
 \Cref{fig:split} (b) and (c) shows the compile time for these algorithms. The single-threaded
 the traversal-based algorithm runs in minutes, which is significantly faster than the parallelized solver that takes hours to days.
 In general, the solver runtime becomes quickly unbounded with a large amount of VUs.
-\todo{show solver time with increasing number of VBs}.
+%\todo{show solver time with increasing number of VBs}.
 
 In summary, the solver solution provides a guaranteed close-to-optimum solution at an expensive
 compile time. Nonetheless, the solver-solution treats the retiming and partitioning as a joint optimization,
@@ -354,8 +354,10 @@ Moreover, the solver-based solution tends to produce a better result for archite
 bound and relax stage constraint.
 The traversal-based solutions, on the other hand, can produce a decent solution in a short amount of
 time.
-However, the solution is prune to adversarial cases and potentially perform badly for unseen graph
-structures.
+However, the solution is a function of the traversal order; hense, the quality of the partitioning
+is highly sensitive to the graph strutures.
+Certain traversal orders show a 10-50\% worse in resource than the solver-based solution in 
+\Cref{fig:split} (a).
 In practice, we can combine the two approaches and invoke the expensive solver only when the
 traversal-based solution is insufficient. The quality of the traversal-based solution can be easily estimated by the resource utilization in each partition.
 
@@ -401,7 +403,7 @@ The memory pruner addresses virtual on-chip memory exceeding the capacity and ba
 single PMU.
 As we parallelize the computation, the on-chip memory must provide higher address bandwidth to sustain the
 compute throughput.
-On a processor-based architecture, this is often achieved by associating a separate first-level
+On a processor-based architecture, this is often achieved with a separate first-level
 cache for each processor core, as shown in \Cref{fig:memmodel} (a).
 The cache implements a hardware coherence protocol that synchronizes the different copies of data
 behind the scenes,

@@ -210,7 +210,7 @@ the pipelined contexts; the token guarantees the access order of the concurrent 
 the expected order of an imperative program.
 The insight is that \emph{as long as all memories are accessed with a program-consistent
 order, the final result is identical to a sequentially executed program}.
-This way, \name introduces minimum p2p synchronizations among small groups of contexts; contexts
+This way, \name introduces minimum point-to-point synchronizations among small groups of contexts; contexts
 accessing different data-structures are naturally parallelized without impacting the final output.
 \Cref{fig:contextalloc} (b) shows an example of the context allocation. 
 \Cref{sec:controlalloc} explains how \name allocates the synchronization tokens based on the control
@@ -335,8 +335,8 @@ the accessing contexts to enforce a program-consistent accessing order.
 \begin{tabular}{lccc}
   \toprule
  Data structure & Memory type \\ \midrule
-  array (fit on-chip) & SRAM \\
-  array (not fit on-chip) & DRAM \\
+  array (fits on-chip) & SRAM \\
+  array (does not fit on-chip) & DRAM \\
   scalar variable & register \\
   queue & FIFO \\
  \bottomrule
@@ -363,7 +363,7 @@ Lastly, for each edge in the reduced dependency graph, \name inserts token betwe
 requesting contexts of the source and destination access explained earlier in the \emph{How} section.
 
 \subparagraph{Dependency Graph Construction}
-For every access in the IR, \name{} checks on other accesses appeared earlier in the program order
+For every access in the IR, \name{} checks on other accesses that occured earlier in the program order
 for a possible forward dependency, and later in the program order for a possible loop-carried dependency (LCD). 
 %In the example in \Cref{fig:contexteg}, there is a forward data dependency between \texttt{W1} and
 %\texttt{R1}, and a write-after-read LCD between \texttt{R1} and \texttt{W1}. 
@@ -574,7 +574,7 @@ tokens in the destination buffers.
 Using the synchronization discussed in \Cref{sec:sync}, \name can support control constructs that 
 typically are not supported on dataflow accelerators, such as branches and while loops.
 Most dataflow accelerators do not support control divergence. SIMT architectures, like GPUs,
-implement branches with predications and pay the latency penalty of both branch cases.
+implement branches with predication and pay the latency penalty of both branch cases.
 To enable these flexible control, the control path of the architecture must permit data dependencies.
 \Cref{fig:controlarch} details the required changes in the control path to support these features.
 
@@ -633,7 +633,7 @@ that maps the loop body.
 
 \paragraph{Branch Condition}
 \name supports both predictions and branches with control divergence.
-Branches within the innermost loops are implemented with predications such that the loop can still be
+Branches within the innermost loops are implemented with predication such that the loop can still be
 vectorized across SIMD lanes.
 This is very similar to a SIMT architecture, where all lanes execute the \emph{if} clause followed by the \emph{else} clause, masking off the memory access for the disabled lanes.
 The total number of SIMD stages required is the total operations in both the \emph{if} and the \emph{else} clauses.

@@ -1,6 +1,87 @@
 \chapter{Related Work}
 
-\section{Network (Ready)}
+\section{Compiler}
+\paragraph{Streaming Dataflow IRs}
+Although many works claim to emit efficient and information-rich dataflow IRs for the downstream compilers, 
+very few of them can capture the high-level parallel patterns and implementation details that are critical 
+to RDA mappings. 
+For example, TensorFlow \cite{tensorflow} emits dataflow IR composed of tensor operations. 
+However, its IR lacks information on the parallel patterns within these operations. 
+In contrast, most of 
+the streaming languages \cite{streamit, synaid, maxj} are not able to extract nested loop-level parallelism 
+from modern data-intensive applications. 
+For example, StreamIt \cite{streamit}, a language tailored for streaming computing, also adopts distributed 
+control as in \name{}. 
+However, it lacks the necessary language features to describe deeply and irregularly nested loops that are 
+common in modern data-intensive applications.
+
+%\paragraph{Hardware Architectures}
+%Spatial reconfigurable accelerators (\eg, Dyser~\cite{dyser} and Tartan~\cite{tartan}) have only one-level of hierarchy.
+%Hence, such accelerators' performance can be bottlenecked by their limited interconnect bandwidth and power budget.
+%Sparse Processing Unit (SPU)~\cite{sparseaccel} can sustain higher interconnect bandwidth by introducing on-chip hierarchy; however, it lacks support for polyhedral memory banking~\cite{poly_cong}, a pivotal optimization to achieve massive parallel accesses to on-chip memory. Plasticine~\cite{plasticine} provides us with the desired architecture features; however, its compiler lacks the necessary components to support efficient streaming execution. Given that Plasticine resembles many key features of the RDA model, we target Plasticine with \name{}.
+
+\paragraph{Machine Learning Compilers}
+\begin{outline}
+\1 TensorFlow
+\1 Theano: A Python framework for fast computation of mathematical expressions.
+\1 Cognitive computing programming paradigm: a corelet language for composing networks of neurosynaptic
+cores. I
+\end{outline}
+
+Library approach
+\begin{outline}
+\1 Mxnet: A flexible and efficient machine learning library for heterogeneous distributed systems
+\1 Anintroductiontocomputational networks and the computational network toolkit
+\1 Neural Network Transformation and Co-design under Neuromorphic Hardware Constraints.
+\1 Caffe: Convolu- tional architecture for fast feature embedding.
+\1 Cambricon: An instruction set architecture for neu- ral networks.
+\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
+\end{outline}
+
+\paragraph{ML Accelerators}
+\begin{outline}
+%% Dataflow accelerators
+\1 A runtime reconfigurable dataflow processor for vision
+\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
+\1 %% domain specific loop fushion inter change
+\1 Truenorth: Design and tool flow of a 65 mw 1 million neuron programmable neurosynaptic chip. from
+IBM
+\1 Memristive Boltzmann machine: A hardware accelerator for combinatorial optimization and deep
+learning. 
+\1 Scalable hierarchical network-on- chip architecture for spiking neural network hardware
+implementations. 
+\1 Diannao: A small-footprint high-throughput accel- erator for ubiquitous machine-learning.
+\1 Pudiannao: A polyvalent machine learning accelerator. In ACM SIGARCH Computer Architecture News, Vol.
+43. ACM, 369–381.
+\1 Eyeriss: An energy- efficient reconfigurable accelerator for deep convolutional neural networks. I
+\1 EIE: efficient inference engine on compressed deep neural network.
+\1 Design and evolution of modular neural network architectures
+\1 In-Datacenter Performance Analysis of a Tensor Processing Unit. 
+\1 RENO: A high- efficient reconfigurable neuromorphic computing accelerator design.
+\1 Convolution engine: balancing efficiency \& flexibility in specialized computing.
+\1 Minerva: Enabling low-power, highly-accurate deep neural network acceler- ators. 
+\1 DNPU: An 8.1TOPS/W Reconfigurable CNN-RNN Processor for General Purpose Deep Neu- ral Networks. 
+\1 C-Brain: A deep learning accelerator that tames the diversity of CNNs through adaptive data-level
+\1 parallelization. 
+\end{outline}
+
+\paragraph{Spatial Compilers}
+Most previous works \cite{nowatzki, spatial-computation} only consider allocating resources at the same level. 
+\name{} takes a more general assumption by co-allocating resources at multiple levels of an accelerator's hierarchy.
+
+%The Plasticine compiler~\cite{plasticine} is similar to \name{} that it also uses a token-based control protocol.
+%However, it performs worse than \name{} due to the following reasons.
+%First, the Plasticine compiler allocates VBs for every level of Spatial's (a high-level language) control hierarchy. 
+%The communication between parent and child controllers lead to both communication hotspots around the parent, and bubbles before entering a steady-state of the loop iterations. 
+%Second, the Plasticine compiler assigns a single memory PB for each logical memory in the Spatial program. 
+%Hence, it could not handle the case where a logical memory exceeds the capacity or bank limits of the physical PBs.
+%Third, the Plasticine compiler only supports polyhedral memory partitioning at the first dimension of the on-chip memory. 
+%Hence, its applicability to data-intensive applications with high-dimension tensor algebra is questionable.
+%Last, compared to \name{}'s separate allocation and assignment phases described in
+%\Cref{sec:control} and \Cref{sec:resalloc},
+%the Plasticine compiler allocates one VB for a specific type of PB and underutilizes resources within PBs.
+
+\section{On-Chip Network}
 
 Multiple decades of research have resulted in a rich body of literature, both in CGRAs~\cite{cgraSurvey1, cgraSurvey2} and on-chip networks~\cite{ocn-synthesis}. We discuss relevant prior work under the following categories:
 \subsection{Tiled Processor Interconnects} Architectures such as Raw~\cite{raw} and Tile~\cite{tile} use scalar operand networks~\cite{son}, which combine static and dynamic networks. Raw has one static and two dynamic interconnects: the static interconnect is used to route normal operand traffic, one dynamic network is used to route runtime-dependent values which could not be routed on the static network, and the second dynamic network is used for cache misses and other exceptions. Deadlock avoidance is guaranteed only in the second dynamic network, which is used to recover from deadlocks in the first dynamic network. However, as described in Section~\ref{sec:intro}, wider buses and larger flit sizes create scalability issues with two dynamic networks, including higher area and power. In addition, our static VC allocation scheme ensures deadlock freedom in our single dynamic network, obviating the need for deadlock recovery.
@@ -28,30 +109,6 @@ Kapre et al. \cite{kapre2011noc} develop a workflow to map applications to CGRAs
 %Our approach provides an extension of these techniques by using a ``closed-loop'' iterative process.
 %Instead of doing each step (placement, routing, deadlock avoidance) sequentially, we are able to use heuristics to quantify the impact that each step has on the badness of the overall design.
 %For example, this allows us to fix routing pathologies by re-placement, because we can identify the specific placement decisions that led to the poor set of routes.
-
-\section{Compiler}
-\paragraph{Streaming Dataflow IRs}
-Although many works claim to emit efficient and information-rich dataflow IRs for the downstream compilers, very few of them can capture the high-level parallel patterns and implementation details that are critical to RDA mappings. For example, TensorFlow \cite{tensorflow} emits dataflow IR composed of tensor operations. However, its IR lacks information on the parallel patterns within these operations. In contrast, most of the streaming languages \cite{streamit, synaid, maxj} are not able to extract nested loop-level parallelism from modern data-intensive applications. For example, StreamIt \cite{streamit}, a language tailored for streaming computing, also adopts distributed control as in \name{}. However, it lacks the necessary language features to describe deeply and irregularly nested loops that are common in modern data-intensive applications.
-
-\paragraph{Hardware Architectures}
-Spatial reconfigurable accelerators (\eg, Dyser~\cite{dyser} and Tartan~\cite{tartan}) have only one-level of hierarchy.
-Hence, such accelerators' performance can be bottlenecked by their limited interconnect bandwidth and power budget.
-Sparse Processing Unit (SPU)~\cite{sparseaccel} can sustain higher interconnect bandwidth by introducing on-chip hierarchy; however, it lacks support for polyhedral memory banking~\cite{poly_cong}, a pivotal optimization to achieve massive parallel accesses to on-chip memory. Plasticine~\cite{plasticine} provides us with the desired architecture features; however, its compiler lacks the necessary components to support efficient streaming execution. Given that Plasticine resembles many key features of the RDA model, we target Plasticine with \name{}.
-
-\paragraph{Spatial Compilers}
-Most previous works \cite{nowatzki, spatial-computation} only consider allocating resources at the same level. \name{} takes a more general assumption by co-allocating resources at multiple levels of an accelerator's hierarchy.
-
-The Plasticine compiler~\cite{plasticine} is similar to \name{} that it also uses a token-based control protocol.
-However, it performs worse than \name{} due to the following reasons.
-First, the Plasticine compiler allocates VBs for every level of Spatial's (a high-level language) control hierarchy. 
-The communication between parent and child controllers lead to both communication hotspots around the parent, and bubbles before entering a steady-state of the loop iterations. 
-Second, the Plasticine compiler assigns a single memory PB for each logical memory in the Spatial program. 
-Hence, it could not handle the case where a logical memory exceeds the capacity or bank limits of the physical PBs.
-Third, the Plasticine compiler only supports polyhedral memory partitioning at the first dimension of the on-chip memory. 
-Hence, its applicability to data-intensive applications with high-dimension tensor algebra is questionable.
-Last, compared to \name{}'s separate allocation and assignment phases described in
-\Cref{sec:control} and \Cref{sec:resalloc},
-the Plasticine compiler allocates one VB for a specific type of PB and underutilizes resources within PBs.
 
 
 % Ignore arch for now; we assume arch
