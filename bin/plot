@@ -531,7 +531,7 @@ def main():
     # plot_mlp()
     # plot_gpu_slide()
     # plot_dep()
-    plot_graphred()
+    # plot_graphred()
 
     # plot_part_dfg()
     # plot_part()
