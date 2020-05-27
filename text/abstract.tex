@@ -1,15 +1,4 @@
-\prefacesection{Abstract (WIP)}
-
-%The rise of ``dark silicon'' in the semiconductor industry due to the end of Dennard scaling 
-%started the multicore era in processor design since 2005.
-%Nonetheless, the performance scaling in multicores is soon coming to a limit, which motivates a new
-%class of spatial architecture--reconfigurable dataflow accelerators (RDAs)--that delivers high throughput 
-%and energy efficiency in computation to keep up with the performance demand.
-%To adapt to the compute intensity in modern data-analytic workloads, particularly in deep learning, RDAs are increasing to a scale
-%that was unprecedented before.
-%The increase in scale introduces new challenges in on-chip network design to maintain the energy efficiency and scalability of RDAs.
-%Furthermore, managing and using RDAs at this scale also require new strategies in mapping, memory management, and flexible control
-%to saturate compute throughput of the accelerator. 
+\prefacesection{Abstract}
 
 %In this talk, I will talk about architectural design and compilation techinques that improves the scaling efficiency of a RDA developed 
 %at Stanford--Plasticine.
@@ -22,29 +11,30 @@
 
 With the slowdown of Moore’s Law, specialized hardware accelerators are gaining tractions 
 for delivering 100-1000x performance improvement over general-purpose processors. 
-As performance scaling in multicores coming to a limit~\cite{multicorescale}, a new
-class of accelerators--reconfigurable dataflow architectures (RDAs)--are particularly promising in 
+As the performance scaling in multicores is coming to a limit~\cite{multicorescale}, a new
+class of accelerators--reconfigurable dataflow architectures (RDAs)--is promising in 
 offering high-throughput and energy-efficient acceleration that keeps up with the performance demand.
 Instead of dynamically fetching instructions like in traditional processors, RDAs have flexible datapath 
-that can be statically configured to parallelize and pipeline the program spatially across
-the on-chip resources. 
+that can be statically configured to spatially parallelize and pipeline the program across
+distributed on-chip resources. 
 The pipelined execution model and explicitly-managed scratchpad in RDAs eliminate
 the performance, area, and energy overhead in dynamic scheduling and conventional memory hierarchy.
 
-To adapt to the compute intensity in modern data-analytic workloads, particularly in deep learning, 
-RDAs are increasing to a scale that was unprecedented before, compared to classic coarse-grained
+To adapt to the compute intensity in modern data-analytic workloads, particularly in the deep learning
+domain, RDAs are increasing to a scale that was unprecedented before, compared to the classic coarse-grained
 reconfigurable architectures (CGRAs).
-Plasticine is an example of a hierarchical RDA with coarse-grained reconfigurable tiles and a
-streaming interconnect.
+With an area footprint of $133\text{mm}^2$ at 28nm, 
+Plasticine is a hierarchical RDA with 12.3 TFLOPs of compute power~\cite{plasticine}.
 Prior work has shown an up to 76x performance/watt benefit from Plasticine over a Stradix V FPGA 
 due to advantage in clock frequency and resource density.
 The increase in scale introduces new challenges in on-chip network design to maintain 
 the throughput and energy efficiency of RDAs.
-Furthermore, managing and using RDAs at this scale also require new strategies in mapping, 
+Furthermore, targeting and managing RDAs at this scale also require new strategies in mapping, 
 memory management, and flexible control to fully utilize the compute power of the accelerator. 
 
-In this work, we focus on two aspects of the software-hardware codesign that impact the usability
-and performance of the accelerator. One of the biggest challenges that hinders the adoption of these
+In this work, we focus on two aspects of the software-hardware co-design that impact the usability
+and scalability of the Plasticine accelerator. 
+One of the biggest challenges that hinders the adoption of these
 accelerators is the low-level declarative configuration interface that requires the programmers to
 have detailed knowledge about the underlying microarchitecture implementation and hardware
 constraints. To address the programmability challenge, we introduce a compiler stack that provides a high-level
