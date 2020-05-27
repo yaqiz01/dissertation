@@ -20,15 +20,28 @@
 %By applying these techniques, we show that Plasticine is able to outperform state of art accelerators, such as GPUs and FPGAs, in
 %both performance and performance/Watt in various dense, sparse, and streaming applications.
 
-With the slowdown of Moore’s Law, specialized hardware accelerators are gaining tractions as energy-efficient platforms that deliver 100-1000x performance improvement over general-purpose processors. 
-Reconfigurable architectures are particularly promising in providing high-throughput and low-latency
-computation in streaming and data-intensive analytics applications. Instead of dynamically executing
-instructions like in processor architectures, reconfigurable architectures have flexible datapath
-that can be statically configured to parallelize and/or pipeline the program spatially across
-on-chip resources. The pipelined execution model and explicitly-managed scratchpad in reconfigurable
-accelerators dramatically reduce the performance, area, and energy overhead in dynamic execution and
-conventional cache memory hierarchy, respectively. Plasticine is a hierarchical coarse-grained
-reconfigurable dataflow accelerator developed at Stanford in 2017. Compared to fine-grained reconfigurable architecture, like FPGAs, Plasticine has shown 76x performance/watt benefit due to the reduction in routing overhead and the improvement in on-chip resource density. 
+With the slowdown of Moore’s Law, specialized hardware accelerators are gaining tractions 
+for delivering 100-1000x performance improvement over general-purpose processors. 
+As performance scaling in multicores coming to a limit~\cite{multicorescale}, a new
+class of accelerators--reconfigurable dataflow architectures (RDAs)--are particularly promising in 
+offering high-throughput and energy-efficient acceleration that keeps up with the performance demand.
+Instead of dynamically fetching instructions like in traditional processors, RDAs have flexible datapath 
+that can be statically configured to parallelize and pipeline the program spatially across
+the on-chip resources. 
+The pipelined execution model and explicitly-managed scratchpad in RDAs eliminate
+the performance, area, and energy overhead in dynamic scheduling and conventional memory hierarchy.
+
+To adapt to the compute intensity in modern data-analytic workloads, particularly in deep learning, 
+RDAs are increasing to a scale that was unprecedented before, compared to classic coarse-grained
+reconfigurable architectures (CGRAs).
+Plasticine is an example of a hierarchical RDA with coarse-grained reconfigurable tiles and a
+streaming interconnect.
+Prior work has shown an up to 76x performance/watt benefit from Plasticine over a Stradix V FPGA 
+due to advantage in clock frequency and resource density.
+The increase in scale introduces new challenges in on-chip network design to maintain 
+the throughput and energy efficiency of RDAs.
+Furthermore, managing and using RDAs at this scale also require new strategies in mapping, 
+memory management, and flexible control to fully utilize the compute power of the accelerator. 
 
 In this work, we focus on two aspects of the software-hardware codesign that impact the usability
 and performance of the accelerator. One of the biggest challenges that hinders the adoption of these
