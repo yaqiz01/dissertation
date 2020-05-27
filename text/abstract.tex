@@ -1,14 +1,5 @@
 \prefacesection{Abstract}
 
-%In this talk, I will talk about architectural design and compilation techinques that improves the scaling efficiency of a RDA developed 
-%at Stanford--Plasticine.
-%Staring with a static-dynamic hybrid network, we show that the hybrid network can improves energy efficiency while providing
-%guaranteed success in placement and routing.
-%Next, I will talk about compiler techinques that convert applications' complex control hierarchies, such as nested loops and branch conditions, into a streaming dataflow representation that can be efficiently executed by Plasticine with distributed on-chip resources.
-%The compiler implements (a) a peer-to-peer (p2p) control paradigm inferred from an imperative programming style that minimizes synchronization overhead, and (b) a mapping strategy that decomposes the computation and memory in a program across a distributed heterogeneous resources.
-%By applying these techniques, we show that Plasticine is able to outperform state of art accelerators, such as GPUs and FPGAs, in
-%both performance and performance/Watt in various dense, sparse, and streaming applications.
-
 With the slowdown of Moore’s Law, specialized hardware accelerators are gaining tractions 
 for delivering 100-1000x performance improvement over general-purpose processors. 
 As the performance scaling in multicores is coming to a limit~\cite{multicorescale}, a new
@@ -24,22 +15,28 @@ To adapt to the compute intensity in modern data-analytic workloads, particularl
 domain, RDAs are increasing to a scale that was unprecedented before, compared to the classic coarse-grained
 reconfigurable architectures (CGRAs).
 With an area footprint of $133\text{mm}^2$ at 28nm, 
-Plasticine is a hierarchical RDA with 12.3 TFLOPs of compute power~\cite{plasticine}.
+Plasticine is a hierarchical RDA with 12.3 TFLOPs of computing power~\cite{plasticine}.
 Prior work has shown an up to 76x performance/watt benefit from Plasticine over a Stradix V FPGA 
-due to advantage in clock frequency and resource density.
-The increase in scale introduces new challenges in on-chip network design to maintain 
+due to an advantage in clock frequency and resource density.
+The increase in scale introduces new challenges in network-on-chip design to maintain 
 the throughput and energy efficiency of RDAs.
 Furthermore, targeting and managing RDAs at this scale also require new strategies in mapping, 
 memory management, and flexible control to fully utilize the compute power of the accelerator. 
 
 In this work, we focus on two aspects of the software-hardware co-design that impact the usability
 and scalability of the Plasticine accelerator. 
-One of the biggest challenges that hinders the adoption of these
-accelerators is the low-level declarative configuration interface that requires the programmers to
-have detailed knowledge about the underlying microarchitecture implementation and hardware
-constraints. To address the programmability challenge, we introduce a compiler stack that provides a high-level
-programming interface that efficiently translates imperative control constructs to streaming
-dataflow execution with minimum synchronization overhead on an on-chip distributed architecture. The
-compiler handles the hardware constraints systematically with resource virtualization. To address
-the performance challenges, we present a comprehensive study on the on-chip network design for 
-reconfigurable dataflow architectures that sustain performance in a scalable fashion with high energy efficiency.
+Although RDAs are flexible to support a wide range of applications, 
+the biggest challenge that hinders the adoption of these accelerators is 
+the required low-level knowledge in microarchitecture design and hardware constraints in
+order to efficiently implement a new application.
+To address this challenge, we introduce a compiler stack that raises the programming abstraction of Plasticine to an imperative-style domain-specific language (DSL) with nested control
+flow for general spatial architectures.
+Besides architecture-agnostic, the abstraction also contains explicit loop constructs, enabling cross-kernel optimizations that are often not explored when programming RDAs.
+Our compiler efficiently translates imperative control constructs to a streaming
+dataflow graph that efficiently scale performance with distributed on-chip resources.
+Using resource virtualization, our compiler systematically handles the resource constraints, hiding
+the low-level physical limitations from the programmers.
+To address the scalability challenge with increasing chip sizes in RDAs, 
+we present a comprehensive study on the network-on-chip design 
+for streaming dataflow execution model that sustain performance in a 
+scalable fashion with high energy efficiency.
