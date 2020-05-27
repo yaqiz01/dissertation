@@ -1,7 +1,9 @@
 \prefacesection{Abstract}
 
 With the slowdown of Moore’s Law, specialized hardware accelerators are gaining tractions 
-for delivering 100-1000x performance improvement over general-purpose processors. 
+for delivering 100-1000x performance improvement over general-purpose
+processors in a variety of applications domains, such as cloud computing, biocomputing, 
+artificial intelligence, etc.~\cite{fpgacloudsurvey,bioaccel,genomicaccel}.
 As the performance scaling in multicores is coming to a limit~\cite{multicorescale}, a new
 class of accelerators--reconfigurable dataflow architectures (RDAs)--is promising in 
 offering high-throughput and energy-efficient acceleration that keeps up with the performance demand.
@@ -15,13 +17,13 @@ To adapt to the compute intensity in modern data-analytic workloads, particularl
 domain, RDAs are increasing to a scale that was unprecedented before, compared to the classic coarse-grained
 reconfigurable architectures (CGRAs).
 With an area footprint of $133\text{mm}^2$ at 28nm, 
-Plasticine is a hierarchical RDA with 12.3 TFLOPs of computing power~\cite{plasticine}.
+Plasticine is a hierarchical RDA supplying 12.3 TFLOPs of computing power~\cite{plasticine}.
 Prior work has shown an up to 76x performance/watt benefit from Plasticine over a Stradix V FPGA 
 due to an advantage in clock frequency and resource density.
 The increase in scale introduces new challenges in network-on-chip design to maintain 
 the throughput and energy efficiency of RDAs.
 Furthermore, targeting and managing RDAs at this scale also require new strategies in mapping, 
-memory management, and flexible control to fully utilize the compute power of the accelerator. 
+memory management, and flexible control to fully utilize their compute power. 
 
 In this work, we focus on two aspects of the software-hardware co-design that impact the usability
 and scalability of the Plasticine accelerator. 
@@ -29,11 +31,12 @@ Although RDAs are flexible to support a wide range of applications,
 the biggest challenge that hinders the adoption of these accelerators is 
 the required low-level knowledge in microarchitecture design and hardware constraints in
 order to efficiently implement a new application.
-To address this challenge, we introduce a compiler stack that raises the programming abstraction of Plasticine to an imperative-style domain-specific language (DSL) with nested control
+To address this challenge, we introduce a compiler stack that raises the programming abstraction of
+Plasticine to an imperative-style domain-specific language (DSL) with nested control
 flow for general spatial architectures.
-Besides architecture-agnostic, the abstraction also contains explicit loop constructs, enabling cross-kernel optimizations that are often not explored when programming RDAs.
+Besides architecture-agnostic, this abstraction contains explicit loop constructs, enabling cross-kernel optimizations that are often not explored when programming RDAs.
 Our compiler efficiently translates imperative control constructs to a streaming
-dataflow graph that efficiently scale performance with distributed on-chip resources.
+dataflow graph that scale performance with distributed on-chip resources.
 Using resource virtualization, our compiler systematically handles the resource constraints, hiding
 the low-level physical limitations from the programmers.
 To address the scalability challenge with increasing chip sizes in RDAs, 
