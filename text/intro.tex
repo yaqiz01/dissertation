@@ -123,4 +123,23 @@ Nonetheless, lack of a common abstraction makes it very hard to sharing compiler
 across accelerators. 
 
 \section{Contribution}
+
+In this work, we start by detailing the key considerations involved in building a RDA network, including those arising from network design, RDA architecture, and the characteristics of spatially mapped applications.
+Network designs must be carefully considered because vectorization magnifies inefficiencies: the increased network area of a vectorized design ensures that any overhead has a significant impact.
+Next, we evaluate the performance, area, and power requirements of several interconnection designs using cycle-accurate simulation and ASIC synthesis of a switch and router with a \SI{28}{nm} industrial technology library.
+We then explore a variety of design points, including static, dynamic, and hybrid networks, decreased flit widths and VC counts for dynamic networks, and different flow-control strategies for static networks.
+
+We show that RDA network designs must consider application characteristics and the execution model of the underlying architecture.
+Performance scales strongly with network bandwidth, with an 8x average performance gap between the best and worst configurations. 
+The hybrid network gives the best network energy-efficiency: a 1.83x average improvement over the static network. On pipelined architectures,
+hybrid networks can also match the performance per area of higher bandwidth, purely static networks with less than 8\% performance loss.
+
+The key contributions of this paper are:
+\begin{enumerate}
+    \item An analysis of key communication patterns exhibited by spatial architectures.
+    \item A network-aware compiler flow that efficiently targets static, dynamic, and hybrid
+      networks with varying granularities.
+    \item A quantitative analysis of the performance, area, and energy trade-offs involved in choosing a RDA network, using benchmarks drawn from various application domains.
+\end{enumerate}
+
 \section{Outline}
