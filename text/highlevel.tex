@@ -74,7 +74,7 @@ for analysis of a reconfigurable architecture that executes the program in space
 Spatial uses a control hierarchy in the IR to capture the scheduling of the program.
 The control hierarchy uses a tree structure to represent the nested control constructs, making it
 easier to analyze the relations between controllers.
-\Cref{fig:spatialegpar} shows an example of a control flow graph vs. a control hierarchy.
+\Cref{fig:spatialegpar} (b) and (c) shows an example of a control flow graph vs. a control hierarchy.
 The controller at each level of the hierarchy corresponds to a control construct, such as a loop, or
 a branch statement. 
 A basic block is attached to each \emph{innermost} controller including instructions
@@ -84,6 +84,36 @@ controller to wrap the floating instructions.
 \name takes the backend of Spatial IR as the input, which is a control hierarchy after loop
 unrolling.
 
+\begin{figure*}
+\centering
+\begin{subfigure}[b]{0.35\textwidth}
+\inputminted{python}{code/spatialegpar.py}
+\caption{Pseudo Spatial example}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.32\textwidth}
+\includegraphics[width=1\textwidth]{figs/controlflow.pdf}
+\caption{Control flow graph}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.25\textwidth}
+\includegraphics[width=1\textwidth]{figs/spatialir.pdf}
+\caption{Schematic Spatial IR}
+\end{subfigure}
+\caption[Spatial Example]{
+  Pseudo example of \name's front-end language.
+  (a) shows the an example of \name's front-end language. 
+  (b) shows the control-flow graph in traditional CPU-based compiler.
+  The `par` keyword indicates outer loop unrolling factor, and
+  the `vec` keyword is followed by a inner-loop vectorization factor.
+  When an iterator is vectorized, instructions using the vectorized iterator is automatically
+  vectorized. When unrolling the outer loop \texttt{A}, the enclosed loop body and
+  next-level controllers are duplicated, as suggested in (c).
+  Each loop in (a) corresponds to a controller in (c). The inner most controllers \texttt{B} and
+  \texttt{C} each contain a basic block within instructions within the inner most loops.
+}
+\label{fig:spatialegpar}
+\end{figure*}
 
 %% Memory model
 The representation of data structures in traditional IRs often marries to the memory model of a 
@@ -96,33 +126,6 @@ memory; this scheme improves programmability of CPU at the cost of hardware comp
 performance.
 Accelerators on the other hand often have explicitly managed on-chip scratchpads.
 Therefore, modeling the data structures as disjoint memory space is more suitable than pointers for reconfigurable architectures.
-
-\begin{figure*}
-\centering
-\begin{subfigure}[b]{0.4\textwidth}
-\inputminted{python}{code/spatialegpar.py}
-\caption{Pseudo Spatial example}
-\end{subfigure}
-\hfill
-\begin{subfigure}[b]{0.58\textwidth}
-\includegraphics[width=1\textwidth]{figs/spatialir.pdf}
-%\missingfigure[figwidth=1\textwidth]{Spatial IR}
-\caption{Schematic Spatial IR}
-\end{subfigure}
-\caption[Spatial Example]{
-  Pseudo example of \name's front-end language.
-  (a) shows the an example of \name's front-end language. The actual front-end Spatial is a
-  Scala-embedded DSL. For simplicity and generality, we use a python style pseudo code to show an
-  language with similar abstraction. The `par` keyword indicates outer loop unrolling factor, and
-  the `vec` keyword is followed by a inner-loop vectorization factor.
-  When an iterator is vectorized, instructions using the vectorized iterator is automatically
-  vectorized as well. When unrolling the outer loop \texttt{A}, the enclosed loop body and
-  next-level control hierarchy are duplicated, as suggested in (b).
-  Each loop in (a) corresponds to a controller in (b). The inner most controllers \texttt{B} and
-  \texttt{C} each contain a basic block within instructions within the inner most loops.
-}
-\label{fig:spatialegpar}
-\end{figure*}
 
 Spatial is an embedded DSL in Scala.
 For simplicity and generality, we will use python-style pseudo code to represents the front-end programming
