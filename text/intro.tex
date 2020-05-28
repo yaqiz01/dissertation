@@ -3,59 +3,110 @@
 \section{The Rising of Hardware Acceleration}
 
 With the end of Dennard Scaling~\cite{dennard}, the amount of performance one can extract from a CPU is reaching a limit.
-To provide general-purpose flexibility, CPU spends the majority of energy on overheads, including dynamic-instruction execution, branch prediction, and a cache hierarchy, and less than 20\% of the energy on the actual computation~\cite{mark}.
-Even worse, the power wall is limiting the entire multicore family
-to reach the doubled performance improvement per generation enabled by technology scaling in the past\cite{multicorescale}.
+To provide general-purpose flexibility, CPU spends the majority of resources and energy on overheads, 
+including dynamic-instruction fetching and decoding, branch prediction, and a cache hierarchy, 
+with less than 20\% of 
+the energy on the actual computation~\cite{mark}.
+Even worse, power wall is limiting the entire multicore family
+to reach the doubled performance per generation enabled by technology scaling in the 
+past~\cite{multicorescale}.
 
-For this reason, many recent efforts are spent on leveraging application domain knowledge in hardware design to enable 
-continued performance scaling while meeting the power budget\cite{turinglecture}.
-Examples include widely adopted General-Purpose Graphics Processing Units (GPGPUs) in the deep-learning domain and machine learning (ML) accelerators, such as Tensor Processing Units~\cite{tpu} and EIE~\cite{eie}, providing orders of magnitude acceleration over a CPU.
-However, massive threads in GPU and the highly specialized datapath in ML accelerators often cause severe
-underutilization of the hardware due to variation in application and data characteristics\cite{tz_rnn}.
+For this reason, hardware acceleration is emerging in various compute-intensive application domains 
+to provide orders of magnitude acceleration, enabling algorithms that were otherwise
+infeasible~\cite{genomicaccel, bioaccel, fpgadeeplearn, fpgacripto}.
+Examples include widely adopted General-Purpose Graphics Processing Units (GPGPUs) 
+in computational genomics, signal procesing, graph processing, and
+deep learning, etc.~\cite{genomicaccel, bioaccel, fpgacloudsurvey}.
+Moreover, many recent efforts are spent on leveraging application domain knowledge in hardware design to enable 
+continued performance scaling while meeting the power budget~\cite{turinglecture}.
+As artificial intelegence receiving great success in industry and business,
+past years have seen an explosion in maching learning accelerators;
+these accelerators contain specialized circuits for ML kernels that dramatically improves the compute
+efficiency~\cite{dadiannao,tpu,eie,chen2017eyeriss,tangram,truenorth}.
+
+Nonetheless, it is non-trivial to achieve a good utilization of these accelerators.
+While the peak FLOPS of GPU has increased by over 20x in the past 10 years, the achievable FLOPS is
+not increasing accordingly~\cite{floptrend, gpuperfana}.
+The massive threads in GPU require embarrassedly parallel workloads to fully saturate the compute
+throughput. GPU's bulk-synchronous nature also causes poor cache efficiency; data are spilled
+off-chip before getting reused~\cite{gpuinefficiency}.
+On the outer hand, 
+while extremely efficient for certain models, machine learning accelerators are highly
+specialized for specific kernels, especially general matrix multiply (GEMM) and convolution.
+However, ML algorithms evolve much faster than the development and manufacture cycle of hardware, 
+leading to inefficiency in or even unsupported by these accelerators.
+For example, hybrid models, such as Mask R-CNN~\cite{maskrcnn} and DeepLab~\cite{deeplab}, include 
+combinations of GEMM-compatible and incompatible operations, both computationally expensive.
+Fix-functional accelerators focusing on GEMM operations, such as TPU~\cite{tpu}, 
+have to rely on CPUs for unsupported operations or
+convert non-GEMM operations to GEMM operations, resulting in a severe performance gap between the
+peak and effective FLOPS~\cite{effflexdnnaccel}.
 
 Reconfigurable spatial architectures overcome this limitation by changing its datapath based on applications' needs.
-Applications are configured at the circuit-level without dynamic instruction fetching and decoding, hence improving energy-efficiency.
+Applications are configured at the circuit-level without dynamic instruction fetching and decoding,
+hence improving energy-efficiency~\cite{calhoun,fpgaPower}.
 In addition to instruction, data, and task-level parallelism explored by processor architectures, spatial architectures also explore instruction and task-level
-pipelining that further increase the compute throughput.
-Pipelining at various granularity enables spatial architectures to achieve high throughput on program phases without massive parallel workload, and allocate resource proportional to compute intensities of program phases.
+pipelining that further increase the compute throughput~\cite{spatial-computation}.
+Exploring pipeline parallelism enable spatial architectures to achieve a high-throughput
+without massively parallelize every program stage.
+Flexible datapath also permits resource distribution proportional to the compute intensity of
+program stages.
+A key performance optimization on reconfigurable accelerators is an application-level design space
+exploration 
+searching for the best resource distribution scheme that balances the compute pipeline~\cite{dse_koeplinger}.
 
-One example of a reconfigurable spatial architecture is Field Programmable Gate Arrays (FPGAs) that support fine-grain, 
-bit-level reconfiguration with a soft logic fabric~\cite{fpga-survey}.
+One of the mainstream reconfigurable spatial architecture is 
+Field Programmable Gate Arrays (FPGAs) that support fine-grain, 
+bit-level reconfigurability with a soft logic fabric~\cite{fpga-survey}.
 The flexible interconnect and lookup table-based logic gate can be configured to implement arbitrary
 datapath.
-FPGAs are used to deploy services commercially~\cite{microsoft, baidu, deephi} and can be rented on the AWS F1 cloud~\cite{aws}. 
-Although around for a long time, FPGAs are not broadly used on high-level applications due to their low-level 
-programming interface and long compilation time.
-Fine tuning applications on FPGAs requires expertise in digital design knowledge and takes a long
-development cycle, which hinders their accessibility to general software programmers.
-As an application-level accelerator, FPGAs also suffers from overhead incurred by fine-grained reconfigurability; 
-studies have shown that an FPGA can have over 
-have hampered widespread adoption for several 
-years~\cite{bolsens, calhoun, fpgaPower, fpgaSurvey}. 
+FPGAs have been used to deploy services commercially~\cite{microsoft, baidu, deephi} and can be rented on the AWS F1 cloud~\cite{aws}. 
+Although around for a long time, FPGAs are not broadly accepted among high-level application programmers 
+due to their low-level programming interface and long compilation time.
+Fine tuning applications on FPGAs requires expertise in digital design and takes a long
+development cycle, which hinders their accessibility to the general software community.
+As an application-level accelerator, FPGAs also suffers from overhead from fine-grained reconfigurability; 
+studies have shown that over 60\% of chip size of a FPGA are spent on routing 
+resources~\cite{fpgaSurvey, calhoun, fpgaPower}. 
 
-Lately, Reconfigurable Dataflow Accelerators (RDAs)~\cite{plasticine, ti} are emerging as a new class of spatial accelerators that retain the desired level of flexibility and energy efficiency without the fine-grained reconfigurability overhead.
-RDA provides high resource density and compute throughput with a hierarchical streaming network, operating at a fixed and high clock frequency at large chip sizes.
-Recent studies~\cite{plasticine} have demonstrated a promising acceleration of dense, sparse, and streaming applications using RDAs.
+In contrast to fine-grained reconfigurable architectures,
+Coarse-Grained Reconfigurable Arrays (CGRAs) are spatial architectures with 
+coarse-grained building blocks, such as ALUs, register files, and memory controllers, 
+distributed in a programmable, word-level static interconnect~\cite{adres, kress, dyser, piperench, tartan, 
+hrl, hycube}.
 
-Spatially reconfigurable architectures are programmable, energy efficient application accelerators offering the flexibility of software and the efficiency of hardware.
-Architectures such as Field Programmable Gate Arrays (FPGAs) achieve energy efficiency by providing statically reconfigurable compute elements and on-chip memories in a bit-level programmable interconnect; this interconnect can be configured to implement arbitrary datapaths. 
-FPGAs are used to deploy services commercially~\cite{microsoft, baidu, deephi}
-and can be rented on the AWS F1 cloud~\cite{aws}. 
-However, FPGAs suffer from overhead incurred by fine-grained reconfigurability; their long compile times
-and relatively low compute density have hampered widespread adoption for several years~\cite{bolsens, calhoun, fpgaPower, fpgaSurvey}. 
-Therefore, recent spatial architectures use
-increasingly coarse-grained building blocks, such as ALUs, register files, and memory controllers, distributed in a programmable, word-level static interconnect.
-Several of these Coarse-Grained Reconfigurable Arrays (CGRAs) have recently been proposed \cite{adres, kress, dyser, piperench, tartan, hrl, ti, hycube, plasticine}.
+Lately, Reconfigurable Dataflow Accelerators (RDAs)~\cite{plasticine, ti, streamdataflow,
+neuflow,cnndataflow,dataflowarch} are emerging as a new class of spatial accelerators that 
+retain the desired level of flexibility and energy efficiency without 
+the area overhead and low clock frequency due to bit-level reconfigurability.
+
+Plasticine is a recently proposed RDA with high resource density and compute throughput.
+Recent studies~\cite{plasticine} have demonstrated a promising acceleration of dense, sparse
+, and streaming applications using RDAs.
+%, operating at a fixed and high clock frequency at large chip sizes.
+
 
 \section{The Need of Flexible Interconnects}
-CGRAs need the right amount of interconnect flexibility to achieve high resource utilization; an inflexible interconnect constrains the space of
-valid application mappings and hinders resource utilization. Furthermore, in the quest to increase compute density, CGRA data paths now 
-contain increasingly coarse-grained processing blocks such as pipelined, vectorized functional units~\cite{plasticine, piperench, xilinx-acap}.
-These data paths typically have a vector width of 8--16x~\cite{plasticine}, which necessitates coarser communication and higher on-chip interconnect bandwidth to avoid
-creating performance bottlenecks. 
+Applications are mapped to RDAs by distributing computations spatially across multiple processing blocks 
+and executing them in a pipelined, data-driven fashion. On traditional Networks on Chip (NoCs), communication 
+is the result of explicit message passing by parallel workers or cache misses; these are bursty and
+relatively infrequent. On RDAs, however, applications are distributed by parallelizing and pipelining; 
+pipelining introduces frequent and throughput-sensitive communication. Because different applications are 
+parallelized and pipelined differently, they have different communication requirements.
+
+RDAs need the right amount of interconnect flexibility to achieve a good resource utilization; 
+an inflexible interconnect constrains the space of
+valid application mappings and hinders resource utilization. 
+Furthermore, 
+in the quest to increase compute density, RDA data paths now 
+contain increasingly coarse-grained processing blocks such as pipelined, vectorized functional 
+units~\cite{plasticine, piperench, xilinx-acap}.
+
+Plasticine, as an example, has a 512-bit vector bus, which necessitates coarser communication 
+and higher on-chip interconnect bandwidth to avoid creating performance bottlenecks. 
 Although many hardware accelerators with large, vectorized data paths have fixed local networks~\cite{brainwave}, there is a need for more
 flexible global networks to adapt to future applications.
-Consequently, interconnect design for these CGRAs involves achieving a balance between the often conflicting requirements of high bandwidth and high flexibility.
+Consequently, interconnect design for these RDAs involves achieving a balance between the often conflicting requirements of high bandwidth and high flexibility.
 
 \section{The Gap between High-Level DSLs and Dataflow Accelerators}
 Recent years has seen a raise in interests in researching in hardware accelerators, primarily

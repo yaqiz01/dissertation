@@ -1,5 +1,14 @@
 \chapter{Conclusions (WIP)}
 
+Reconfigurable dataflow accelerators (RDAs) are a promising class of spatial accelerators, which deliver higher performance-to-resource efficiency than conventional process architectures while capturing a large application space.
+However, to sustain these benefits as RDAs get larger, the software stack must address the challenges of (a) distributed control / correctness and (b) efficient resource allocation.
+
+We address these challenges by proposing a distributed asynchronous control scheme and a program decomposition method. 
+We develop a compiler, \name{}, that constructs a virtual block dataflow graph (VBDFG) from a program specification and generates a minimal set of peer-to-peer synchronizations, which allow fine-grained parallelization factors that would otherwise incur large communication overheads.
+Furthermore, operations on VBDFG are decomposed and assigned to a heterogenous collections of physical blocks (PBs). 
+Lastly, we implement these techniques and through evaluations show that \name{} achieves a speedup of 4x over a Tesla V100 GPU.
+We hope that the approach and implementation presented in this work will help scale modern RDAs add a steady pace..
+
 We show that the best network design depends on both applications and the underlying accelerator architecture.
 Network performance correlates strongly with bandwidth for streaming accelerators, and scaling raw bandwidth is more area- and energy-efficient with a static network.
 We show that the application mapping can be optimized to move less data by using a dynamic network as a fallback from a high-bandwidth static network.
