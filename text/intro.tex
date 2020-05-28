@@ -104,13 +104,13 @@ coarse-grained building blocks, such as ALUs, register files, and memory control
 distributed in a programmable, word or vector-level static interconnect~\cite{adres, kress, dyser, piperench, tartan, 
 hrl, hycube}.
 We refer a subclass of CGRAs with dataflow-driven execution model as Reconfigurable Dataflow
-Architectures (RDAs).
-Lately, RDAs~\cite{plasticine, ti, streamdataflow,neuflow,cnndataflow,dataflowarch} are emerging as a new class of spatial accelerators that retain the desired level of flexibility and energy efficiency without the area overhead and low clock frequency due to bit-level reconfigurability.
-Plasticine, our previously proposed RDA, 
-has demonstrated a promising acceleration of dense, sparse, database, and streaming applications~~\cite{plasticine, gorgon, multijoin,prabhakarthesis}.
+Architectures (RDAs)\footnote{Dataflow overlay architectures on FPGA are technically also RDAs, which are not
+primary concern in the discussion of this work.}~\cite{plasticine, ti, streamdataflow,neuflow,cnndataflow,dataflowarch}.
+Lately, RDAs are emerging as a new class of spatial accelerators that retain the desired level of flexibility and energy efficiency without the area overhead and low clock frequency due to bit-level reconfigurability.
+Our previously proposed RDA--Plasticine--has demonstrated a promising acceleration of dense, sparse, database, and streaming applications~~\cite{plasticine, gorgon, multijoin,prabhakarthesis}.
 To meet the computing demand of recent data-analytic workload, Plasticine is a large-scale RDA
 compared to traditional CGRAs. 
-\Cref{tab:ops} shows the OPS comparison across different CGRAs.
+\Cref{tab:ops} shows the OPS comparison across a few CGRAs proposed in the prior works.
 
 \begin{table}
   \centering
@@ -128,7 +128,9 @@ Plasticine variant proposed for joint machine learning and database acceleration
 
 The scale of Plasticine introduces challenges in network-on-chip design to sustain 
 bandwidth requirements while staying energy-efficient.
-The compilation strategy also needs to explore multiple-levels of concurrency in execution with minimum synchronization overhead to maximize the scalability of the mapped design.
+On the other hand, the compilation strategy also needs to be adjusted to explore multiple-levels of
+concurrency in the program to saturate the compute throughput of the large-scale RDA.
+Furthermore, this strategy must introduce minimum synchronization overhead to maximize the scalability of the mapped design.
 
 \section{The Need for Flexible Interconnects}
 Applications are mapped to RDAs by distributing computations spatially across multiple processing blocks and executing them in a pipelined, data-driven fashion. On traditional Networks on Chip (NoCs), communication is the result of explicit message passing by parallel workers or cache misses; these are bursty and
