@@ -1,20 +1,25 @@
 \chapter{Conclusions (WIP)} \label{sec:conclusion}
 
-Reconfigurable dataflow accelerators (RDAs) are a promising class of spatial accelerators, which deliver higher performance-to-resource efficiency than conventional process architectures while capturing a large application space.
-However, to sustain these benefits as RDAs get larger, the software stack must address the challenges of (a) distributed control / correctness and (b) efficient resource allocation.
+Reconfigurable dataflow accelerators (RDAs) are a promising class of spatial accelerators that deliver higher performance-to-resource efficiency while capturing a large application space.
+However, to sustain these benefits of RDAs, scalability must be taken into account in both software
+stack and hardware design.
 
-We address these challenges by proposing a distributed asynchronous control scheme and a program decomposition method. 
-We develop a compiler, \name{}, that constructs a virtual block dataflow graph (VBDFG) from a program specification and generates a minimal set of peer-to-peer synchronizations, which allow fine-grained parallelization factors that would otherwise incur large communication overheads.
-Furthermore, operations on VBDFG are decomposed and assigned to a heterogenous collections of physical blocks (PBs). 
-Lastly, we implement these techniques and through evaluations show that \name{} achieves a speedup of 4x over a Tesla V100 GPU.
-We hope that the approach and implementation presented in this work will help scale modern RDAs add a steady pace..
+On the software side, we address this challenge with a distributed asynchronous control scheme and resource
+virtualization.
+We develop a compiler, \name{}, that constructs a dataflow graph from an imperative program with nested
+control flow. We use dataflow tokens to enforce sequential consistency across distributed memory
+accesses, incurring minimum communication overhead.
+Furthermore, \name efficiently compose distributed resource to provide an abstraction of larger
+logical resources to the programmers.
+Our optimizations effectively eliminate pipelining stall and reduce resource fragmentation with
+heterogeneous resources.
+Lastly, our evaluation shows that \name{} achieves of 2x averaged speedup and an area-normalized 4x
+speedup over a Tesla V100 GPU.
 
-We show that the best network design depends on both applications and the underlying accelerator architecture.
+On the hardware side, we show that the best network design depends on both applications and the underlying accelerator architecture.
 Network performance correlates strongly with bandwidth for streaming accelerators, and scaling raw bandwidth is more area- and energy-efficient with a static network.
 We show that the application mapping can be optimized to move less data by using a dynamic network as a fallback from a high-bandwidth static network.
-%this contributes a 6.9x average performance per area and 2.3x average energy-efficiency improvement for a static-dynamic hybrid network.
 This static-dynamic hybrid network provides a 1.8x energy-efficiency and
 2.8x performance advantage over the purely static and purely dynamic networks, respectively.
-  %Furthermore, we show that spatial architectures require larger switches as programs get bigger, imposing super-linear scaling of network size with chip area.
 
 
