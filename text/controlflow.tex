@@ -13,7 +13,7 @@
 %Therefore, as long as the computation is executed with the expected number of iterations and the memories are updated consistently, there is no need for any extra synchronization.
 %Next, we walk through how \name{} achieves this in more concrete detail.
 
-\subsection{Loop Division (Ready)}
+\subsection{Loop Division}
 Between the front-end and the back-end abstractions of \name, an obvious gap is that 
 the imperative front-end language can contain arbitrarily nested control hierarchy, whereas
 the hardware compute engine can only execute operations that are control-free.
@@ -95,7 +95,7 @@ Example of an illegal loop fission and a legal loop division
 \label{fig:loopexp2}
 \end{figure*}
 
-\subsection{Virtual Context Allocation (Ready)} 
+\subsection{Virtual Context Allocation} 
 
 \begin{figure*}
 \centering
@@ -230,7 +230,7 @@ To map a large program on Plasticine, the program graph must be sliced into mult
 A single chunk is executed in-space, exploring on-chip parallelism and pipelining;
 different chunks are executed in-time by reconfiguring the accelerator.
 
-\subsection{Control Allocation (Ready)} \label{sec:controlalloc}
+\subsection{Control Allocation} \label{sec:controlalloc}
 \label{sec:sync}
 \name uses control tokens to enforce the memory access order in an imperative program on a dataflow
 architecture. 
@@ -570,7 +570,7 @@ tokens in the destination buffers.
 %%\ms{repeated caption, rather give a single caption.}
 
 
-\subsection{Data-Dependent Control Flow (Ready)} \label{sec:datactrl}
+\subsection{Data-Dependent Control Flow} \label{sec:datactrl}
 Using the synchronization discussed in \Cref{sec:sync}, \name can support control constructs that 
 typically are not supported on dataflow accelerators, such as branches and while loops.
 Most dataflow accelerators do not support control divergence. SIMT architectures, like GPUs,
@@ -762,7 +762,7 @@ The reused hardware corresponding for a function call
 can be viewed as a shared resource like memories; contexts with callers and callees of the procedure call
 must pass tokens to serialize their access order.
 
-\subsection{Virtual Unit Allocation (Ready)}
+\subsection{Virtual Unit Allocation}
 After all contexts and shared memory are allocated and synchronized, 
 \name moves each floating context into a VU, which later maps to a PU.
 In the resource allocation phase, \name might partition the big contexts into multiple VUs, and small contexts into a single VU. 

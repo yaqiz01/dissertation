@@ -1,4 +1,4 @@
-\chapter{Introduction (WIP)}
+\chapter{Introduction}
 
 \section{The Rising of Hardware Acceleration}
 
@@ -41,13 +41,13 @@ Fix-functional accelerators focusing on GEMM operations, such as TPU~\cite{tpu},
 have to rely on CPUs for unsupported operations or
 convert non-GEMM operations to GEMM operations, resulting in a severe performance gap between the
 peak and effective FLOPS~\cite{effflexdnnaccel}.
-\Cref{fig:peakutil} illustrate a tradeoff between average utilization of the peak FLOPS over a range
+\Cref{fig:peakutil} illustrate a trade-off between average utilization of the peak FLOPS over a range
 of data and the peak FLOPS available on the hardware.
 
 \begin{figure*}
 \centering
 \includegraphics[width=0.4\textwidth]{figs/peakutil.pdf}
-\caption[Average utilization vs. peak compute density tradeoff]{
+\caption[Average utilization vs. peak compute density trade-off]{
  Tradeoff between the average utilization of the peak FLOPS over a range of applications vs. the peak compute density 
  among different architectures.
  The shaded area indicates the effective FLOPS achieved.
@@ -137,7 +137,7 @@ Applications are mapped to RDAs by distributing computations spatially across mu
 blocks and executing them in a pipelined, data-driven fashion. 
 In traditional Networks-on-Chip
 (NoCs) for multicore systems, communication is the result of explicit message passing between
-parallel workers or cache misses that generate messages for coherence protocol; these traffic are bursty and
+parallel workers or cache misses that generate messages for coherence protocol; these traffics are bursty and
 relatively infrequent. 
 On RDAs, however, applications are distributed by parallelizing and pipelining; 
 pipelining introduces frequent and throughput-sensitive communication. 
@@ -157,14 +157,13 @@ High-level performance model of a spatial architecture.
 reconfigurable architecture.
 Due to pipelined execution, the performance of a spatial architecture is dominant by throughput as
 supposed to latency. 
-Compute, on and off-chip memory accesses, and network become a integrated pipeline;
+Compute, on and off-chip memory accesses, and network become an integrated pipeline;
 overall performance is limited by the pipeline stage with lowest throughput.
 The red terms in the equation are application-specific and capture the compute, memory, or IO-bound characteristics.
 The blue terms are the bandwidth and FLOPS available on the hardware.
 While the compute and memory access in application increases linearly with parallelization factor and pipelining depth,
 the required network bandwidth from application increases quadratically with increasing parallelism.
-This means as we going to larger chip size, the network bandwidth must grow super linearly 
-to achieve a perfect performance scaling, unless exploring pipeline parallelism.
+This means as we going to larger chip size, the network bandwidth must grow super linearly to achieve a perfect performance scaling, unless exploring pipeline parallelism.
 
 RDAs need the right amount of interconnect flexibility to achieve good resource utilization; 
 an inflexible interconnect constrains the space of
@@ -189,13 +188,13 @@ Nonetheless, lack of a common abstraction makes it very hard to share compiler i
 across accelerators. 
 
 Most RDAs comes with a co-designed software layer that is very low-level and restrictive,
-requiring expertise knowledge in hardware architecture to efficiently target the accelerator.
+requiring expert knowledge in hardware architecture to efficiently target the accelerator.
 On the other side,
 machine learning frameworks~\cite{tensorflow,caffe,pytorch,taco,onnc,tc} provide high-level and 
 succinct front-end abstraction that targets multiple hardware platforms. 
 Yet most of theses frameworks only target mainstream accelerators, such as GPUs and FPGAs.
 Very few of the accelerators mentioned above can support more than a few proof-of-concept models
-with a end-to-end integration with these frameworks.
+with an end-to-end integration with these frameworks.
 
 \begin{figure*}
 \centering
@@ -223,60 +222,81 @@ with a end-to-end integration with these frameworks.
 Part of the reason behind this is the massive engineering effort to program these accelerators.
 Frameworks like TensorFlow~\cite{tensorflow} and PyTorch~\cite{caffe} uses a template library
 approach, as shown in ~\Cref{fig:bigpic} (a).
-These frameworks treats operations in the ML dataflow graph as blackbox kernels and implement
+These frameworks treat operations in the ML dataflow graph as black-box kernels and implement
 every operation for every backend, requiring expensive engineering hours and hardware expertise to
-fine tune each accelerator.
+fine-tune each accelerator.
 Furthermore, cross-kernel optimizations, such as fusion, often provide orders of magnitude improvement in efficiency.
 %%TODO: citation
 Recent studies in sparse ML also show promising speedup on large ML models~\cite{eie}. 
 However, sparse kernels require various data formats with very different implementation than the dense
 version~\cite{tacosparse}.
-In the blackbox approach, each fused operation and data format corresponds to a new blackbox
+In the black-box approach, each fused operation and data format corresponds to a new black-box
 kernel.
 As a result, the combination of required templates easily becomes untractable.
 
-The alternative whitebox approach showin in~\Cref{fig:bigpic} (b) uses a succinct front-end
+The alternative white-box approach showing in~\Cref{fig:bigpic} (b) uses a succinct front-end
 representation, such as index notations~\cite{taco}, to express the computation of a kernel.
 This representation, however, cannot be directly mapped to accelerators due to various physical
 constraints.
-The framework then uses a series of transformations and optimizations to reformulate the kernel 
-to an imperative implementation that can be supported by the accelerator. 
+The framework then uses a series of transformations and optimizations to reformulate the kernel to an imperative implementation that can be supported by the accelerator. 
 The transformation is often target-specific and studies have demonstrated ML-based cost models to
 facilitate the automatic searching of backend-specific schedules~\cite{tvm}.
-Next, the compiler can easily translates the imperative IR to the imperative front-ends of different
+Next, the compiler can easily translate the imperative IR to the imperative front-ends of different
 accelerators.
 
-To enable an easy integration of the whitebox approach, we introduce a compiler--\name--that raise
+To enable easy integration of the white-box approach, we introduce a compiler--\name--that raise
 the programming abstraction of Plasticine to an imperative, loop-based
 language for general reconfigurable hardware---Spatial~\cite{spatial}.
-Plasticine is a purely dataflow accelerator without a centralized scheduler that
+Plasticine is a pure dataflow accelerator without a centralized scheduler that
 executes instructions. This design makes the architecture very scalable to achieve FLOPS comparable
 to high-end GPUs and FPGAs.
 Nonetheless, it is not intuitive nor easy to implement a linear algebra kernel with the low-level
 declarative streaming configurations.
-By support imperative constructs on a data-flow architecture efficiently, \name not only improves
-the programmability of Plasticine, but also enables cross kernel optimizations on Plasticine.
+By support imperative constructs on a data-flow architecture efficiently, \name not only improves the programmability of Plasticine, but also enables cross kernel optimizations on Plasticine.
 These optimizations have demonstrated an average 30x speedup over a Tesla V100 GPU and 2x speedup over
-a Stratix 10 FPGA from a Plasticine with much less on-chip resource than the baseline architectures~\cite{tz_rnn} .
+a Stratix 10 FPGA from a Plasticine with much less on-chip resource than the baseline architectures~\cite{tz_rnn}.
 
 \section{Contribution}
 
-In this work, we start by detailing the key considerations involved in building an RDA network, including those arising from network design, RDA architecture, and the characteristics of spatially mapped applications.
-Network designs must be carefully considered because vectorization magnifies inefficiencies: the increased network area of a vectorized design ensures that any overhead has a significant impact.
-Next, we evaluate the performance, area, and power requirements of several interconnection designs using cycle-accurate simulation and ASIC synthesis of a switch and router with a \SI{28}{nm} industrial technology library.
-We then explore a variety of design points, including static, dynamic, and hybrid networks, decreased flit widths and VC counts for dynamic networks and different flow-control strategies for static networks.
+This thesis work is upon the prior works on the Plasticine architecture~\cite{plasticine} and the Spatial
+compiler~\cite{spatial}.
+We address the programmability and scalability challenges from a software
+and a hardware direction.
+We first introduce the Plasticine compiler---\name---that maps Spatial applications to Plasticine.
+Next, we present several architectural augmentations to Plasticine to increase the flexibility in 
+interconnect, memory access patterns, and control flow.
 
-We show that RDA network designs must consider application characteristics and the execution model of the underlying architecture.
-Performance scales strongly with network bandwidth, with an 8x average performance gap between the best and worst configurations. 
-The hybrid network gives the best network energy-efficiency: a 1.83x average improvement over the static network. On pipelined architectures,
-hybrid networks can also match the performance per area of higher bandwidth, purely static networks with less than 8\% performance loss.
-
-The key contributions of this paper are:
+The key contributions of this work are summarized below:
 \begin{enumerate}
-    \item An analysis of key communication patterns exhibited by spatial architectures.
-    \item A network-aware compiler flow that efficiently targets static, dynamic, and hybrid networks with varying granularities.
-    \item A quantitative analysis of the performance, area, and energy trade-offs involved in choosing an RDA network, using benchmarks drawn from various application domains.
+    \item We propose an imperative to dataflow transformation that implements imperative control constructs, such as nested loops and branch statements, on a pure dataflow architecture.
+      This mapping strategy introduces minimum point-to-point synchronization that efficiently scales performance over distributed on-chip resources.
+    \item We introduce compiler-enforced memory consistency to preserve memory ordering in the imperative program between distributed memory accesses.
+    \item We demonstrate a systematic approach to address physical constraints in a hierarchical RDA.
+      We evaluate the tradeoff between a traversal-based vs. solver-based algorithms for program partitioning. 
+      %We also present how to efficiently partition a logical memory over distributed
+      %scratchpads.
+    \item We use resource virtualization and optimizations to minimize fragmentation in resource allocation with heterogeneous compute tiles.
+    \item We demonstrate an evaluation of the scalability of \name and effectiveness of compiler optimizations.
+      We show a 1.9x average speedup over a Tesla V100 with a Plasticine with 8x less in on-chip
+      resources due to the efficient use of the accelerator.
+    \item We analyze the key communication patterns exhibited by spatial architectures by characterizing a variety of benchmarks from different domains.
+    \item We illustrate that static compiler knowledge can be used to reduce routing congestion.
+    \item We give a comprehensive quantitative analysis of the performance, area, and energy trade-offs 
+      involved in choosing an RDA network, using a cycle-accurate simulator and ASIC synthesis with a \SI{28}{nm} industrial technology library.
+      We explore a variety of design points, including static, dynamic, and hybrid networks, decreased flit widths and VC counts for dynamic networks and different flow-control strategies for static networks.
+    \item We show that bandwidth is the more critical metric for the network of RDAs, due to their pipelined execution nature. We found static-dynamic hybrid networks can give better energy efficiency by reducing overprovisioning in purely static networks and reducing routing distance.
+    \item We present changes in Plasticine required to support flexible memory access patterns and flexible control flow.
 \end{enumerate}
+
+%In this work, we start by detailing the key considerations involved in building an RDA network, including those arising from network design, RDA architecture, and the characteristics of spatially mapped applications.
+%Network designs must be carefully considered because vectorization magnifies inefficiencies: the increased network area of a vectorized design ensures that any overhead has a significant impact.
+%Next, we evaluate the performance, area, and power requirements of several interconnection designs using cycle-accurate simulation and ASIC synthesis of a switch and router with a \SI{28}{nm} industrial technology library.
+%We then explore a variety of design points, including static, dynamic, and hybrid networks, decreased flit widths and VC counts for dynamic networks and different flow-control strategies for static networks.
+
+%We show that RDA network designs must consider application characteristics and the execution model of the underlying architecture.
+%Performance scales strongly with network bandwidth, with an 8x average performance gap between the best and worst configurations. 
+%The hybrid network gives the best network energy-efficiency: a 1.83x average improvement over the static network. On pipelined architectures,
+%hybrid networks can also match the performance per area of higher bandwidth, purely static networks with less than 8\% performance loss.
 
 \section{Outline}
 The rest of this thesis is organized as follow:
