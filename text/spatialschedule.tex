@@ -3,6 +3,7 @@
 \begin{subfigure}[b]{0.34\textwidth}
 \inputminted{python}{code/spatialeg2.py}
 \caption {
+  Example program
 }
 \end{subfigure}
 \hfill
@@ -10,10 +11,11 @@
 \centering
 \includegraphics[width=1.0\textwidth]{figs/pipeexec.pdf}
 \caption {
+  Timing of execution with hierarchical pipelining and parallelization
 }
 \end{subfigure}
 \caption[Hiearchical pipelining and parallelization on spatial architecture]{
-Hierarchical pipelining and parallelization in spatial architecture.
+Hierarchical pipelining and parallelization in a spatial architecture.
 (a) illustrates the runtime and throughput of a hierarchically pipelined and parallelized program on
 a reconfigurable spatial architecture. 
 At the inner level, instructions within each basic
@@ -21,8 +23,8 @@ block are fine-grained pipelined across iterations of the innermost loop.
 At the outer level, the inner loops are coarse-grained pipelined across the outer loop iterations.
 Exploiting multiple levels of pipeline parallelism gives a total throughput of $x+y$ operations per
   cycle, where \emph{x} and \emph{y} are number of operations in the basic blocks.
-(b) Vectorizing the inner most loops B and C by \texttt{n} increases the throughput to $(x+y)n$.
-(c) Parallelizing the outer loop A by \texttt{m} further increases the throughput to $(x+y)mn$.
+  (b) Vectorizing the inner most loops \emph{B} and \emph{C} by \emph{n} increases the throughput to $(x+y)n$.
+  (c) Parallelizing the outer loop \emph{A} by \emph{m} further increases the throughput to $(x+y)mn$.
 }
 \label{fig:pipeexec}
 \end{figure*}
@@ -36,7 +38,7 @@ instructions within a program are executed in time, maximizing the flexibility t
 
 Reconfigurable accelerators are a direct violation of the von Neumann execution model; 
 instructions are statically embedded in the datapath and executed in space as supposed to in time.
-One of the disadvantages of reconfigurable hardware is paying the resource cost for infrequently
+The disadvantage of static reconfiguration is paying the resource cost for infrequently
 executed instructions, making it unsuitable for control-heavy workloads that traditional
 processors are efficient at.
 On the other hand, RDAs are particularly competitive in providing high-throughput, 
@@ -46,23 +48,25 @@ recognition, machine translation, digital signal processing, network processing,
 These applications exhibit a rich amount of data-level parallelism with relatively static control
 flow.
 
-\Cref{fig:pipeexec} shows an example of hierarchical parallelism and pipelining exploit by
+\Cref{fig:pipeexec} shows an example of the hierarchical parallelism and pipelining exploit by
 a spatial architecture.
 The overall compute throughput of a parallelized and pipelined program is 
 the product of the total parallelization factors and pipelining depth.
 By exploring multiple dimensions of concurrency in the program, spatial architecture is more likely
-to achieve a good compute throughput for a wide range of applications.
+to saturate the compute throughput of the hardware for a wide range of applications.
 For applications that are expensive to parallelize due to irregular access patterns, spatial
 architectures can increase on the pipelining dimension;
 for application with embarrassingly parallel workloads, spatial architecture can budget most
 resource on increasing parallelism.
 
-Another benefit of pipelined execution is that it is relatively easy to achieve good memory performance.
-Data accessed by different stages of the pipelines are stored in discrete scratchpads instead of a shared cache; improving the effective on-chip bandwidth and capacity.
-Using explicitly managed scratchpad also tends to improve locality and eliminate cache performance issues, such as thrashing.
+Pipelined execution is also beneficial for achieving good memory performance.
+Data accessed by different stages of the pipelines are stored in disjoint scratchpads instead of a
+shared cache, improving the address bandwidth and effective on-chip capacity.
+Using explicitly managed scratchpads with application knowledge also tends to improve locality
+and eliminate cache performance issues, such as thrashing.
 Across kernels, pipelined execution reduces the amount of off-chip accesses for intermediate
 data.
-SIMT architectures, like GPUs, relying on high-bandwidth DRAM technology, such as HBM, to sustain
+SIMT architectures, like GPUs, relying on high-bandwidth DRAM technologies, such as HBM, to sustain
 the compute throughput of massively parallelized threads.
 While providing over 10x more bandwidth than traditional DDR technologies, HBM is very limited in
 capacity, around 16GB as supposed to on the orders of TB for DDR.

@@ -41,8 +41,8 @@ Fix-functional accelerators focusing on GEMM operations, such as TPU~\cite{tpu},
 have to rely on CPUs for unsupported operations or
 convert non-GEMM operations to GEMM operations, resulting in a severe performance gap between the
 peak and effective FLOPS~\cite{effflexdnnaccel}.
-\Cref{fig:peakutil} illustrate a trade-off between average utilization of the peak FLOPS over a range
-of data and the peak FLOPS available on the hardware.
+\Cref{fig:peakutil} illustrates a trade-off between average utilization of the peak FLOPS over a range
+of applications and the peak FLOPS available on the hardware.
 
 \begin{figure*}
 \centering
@@ -52,9 +52,9 @@ of data and the peak FLOPS available on the hardware.
  among different architectures.
  The shaded area indicates the effective FLOPS achieved.
  With all the dynamic scheduling hardware in CPUs, such as prefetching and branch prediction, 
- CPU can achieve a fairly decent instruction per cycle (IPC) for data-analytic workloads that have a 
+ CPUs can achieve a fairly decent instruction per cycle (IPC) for data-analytic workloads that have a 
  regular control flow. 
- However, overheads to support flexibility, security, and programmability in CPU result in a low FLOPS
+ However, overheads to support flexibility, security, and programmability in CPUs result in a low FLOPS
  density. 
  While GPU and fix-function accelerators have a high FLOPS density, they are prone to
  underutilization due to variation in application characteristics. 
@@ -65,11 +65,10 @@ of data and the peak FLOPS available on the hardware.
 \label{fig:peakutil}
 \end{figure*}
 
-Reconfigurable spatial architectures overcome this limitation by changing its datapath based on applications' needs.
+Reconfigurable spatial architectures overcome this limitation by changing their datapaths based on applications' needs.
 Applications are configured at the circuit-level without dynamic instruction fetching and decoding,
 hence improving energy-efficiency~\cite{calhoun,fpgaPower}.
-In addition to instruction, data, and task-level parallelism explored by processor architectures, spatial architectures also explore instruction and task-level
-pipelining that further increase the compute throughput~\cite{spatial-computation}.
+In addition to instruction, data, and task-level parallelism explored by processor architectures, spatial architectures also explore instruction and task-level pipelining that further increases the compute throughput~\cite{spatial-computation}.
 Exploring pipeline parallelism enables spatial architectures to achieve a high-throughput
 without massively parallelize every stage of the program.
 Flexible datapath also permits resource distribution proportional to the compute intensity of
@@ -86,7 +85,7 @@ datapath.
 FPGAs have been used to deploy services commercially~\cite{microsoft, baidu, deephi} and can be rented on the AWS F1 cloud~\cite{aws}. 
 Although around for a long time, FPGAs are not broadly accepted among high-level application programmers due to their low-level programming interface and long compilation time.
 Fine-tuning applications on FPGAs requires expertise in digital design and takes a long development cycle, which hinder their accessibility to the general software community.
-As an application-level accelerator, FPGAs also suffer from overhead in fine-grained reconfigurability; 
+As application-level accelerators, FPGAs also suffer from overhead in fine-grained reconfigurability; 
 studies have shown that over 60\% of the chip area of an FPGA is spent on routing resources~\cite{fpgaSurvey, calhoun, fpgaPower}. 
 
 %Lately, Reconfigurable Dataflow Architecture (RDAs)~\cite{plasticine, ti, streamdataflow,neuflow,cnndataflow,dataflowarch} are emerging as a new class of spatial accelerators that 
@@ -115,7 +114,7 @@ compared to traditional CGRAs.
   \centering
 \begin{tabular*}{0.88\textwidth}{cccccc}
   \toprule
-  \textbf{Architectures} & DySER~\cite{dyser} & TI~\cite{ti} & revel~\cite{revel}
+  \textbf{Architectures} & DySER~\cite{dyser} & TI~\cite{ti} & REVEL~\cite{revel}
   & Plasticine~\cite{plasticine} & Gorgon~\cite{gorgon}\\\midrule
   \textbf{OPS} & 128GOPS & 64GOPS & 300GOPS & 12.3TFLOPS & 38.4TFLOPS \\
   \bottomrule
@@ -128,8 +127,9 @@ Plasticine variant proposed for joint machine learning and database acceleration
 The scale of Plasticine introduces challenges in network-on-chip design to sustain 
 bandwidth requirements while staying energy-efficient.
 The compilation strategy also needs to explore multiple-levels of
-concurrency in the program to saturate the compute throughput of the large-scale RDA;
-this strategy must introduce minimum synchronization overhead to maximize the scalability of the mapped design.
+concurrency in the program to saturate the compute throughput of a large-scale RDA;
+this strategy must introduce minimum synchronization overhead to maximize the scalability of the
+mapped designs.
 
 \section{The Need for Flexible Interconnects}
 Applications are mapped to RDAs by distributing computations spatially across multiple processing
@@ -154,25 +154,25 @@ High-level performance model of a spatial architecture.
 
 \Cref{fig:perfmodel} shows a high-level performance model of a spatially pipelined and parallelized
 reconfigurable architecture.
-Due to pipelined execution, the performance of a spatial architecture is dominant by throughput as
+Due to pipelined execution, the performance of a spatial architecture is mainly determined by throughput as
 supposed to latency. 
 Compute, on and off-chip memory accesses, and network become an integrated pipeline;
 overall performance is limited by the pipeline stage with the lowest throughput.
 The red terms in the equation are application-specific and capture the compute, memory, or IO-bound characteristics.
 The blue terms are the bandwidth and FLOPS available on the hardware.
 While the compute and memory access in application increases linearly with parallelization factor and pipelining depth,
-the required network bandwidth from application increases quadratically with increasing parallelism.
+the required network bandwidth from the applications increases quadratically with increasing parallelism.
 This means as we going to larger chip size, the network bandwidth must grow super linearly to achieve a perfect performance scaling, unless exploring pipeline parallelism.
 
 RDAs need the right amount of interconnect flexibility to achieve good resource utilization; 
 an inflexible interconnect constrains the space of
 valid application mappings and hinders resource utilization. 
 Furthermore, 
-in the quest to increase compute density, RDA data paths now 
+in the quest to increase compute density, RDA datapaths now 
 contain increasingly coarse-grained processing blocks such as pipelined, vectorized functional 
 units~\cite{plasticine, piperench, xilinx-acap}.
 Plasticine, as an example, has a 512-bit vector bus, which necessitates coarser communication and higher on-chip interconnect bandwidth to avoid creating performance bottlenecks. 
-Although many hardware accelerators with large, vectorized data paths have fixed local networks~\cite{brainwave}, there is a need for more
+Although many hardware accelerators with large, vectorized datapaths have fixed local networks~\cite{brainwave}, there is a need for more
 flexible global networks to adapt to future applications.
 Consequently, interconnect design for these RDAs involves achieving a balance between the often conflicting requirements of high bandwidth and high flexibility.
 
@@ -251,7 +251,8 @@ executes instructions. This design makes the architecture very scalable to achie
 to high-end GPUs and FPGAs.
 Nonetheless, it is not intuitive nor easy to implement a linear algebra kernel with the low-level
 declarative streaming configurations.
-By support imperative constructs on a data-flow architecture efficiently, \name not only improves the programmability of Plasticine, but also enables cross kernel optimizations on Plasticine.
+By support imperative constructs on a data-flow architecture efficiently, \name not only improves
+the programmability of Plasticine, but also enables cross kernel optimizations.
 These optimizations have demonstrated an average 30x speedup over a Tesla V100 GPU and 2x speedup over
 a Stratix 10 FPGA from a Plasticine with much less on-chip resource than the baseline architectures~\cite{tz_rnn}.
 
@@ -260,7 +261,7 @@ a Stratix 10 FPGA from a Plasticine with much less on-chip resource than the bas
 This thesis work is upon the prior works on the Plasticine architecture~\cite{plasticine} and the Spatial
 compiler~\cite{spatial}.
 We address the programmability and scalability challenges from a software
-and a hardware direction.
+and a hardware angle.
 We first introduce the Plasticine compiler---\name---that maps Spatial applications to Plasticine.
 Next, we present several architectural augmentations to Plasticine to increase the flexibility in interconnect, memory access patterns, and control flow.
 
@@ -269,7 +270,7 @@ The key contributions of this work are summarized below:
     \item We propose an imperative to dataflow transformation that implements imperative control constructs, such as nested loops and branch statements, on a pure dataflow architecture.
       This mapping strategy introduces minimum point-to-point synchronization that efficiently scales performance over distributed on-chip resources.
     \item We introduce compiler-enforced memory consistency to preserve memory ordering in the imperative program between distributed memory accesses.
-    \item We demonstrate a systematic approach to address physical constraints in a hierarchical RDA.
+    \item We illustrate a systematic approach to address physical constraints in a hierarchical RDA.
       We evaluate the tradeoff between a traversal-based vs. solver-based algorithms for program partitioning. 
       %We also present how to efficiently partition a logical memory over distributed
       %scratchpads.
@@ -278,11 +279,14 @@ The key contributions of this work are summarized below:
       We show a 1.9x average speedup over a Tesla V100 with a Plasticine with 8x less in on-chip
       resources due to the efficient use of the accelerator.
     \item We analyze the key communication patterns exhibited by spatial architectures by characterizing a variety of benchmarks from different domains.
-    \item We illustrate that static compiler knowledge can be used to reduce routing congestion.
+    \item We demonstrate that static compiler knowledge can be used to reduce routing congestion.
     \item We give a comprehensive quantitative analysis of the performance, area, and energy trade-offs 
       involved in choosing an RDA network, using a cycle-accurate simulator and ASIC synthesis with a \SI{28}{nm} industrial technology library.
       We explore a variety of design points, including static, dynamic, and hybrid networks, decreased flit widths and VC counts for dynamic networks and different flow-control strategies for static networks.
-    \item We show that bandwidth is the more critical metric for the network of RDAs, due to their pipelined execution nature. We found static-dynamic hybrid networks can give better energy efficiency by reducing overprovisioning in purely static networks and reducing routing distance.
+    \item We show that bandwidth is the most critical metric to assess network performance for RDA,
+      due to their pipelined execution nature. We found static-dynamic hybrid networks can give
+      better energy efficiency by reducing overprovisioning in purely static networks and reducing
+      data movement.
     \item We present changes in Plasticine required to support flexible memory access patterns and flexible control flow.
 \end{enumerate}
 
