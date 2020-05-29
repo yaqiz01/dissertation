@@ -1,7 +1,7 @@
 \chapter{Related Work} \label{sec:related}
 
 \section{Compiler}
-\paragraph{Streaming Dataflow IRs}
+\subsection{Streaming Dataflow IRs}
 Although many works claim to emit efficient and information-rich dataflow IRs for the downstream compilers, 
 very few of them can capture the high-level parallel patterns and implementation details that are critical 
 to RDA mappings. 
@@ -20,58 +20,58 @@ common in modern data-intensive applications.
 %Hence, such accelerators' performance can be bottlenecked by their limited interconnect bandwidth and power budget.
 %Sparse Processing Unit (SPU)~\cite{sparseaccel} can sustain higher interconnect bandwidth by introducing on-chip hierarchy; however, it lacks support for polyhedral memory banking~\cite{poly_cong}, a pivotal optimization to achieve massive parallel accesses to on-chip memory. Plasticine~\cite{plasticine} provides us with the desired architecture features; however, its compiler lacks the necessary components to support efficient streaming execution. Given that Plasticine resembles many key features of the RDA model, we target Plasticine with \name{}.
 
-\paragraph{Machine Learning Compilers}
-\begin{outline}
-\1 TensorFlow
-\1 Theano: A Python framework for fast computation of mathematical expressions.
-\1 Cognitive computing programming paradigm: a corelet language for composing networks of neurosynaptic
-cores. I
-\cite{onnc}
-\end{outline}
+%\paragraph{Machine Learning Compilers}
+%\begin{outline}
+%\1 TensorFlow
+%\1 Theano: A Python framework for fast computation of mathematical expressions.
+%\1 Cognitive computing programming paradigm: a corelet language for composing networks of neurosynaptic
+%cores. I
+%\cite{onnc}
+%\end{outline}
 
-Library approach
-\begin{outline}
-\1 Mxnet: A flexible and efficient machine learning library for heterogeneous distributed systems
-\1 Anintroductiontocomputational networks and the computational network toolkit
-\1 Neural Network Transformation and Co-design under Neuromorphic Hardware Constraints.
-\1 Caffe: Convolu- tional architecture for fast feature embedding.
-\1 Cambricon: An instruction set architecture for neu- ral networks.
-\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
-\end{outline}
+%Library approach
+%\begin{outline}
+%\1 Mxnet: A flexible and efficient machine learning library for heterogeneous distributed systems
+%\1 Anintroductiontocomputational networks and the computational network toolkit
+%\1 Neural Network Transformation and Co-design under Neuromorphic Hardware Constraints.
+%\1 Caffe: Convolu- tional architecture for fast feature embedding.
+%\1 Cambricon: An instruction set architecture for neu- ral networks.
+%\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
+%\end{outline}
 
 Kernel-specific loop optimization
 \begin{outline}
 \1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
 \end{outline}
 
-\paragraph{ML Accelerators}
-\begin{outline}
-%% Dataflow accelerators
-\1 A runtime reconfigurable dataflow processor for vision
-\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
-\1 %% domain specific loop fushion inter change
-\1 Truenorth: Design and tool flow of a 65 mw 1 million neuron programmable neurosynaptic chip. from
-IBM
-\1 Memristive Boltzmann machine: A hardware accelerator for combinatorial optimization and deep
-learning. 
-\1 Scalable hierarchical network-on- chip architecture for spiking neural network hardware
-implementations. 
-\1 Diannao: A small-footprint high-throughput accel- erator for ubiquitous machine-learning.
-\1 Pudiannao: A polyvalent machine learning accelerator. In ACM SIGARCH Computer Architecture News, Vol.
-43. ACM, 369–381.
-\1 Eyeriss: An energy- efficient reconfigurable accelerator for deep convolutional neural networks. I
-\1 EIE: efficient inference engine on compressed deep neural network.
-\1 Design and evolution of modular neural network architectures
-\1 In-Datacenter Performance Analysis of a Tensor Processing Unit. 
-\1 RENO: A high- efficient reconfigurable neuromorphic computing accelerator design.
-\1 Convolution engine: balancing efficiency \& flexibility in specialized computing.
-\1 Minerva: Enabling low-power, highly-accurate deep neural network acceler- ators. 
-\1 DNPU: An 8.1TOPS/W Reconfigurable CNN-RNN Processor for General Purpose Deep Neu- ral Networks. 
-\1 C-Brain: A deep learning accelerator that tames the diversity of CNNs through adaptive data-level
-\1 parallelization. 
-\end{outline}
+%\paragraph{ML Accelerators}
+%\begin{outline}
+%%% Dataflow accelerators
+%\1 A runtime reconfigurable dataflow processor for vision
+%\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
+%\1 %% domain specific loop fushion inter change
+%\1 Truenorth: Design and tool flow of a 65 mw 1 million neuron programmable neurosynaptic chip. from
+%IBM
+%\1 Memristive Boltzmann machine: A hardware accelerator for combinatorial optimization and deep
+%learning. 
+%\1 Scalable hierarchical network-on- chip architecture for spiking neural network hardware
+%implementations. 
+%\1 Diannao: A small-footprint high-throughput accel- erator for ubiquitous machine-learning.
+%\1 Pudiannao: A polyvalent machine learning accelerator. In ACM SIGARCH Computer Architecture News, Vol.
+%43. ACM, 369–381.
+%\1 Eyeriss: An energy- efficient reconfigurable accelerator for deep convolutional neural networks. I
+%\1 EIE: efficient inference engine on compressed deep neural network.
+%\1 Design and evolution of modular neural network architectures
+%\1 In-Datacenter Performance Analysis of a Tensor Processing Unit. 
+%\1 RENO: A high- efficient reconfigurable neuromorphic computing accelerator design.
+%\1 Convolution engine: balancing efficiency \& flexibility in specialized computing.
+%\1 Minerva: Enabling low-power, highly-accurate deep neural network acceler- ators. 
+%\1 DNPU: An 8.1TOPS/W Reconfigurable CNN-RNN Processor for General Purpose Deep Neu- ral Networks. 
+%\1 C-Brain: A deep learning accelerator that tames the diversity of CNNs through adaptive data-level
+%\1 parallelization. 
+%\end{outline}
 
-\paragraph{Spatial Compilers}
+\subsection{Spatial Compilers}
 Most previous works \cite{nowatzki, spatial-computation} only consider allocating resources at the same level. 
 \name{} takes a more general assumption by co-allocating resources at multiple levels of an accelerator's hierarchy.
 

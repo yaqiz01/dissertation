@@ -1,4 +1,4 @@
-\chapter{Background (WIP)}\label{sec:background}
+\chapter{Background}\label{sec:background}
 
 \section{Execution Schedules of Reconfigurable Architectures} 
 \begin{figure*}
@@ -18,9 +18,9 @@
 Hierarchical pipelining and parallelization in spatial architecture.
 (a) illustrates the runtime and throughput of a hierarchically pipelined and parallelized program on
 a reconfigurable spatial architecture. 
-At inner level, instructions within each basic
-block are fine-grained pipelined across iterations of the inner most loop. 
-At outer level, the inner loops are coarse-grained pipelined across the outer loop iterations.
+At the inner level, instructions within each basic
+block are fine-grained pipelined across iterations of the innermost loop. 
+At the outer level, the inner loops are coarse-grained pipelined across the outer loop iterations.
 Exploiting multiple levels of pipeline parallelism gives a total throughput of $x+y$ operations per
   cycle, where \emph{x} and \emph{y} are number of operations in the basic blocks.
 (b) Vectorizing the inner most loops B and C by \texttt{n} increases the throughput to $(x+y)n$.
@@ -33,21 +33,19 @@ The key advantage of reconfigurable spatial accelerators, compared to processor-
 is the ability to explore multiple levels of pipeline parallelism. 
 In traditional Von Neumann architectures~\cite{vonneumann}, like CPUs and GPUs,
 a computer consists of a processing unit that performs
-computation, a memory unit that stores the program states, and a control unit that tracks execution
-states and fetch the instruction to execute. This computing model inherently assumes that
-instructions with in a program are executed in time, maximizing the flexibility to 
-context switching between different workloads dynamically.
+computation, a memory unit that stores the program states, and a control unit that tracks execution states and fetches the instruction to execute. This computing model inherently assumes that
+instructions within a program are executed in time, maximizing the flexibility to context switching between different workloads dynamically.
 
 Reconfigurable accelerators are a direct violation of the von Neumann execution model; 
-instructions are statically imbedded in the datapath and executed in space as supposed to in time.
-One of the disadvantage of reconfigurable hardware is paying the resource cost for infrequently
+instructions are statically embedded in the datapath and executed in space as supposed to in time.
+One of the disadvantages of reconfigurable hardware is paying the resource cost for infrequently
 executed instructions, making it unsuitable for control-heavy workloads that traditional
 processors are efficient at.
 On the other hand, RDAs are particularly competitive in providing high-throughput, 
 low-latency, and energy-efficiency acceleration for data-analytical workloads.
-Data-analytical workloads encompass a wide domains of applications, including image processing,
+Data-analytical workloads encompass wide domains of applications, including image processing,
 recognition, machine translation, digital signal processing, network processing, etc.
-These applications exhibits a rich amount of data-level parallelism with relatively static control
+These applications exhibit a rich amount of data-level parallelism with relatively static control
 flow.
 
 \Cref{fig:pipeexec} shows an example of hierarchical parallelism and pipelining exploit by
@@ -61,14 +59,12 @@ architectures can increase on the pipelining dimension;
 for application with embarrassingly parallel workloads, spatial architecture can budget most
 resource on increasing parallelism.
 
-Another benefit of pipelined execution is easier to achieve good memory performance.
-Data accessed by different stage of the pipelines are stored in discrete scratchpads 
-instead of a shared cache; improving the effective on-chip bandwidth and capacity.
-Using explicitly managed scratchpad also tends to improve locality and 
-eliminate cache performance issues, such thrashing.
+Another benefit of pipelined execution is that it is relatively easy to achieve good memory performance.
+Data accessed by different stages of the pipelines are stored in discrete scratchpads instead of a shared cache; improving the effective on-chip bandwidth and capacity.
+Using explicitly managed scratchpad also tends to improve locality and eliminate cache performance issues, such as thrashing.
 Across kernels, pipelined execution reduces the amount of off-chip accesses for intermediate
 data.
-SIMT architectures, like GPUs, relying on high-bandwidth DRAM technology, such has HBM, to sustain
+SIMT architectures, like GPUs, relying on high-bandwidth DRAM technology, such as HBM, to sustain
 the compute throughput of massively parallelized threads.
 While providing over 10x more bandwidth than traditional DDR technologies, HBM is very limited in
 capacity, around 16GB as supposed to on the orders of TB for DDR.
