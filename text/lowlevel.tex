@@ -3,7 +3,7 @@
 \begin{figure*}
 \centering
 \includegraphics[width=0.7\textwidth]{figs/plasticine.pdf}
-\caption[Plasticine chip-level architecture]{Plasticine chip-level architectural diagram}
+\caption[Plasticine chip-level architecture]{Plasticine chip-level diagram}
 \label{fig:plasticine}
 \end{figure*}
 
@@ -14,13 +14,12 @@
 
 %Taking Plasticine as an example, 
 %the hardware has a collection of memory tiles (PMUs) and compute tiles (PCUs). 
-Plasticine is a tile-based reconfigurable dataflow accelerator designed for a wide range of data-intensive
+Plasticine is a tile-based RDA designed for a wide range of data-intensive
 workloads.
 With an area footprint of $113mm^2$ at 28-nm process, Plasticine packs 12.3 TFLOPS of compute
 throughput and 16 MB of on-chip memory. 
 Without bit-level reconfiguration overhead,
-Plasticine runs a higher clock frequency than most FPGAs, running at 1GHz 
-with a thermal design power at 49W. 
+Plasticine runs a higher clock frequency than most FPGAs at 1GHz with a thermal design power at 49W. 
 Previous work has shown a up to 77X performance-per-watt improvement from Plasticine over a Stratix
 V FPGA~\cite{plasticine}.
 \Cref{fig:plasticine} shows the chip-level design of Plasticine.
@@ -34,7 +33,7 @@ The data networks contain a single valid bit traveled along with the data;
 the control network has only the valid bit without a payload, transmitting control pulses across tiles.
 There are three types of configurable units: the pattern compute units (PCUs) perform the most
 heavy lifting computation on Plasticine; the pattern memory units (PMUs) contain all distributed
-scratchpad on-chip; and the DRAM Address Generation Unit (AG) that generates DRAM requests going to
+scratchpad on-chip; and the DRAM Address Generation Units (AGs) that generate DRAM requests going to
 the off-chip memory.
 
 Like FPGAs, Plasticine can also support multiple-level of parallelization and pipelining explained
@@ -44,7 +43,8 @@ For the rest of this section, we will explain the native programming interfaces 
 configurable units.
 
 \subsubsection{Pattern Compute Unit (PCU)}
-As the major compute workhorse of the architecture, a PCU contains a 6-stage SIMD pipeline with 16 SIMD lanes. 
+As the major compute workhorse of the architecture, a PCU contains a 6-stage single instruction
+multiple data (SIMD) pipeline with 16 SIMD lanes. 
 Unlike a processor core, the PCU can only statically configure six vector instructions throughout the
 entire execution.
 Additionally, the six instructions must be branch-free in order to be fully pipelined across stages.
@@ -53,6 +53,9 @@ The software can configure the SIMD pipeline to depend on a set of input streams
 produce a set of output streams. 
 There are three types of streams---single-bit control streams, 32-bit word scalar streams, and
 16-word vector streams---corresponding to three types of global networks.
+As the control stream does not have any payload, it is efficiently implemented with an up-down counter
+(UDC), whose value is incremented when the token arrives and decremented when the token is consumed. 
+The UDC can produce a similar valid (not empty) and ready (not full) interface as other data FIFOs. 
 Execution of the PCU is triggered by the arrival of its input dependencies and back pressured by
 the downstream buffers.
 PCU also contains configurable counters, which can be chained to produce the values of nested
@@ -78,22 +81,18 @@ loop iterators used in the datapath.
     (a) shows the simplified declarative-style configuration for the SIMD pipeline context in a PCU.
     Each PCU context can produce a set of output streams as a function of input streams and counter
     values.
-    Each stage contains multiple pipeline registers (PRs) that can propogate results across stages.
+    Each stage contains multiple pipeline registers (PRs) that can propagate results across stages.
     A stage can read PRs from the previous stage and write to PRs in its current stage.
-    Only the first stage can read streams and counter values and the last stage can write streams. 
-    Other stages need to propogate the required values through PRs.
+    Only the first stage can read streams and counter values, and only the last stage can write to streams. 
+    Other stages need to propagate the required values through PRs.
     (b) shows a simplified configuration where registers are implicitly allocated.
-    By configuring when each stream is enqueued and dequeued using signals from the chained counters, 
-    these streams are effectively read and written within different loop bodies.
-    (c) shows the effective execution achieved in an imperative program.
-    In (b), the \texttt{valid} signal of the inner most counter \texttt{j} is high whenever the context is
+    The \texttt{valid} signal of the inner most counter \texttt{j} is high whenever the context is
     enabled. The context is implicitly triggered whenever its input streams \texttt{streamA},
     \texttt{streamB}, and \texttt{streamC} are non-empty and output stream \texttt{outputD} is ready.
-    %The declarative configuration also specifies a pipeline register (PR) to holds output of each stage
-    %and explicitly forward live variables across stages. 
-    %For simplicity, these details are omitted in the imperative-style on the right and
-    %\Cref{sec:regalloc} gives more details on register allocation for the SIMD pipeline.
-    In (b) and (c), we move the definitions of streams outside of the context, so they can be written by
+    By configuring when each stream is enqueued and dequeued using signals from the chained counters, 
+    these streams are effectively read and written within different loop bodies.
+    (c) shows the effective execution of the declarative configuration achieved in an imperative program.
+    We move the definitions of streams outside of the context in (b) and (c), so they can be written by
     other contexts. 
     Each stream can have exactly one writer. 
     If a stream has more than one reader, effectively the
@@ -111,7 +110,7 @@ signals, can be used to dequeue and enqueue the input and output streams, respec
 The counter bounds (i.e., min, max, and stride) can also be data-dependent using values from the scalar input streams. Compared to other dataflow architectures, the dataflow engine in Plasticine is more flexible in that it allows dynamic enqueue and dequeue window for its input and output streams.
 \emph{This feature enables Plasticine to support complex control hierarchy, such as non-perfectly nested loops and
 branch statements, across contexts even though individual contexts can only execute instructions that are
-control-free}. 
+branch-free}. 
 
 \Cref{fig:contextc} represents the effective execution achieved in an imperative-style program.
 For simplicity, we will use the imperative-style configuration in the later discussion.
@@ -119,10 +118,11 @@ However, it is important to realize the instructions in the imperative-style con
 executed in time, but rather in space.
 There is a one-to-one translation from the declarative-style configuration to the imperative-style, but not in a reverse way.
 %There are many restrictions on the structure of the program in the imperative-style. 
-Instructions in the contexts must belongs to a single basic block, and the loops need to be
+For example, in the imperative-style, 
+instructions in the contexts must belongs to a single basic block, and the loops need to be
 perfectly nested (only accesses to streams can occur in the outer loops).
 
-There is no global scheduler to orchestrate the execution order among contexts---the execution is purely
+There is no global scheduler that orchestrates the execution order among contexts---the execution is purely
 streaming and dataflow driven. 
 The only way to order the execution of two independent contexts is to introduce a control \term{token} between two contexts acting like a dummy data-dependency.
 This restriction eliminates the possible long-traveling wires and communication hot spots caused by a
@@ -138,7 +138,7 @@ In contrast to the PCU SIMD pipeline that has to be programmed atomically, the a
 In addition to compute stages, resources such as I/O ports, buffers, and counters are also shared across contexts.
 It is the software's responsibility to make sure the total resources consumed by all
 contexts do not exceed the resource limits of the PMU.
-All contexts within PMU have access to the scratchpads with unprotected order. For instance, to
+All contexts within PMU have access to the scratchpads with unprotected order. To
 restrict a read context to access the scratchpad after the write context, the software must explicitly allocate
 a token from the write context to the read context.
 \name automatically generates required control tokens across contexts such that the memory access order is
@@ -146,7 +146,7 @@ consistent with the program order from a high-level imperative programming langu
 
 Unlike most accelerators at this scale, Plasticine does not have any shared global on-chip memory. 
 This design dramatically improves the memory density and scalability of the architecture 
-by eliminating hardware complexity and overhead to support complex cache coherence protocol.
+by eliminating communication hotspot and bandwidth limitation of a shared memory.
 %% TODO: add a sentence commenting on the network bandwidth
 On the other hand, however, the burden of maintaining a consistent view of a logical memory mapped
 across distributed scratchpads is left to the software.
@@ -156,7 +156,7 @@ One of the major contributions of \name is to hide this synchronization burden f
 
 \subsubsection{DRAM Interface}
 The Plasticine architecture provides access to four DDR channels on the two sides of the
-tiled array, as shown in \Cref{fig:plasticine}. 
+tile array, as shown in \Cref{fig:plasticine}. 
 Each side has a column of DRAM address generator (AG) specialized in generating off-chip
 requests. Like compute pipeline in PMUs, the pipeline in AG is also non-vectorized with integer
 arithmetics. Each AG can generate a load or a store request streams to the off-chip memory. All
@@ -165,5 +165,5 @@ and no ordering guaranteed across streams.
 In streaming pipelined execution, the program can use multiple streams for DRAM accesses appeared in
 different locations of the program.
 To provide off-chip memory consistency, \name allocates
-synchronizations across these streams to preserve memory order expected by the program.
+synchronizations across different streams to preserve memory order expected by the program.
 

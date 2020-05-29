@@ -50,15 +50,16 @@ implementations of the application, hiding the low-level hardware interfaces and
 users.
 To target Plasticine, we take applications described in Spatial, disabling FPGA-specific
 transformations, and perform architecture-specific lowering to \name's IR.
-The key transformations we take from the Spatial compiler is loop unrolling and memory buffering and partitioning
+The key transformations we take from the Spatial compiler is loop unrolling, memory buffering, and
+memory partitioning
 (explained later in \Cref{sec:memsplit}).
 Optimizations, such as retiming and scheduling, are disabled for Plasticine, as they cannot be
 directly applied.
 \Cref{fig:spatialstack} summarizes the compiler flow to target FPGAs and Plasticine from Spatial.
 
-Although \name takes Spatial as front-end, the compilation techniques in \name can be equally
-applied to other imperative languages with similar control constructs, such as C-based high-level
-synthesis language, the backend of Halide IR, the TACO compiler, etc.
+Although \name takes Spatial as the front-end language, \name can be equally
+integrated with other imperative languages with similar control constructs, such as C-based high-level
+synthesis language, the backend of the Halide IR~\cite{halide}, the TACO~\cite{taco} compiler, etc.
 Using Spatial as our front-end language, however, has a few advantages.
 Rather than adapting existing languages for processor architectures like in most HLS tools, 
 the design of spatial is engineered specifically for reconfigurable architectures.

@@ -201,7 +201,7 @@ with an end-to-end integration with these frameworks.
 \centering
 \includegraphics[width=1\textwidth]{figs/blackbox.pdf}
 \caption{
-  Blackbox approach.
+  Blackbox approach in~\cite{tensorflow,pytorch,caffe}.
 }
 \end{subfigure}
 \hfill
@@ -209,7 +209,7 @@ with an end-to-end integration with these frameworks.
 \centering
 \includegraphics[width=1\textwidth]{figs/whitebox.pdf}
 \caption{
-  Whitebox approach.
+  Whitebox approach in~\cite{tvm,taco,tc,onnc,halide}.
 }
 \end{subfigure}
 \caption[Big picture of machine learning frameworks]{
@@ -240,7 +240,7 @@ constraints.
 The framework then uses a series of transformations and optimizations to reformulate the kernel to an imperative implementation that can be supported by the accelerator. 
 The transformation is often target-specific and studies have demonstrated ML-based cost models to
 facilitate the automatic searching of backend-specific schedules~\cite{tvm}.
-Next, the compiler can easily translate the imperative IR to the imperative front-ends of different
+Next, the compiler can easily translate the imperative intermediate representation (IR) to the imperative front-ends of different
 accelerators.
 
 To enable easy integration of the white-box approach, we introduce a compiler--\name--that raise

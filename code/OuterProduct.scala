@@ -1,5 +1,5 @@
 // Host to accelerator register for scalar input with 
-// user annotated value
+// user annotated value for static analysis
 val N = ArgIn[Int]; 
 bound(N) = 1024
 // 1-D DRAM size in N
