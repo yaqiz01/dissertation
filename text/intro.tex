@@ -8,7 +8,7 @@ including dynamic-instruction fetching and decoding, branch prediction, and a ca
 with less than 20\% of 
 the energy on the actual computation~\cite{mark}.
 Even worse, power wall is limiting the entire multicore family
-to reach the doubled performance per generation enabled by technology scaling in the 
+to reach the doubled performance per generation scaling enabled by technology scaling in the 
 past~\cite{multicorescale}.
 
 For this reason, hardware acceleration is emerging in various compute-intensive application domains 
@@ -86,8 +86,8 @@ datapath.
 FPGAs have been used to deploy services commercially~\cite{microsoft, baidu, deephi} and can be rented on the AWS F1 cloud~\cite{aws}. 
 Although around for a long time, FPGAs are not broadly accepted among high-level application programmers due to their low-level programming interface and long compilation time.
 Fine-tuning applications on FPGAs require expertise in digital design and takes a long
-development cycle, which hinders their accessibility to the general software community.
-As an application-level accelerator, FPGAs also suffers from overhead in fine-grained reconfigurability; 
+development cycle, which hinder their accessibility to the general software community.
+As an application-level accelerator, FPGAs also suffer from overhead in fine-grained reconfigurability; 
 studies have shown that over 60\% of the chip area of an FPGA is spent on routing resources~\cite{fpgaSurvey, calhoun, fpgaPower}. 
 
 %Lately, Reconfigurable Dataflow Architecture (RDAs)~\cite{plasticine, ti, streamdataflow,neuflow,cnndataflow,dataflowarch} are emerging as a new class of spatial accelerators that 
@@ -128,20 +128,21 @@ Plasticine variant proposed for joint machine learning and database acceleration
 
 The scale of Plasticine introduces challenges in network-on-chip design to sustain 
 bandwidth requirements while staying energy-efficient.
-On the other hand, we also need to adjust the compilation strategy to explore multiple-levels of
+The compilation strategy also needs to explore multiple-levels of
 concurrency in the program to saturate the compute throughput of the large-scale RDA;
 this strategy must introduce minimum synchronization overhead to maximize the scalability of the mapped design.
 
 \section{The Need for Flexible Interconnects}
 Applications are mapped to RDAs by distributing computations spatially across multiple processing
 blocks and executing them in a pipelined, data-driven fashion. 
-On traditional Networks on Chip
+In traditional Networks-on-Chip
 (NoCs) for multicore systems, communication is the result of explicit message passing between
-parallel workers or messages to handle cache misses from the coherence protocol; these are bursty and
+parallel workers or cache misses that generate messages for coherence protocol; these traffic are bursty and
 relatively infrequent. 
 On RDAs, however, applications are distributed by parallelizing and pipelining; 
 pipelining introduces frequent and throughput-sensitive communication. 
-Because different applications are parallelized and pipelined differently, they have different communication requirements.
+Applications with different characteristics, such as compute vs. memory-bound, also exhibit 
+very different communication patterns.
 
 \begin{figure*}
 \centering
@@ -156,14 +157,14 @@ High-level performance model of a spatial architecture.
 reconfigurable architecture.
 Due to pipelined execution, the performance of a spatial architecture is dominant by throughput as
 supposed to latency. 
-Compute, on and off-chip memory accesses, and network become a integrated pipeline, 
-where performance is limited by the pipeline stage with lowest throughput.
+Compute, on and off-chip memory accesses, and network become a integrated pipeline;
+overall performance is limited by the pipeline stage with lowest throughput.
 The red terms in the equation are application-specific and capture the compute, memory, or IO-bound characteristics.
-The blue terms are the available bandwidth and FLOPS on the hardware.
+The blue terms are the bandwidth and FLOPS available on the hardware.
 While the compute and memory access in application increases linearly with parallelization factor and pipelining depth,
 the required network bandwidth from application increases quadratically with increasing parallelism.
-This means as we going to larger chip size, the network bandwidth must grow super linearly in
-order to achieve a perfect performance scaling, unless exploring pipeline parallelism.
+This means as we going to larger chip size, the network bandwidth must grow super linearly 
+to achieve a perfect performance scaling, unless exploring pipeline parallelism.
 
 RDAs need the right amount of interconnect flexibility to achieve good resource utilization; 
 an inflexible interconnect constrains the space of
@@ -179,6 +180,23 @@ Consequently, interconnect design for these RDAs involves achieving a balance be
 
 \section{The Gap between High-Level DSLs and Dataflow Accelerators}
 
+Recent years have seen an explosion of hardware accelerators, primarily motivated by AI
+applications~\cite{tangram,truenorth,memristive,dadiannao,pudiannao,chen2017eyeriss,eie,reno,convengine,minerva,dnpu,cbrain}. 
+Research in software infrastructures for these accelerators, however, is just emerging.
+Unlike CPUs, accelerators do not support a standard instruction set architecture (ISA), alleviating the overhead from
+layers of abstractions and the burden of backward compatibility. 
+Nonetheless, lack of a common abstraction makes it very hard to share compiler infrastructure
+across accelerators. 
+
+Most RDAs comes with a co-designed software layer that is very low-level and restrictive,
+requiring expertise knowledge in hardware architecture to efficiently target the accelerator.
+On the other side,
+machine learning frameworks~\cite{tensorflow,caffe,pytorch,taco,onnc,tc} provide high-level and 
+succinct front-end abstraction that targets multiple hardware platforms. 
+Yet most of theses frameworks only target mainstream accelerators, such as GPUs and FPGAs.
+Very few of the accelerators mentioned above can support more than a few proof-of-concept models
+with a end-to-end integration with these frameworks.
+
 \begin{figure*}
 \centering
 \begin{subfigure}[b]{0.48\textwidth}
@@ -193,20 +211,53 @@ Consequently, interconnect design for these RDAs involves achieving a balance be
 \centering
 \includegraphics[width=1\textwidth]{figs/whitebox.pdf}
 \caption{
+  Whitebox approach.
 }
 \end{subfigure}
-\caption[Big picture of accelerator compiler stack]{
-  Whitebox approach.
+\caption[Big picture of machine learning frameworks]{
+  Big picture of machine learning frameworks.
 }
 \label{fig:bigpic}
 \end{figure*}
 
-Recent years have seen a rise in interests in hardware accelerators, primarily motivated by AI applications. 
-Research in software infrastructure for these accelerators, however, is just emerging.
-Unlike CPUs, these accelerators do not support a standard ISAs, alleviating the overhead from
-layers of abstractions and the burden of backward compatibility. 
-Nonetheless, lack of a common abstraction makes it very hard to sharing compiler infrastructure
-across accelerators. 
+Part of the reason behind this is the massive engineering effort to program these accelerators.
+Frameworks like TensorFlow~\cite{tensorflow} and PyTorch~\cite{caffe} uses a template library
+approach, as shown in ~\Cref{fig:bigpic} (a).
+These frameworks treats operations in the ML dataflow graph as blackbox kernels and implement
+every operation for every backend, requiring expensive engineering hours and hardware expertise to
+fine tune each accelerator.
+Furthermore, cross-kernel optimizations, such as fusion, often provide orders of magnitude improvement in efficiency.
+%%TODO: citation
+Recent studies in sparse ML also show promising speedup on large ML models~\cite{eie}. 
+However, sparse kernels require various data formats with very different implementation than the dense
+version~\cite{tacosparse}.
+In the blackbox approach, each fused operation and data format corresponds to a new blackbox
+kernel.
+As a result, the combination of required templates easily becomes untractable.
+
+The alternative whitebox approach showin in~\Cref{fig:bigpic} (b) uses a succinct front-end
+representation, such as index notations~\cite{taco}, to express the computation of a kernel.
+This representation, however, cannot be directly mapped to accelerators due to various physical
+constraints.
+The framework then uses a series of transformations and optimizations to reformulate the kernel 
+to an imperative implementation that can be supported by the accelerator. 
+The transformation is often target-specific and studies have demonstrated ML-based cost models to
+facilitate the automatic searching of backend-specific schedules~\cite{tvm}.
+Next, the compiler can easily translates the imperative IR to the imperative front-ends of different
+accelerators.
+
+To enable an easy integration of the whitebox approach, we introduce a compiler--\name--that raise
+the programming abstraction of Plasticine to an imperative, loop-based
+language for general reconfigurable hardware---Spatial~\cite{spatial}.
+Plasticine is a purely dataflow accelerator without a centralized scheduler that
+executes instructions. This design makes the architecture very scalable to achieve FLOPS comparable
+to high-end GPUs and FPGAs.
+Nonetheless, it is not intuitive nor easy to implement a linear algebra kernel with the low-level
+declarative streaming configurations.
+By support imperative constructs on a data-flow architecture efficiently, \name not only improves
+the programmability of Plasticine, but also enables cross kernel optimizations on Plasticine.
+These optimizations have demonstrated an average 30x speedup over a Tesla V100 GPU and 2x speedup over
+a Stratix 10 FPGA from a Plasticine with much less on-chip resource than the baseline architectures~\cite{tz_rnn} .
 
 \section{Contribution}
 
