@@ -91,7 +91,7 @@ In a more aggressive specialization,
   we can fuse the multiply and rearrange into the same stage.
 We also fuse the first low-precision reduction with the next rearrange shown in Figure \ref{fig:lowprec} (d).
 In this way, we can perform the entire low-precision map-reduce in 2 stages in addition to the original full precision reduction.
-In order to maximize hardware reuse,
+To maximize hardware reuse,
   we assume that it is possible to construct a full precision FU
   using low-precision FUs.
 
@@ -128,7 +128,7 @@ Evaluating an RNN cell containing $N$ hidden units and $N$ input features
   requires $2N^2$ computations and $N^2+N$ memory reads.
 With a large $N$, the compute to memory ratio is 2:1.
 The original Plasticine architecture uses a checkerboard layout
-  with 1 to 1 ratio between PCU and PMU.
+  with a 1 to 1 ratio between PCU and PMU.
 A PCU has six stages and 16 lanes, and a PMU has 16 banks, which gives a 6:1 ratio between
   compute resource and on-chip memory read bandwidth.
 As a result of this layout,

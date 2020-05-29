@@ -11,8 +11,7 @@ Accelerators often have heterogeneity in compute resources to improve efficiency
 special operations.
 In Plasticine, PMUs and DAGs have specialized compute pipelines for address calculation that are 
 less capable than the compute pipeline in PCUs.
-However, heterogeneity tends to reduce average utilization because different applications, and even the same
-application with different data sizes, can vary highly in the desired ratio among different
+However, heterogeneity tends to reduce average utilization because different applications, and even the same application with different data sizes, can vary highly in the desired ratio among different
 resource~\cite{tz_rnn}.
 A compute-bound application, for example, can heavily underutilize the DAGs and PMUs.
 To address this problem, \name models the virtual to physical assignment as a constraint satisfaction problem; 
@@ -268,7 +267,7 @@ optimization-based algorithm with an optimal solution but long compile time.
 \subsubsection{Traversal-based Solution}
 To address the cycle constraint, the traversal-based algorithm performs a topological sort of the dataflow graph.
 The topological traversal ignores the back edges in the graph. 
-Staring from the beginning of the sorted list, the algorithm iteratively adds nodes into a partition
+Starting from the beginning of the sorted list, the algorithm iteratively adds nodes into a partition
 until it fits no more nodes. The algorithm then repeats the process with a new partition.
 This approach guarantees that no cycle is introduced with $O(V+E)$ complexity, 
 where $V$ and $E$ are the numbers of vertices and edges in the dataflow graph.
@@ -344,7 +343,7 @@ Such graphs typically end up with long-live variables across partitions that req
 \Cref{fig:split} (b) and (c) shows the compile time for these algorithms. The single-threaded
 the traversal-based algorithm runs in minutes, which is significantly faster than the parallelized solver that takes hours to days.
 In general, the solver runtime becomes quickly unbounded with a large amount of VUs.
-%\todo{show solver time with increasing number of VBs}.
+%\todo{show solver time with an increasing number of VBs}.
 
 In summary, the solver solution provides a guaranteed close-to-optimum solution at an expensive
 compile time. Nonetheless, the solver-solution treats the retiming and partitioning as a joint optimization,
@@ -354,8 +353,8 @@ Moreover, the solver-based solution tends to produce a better result for archite
 bound and relax stage constraint.
 The traversal-based solutions, on the other hand, can produce a decent solution in a short amount of
 time.
-However, the solution is a function of the traversal order; hense, the quality of the partitioning
-is highly sensitive to the graph strutures.
+However, the solution is a function of the traversal order; hence, the quality of the partitioning
+is highly sensitive to the graph structures.
 Certain traversal orders show a 10-50\% worse in resource than the solver-based solution in 
 \Cref{fig:split} (a).
 In practice, we can combine the two approaches and invoke the expensive solver only when the

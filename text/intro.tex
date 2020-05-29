@@ -85,8 +85,7 @@ The flexible interconnect and lookup table-based logic gate can be configured to
 datapath.
 FPGAs have been used to deploy services commercially~\cite{microsoft, baidu, deephi} and can be rented on the AWS F1 cloud~\cite{aws}. 
 Although around for a long time, FPGAs are not broadly accepted among high-level application programmers due to their low-level programming interface and long compilation time.
-Fine-tuning applications on FPGAs require expertise in digital design and takes a long
-development cycle, which hinder their accessibility to the general software community.
+Fine-tuning applications on FPGAs requires expertise in digital design and takes a long development cycle, which hinder their accessibility to the general software community.
 As an application-level accelerator, FPGAs also suffer from overhead in fine-grained reconfigurability; 
 studies have shown that over 60\% of the chip area of an FPGA is spent on routing resources~\cite{fpgaSurvey, calhoun, fpgaPower}. 
 
@@ -158,7 +157,7 @@ reconfigurable architecture.
 Due to pipelined execution, the performance of a spatial architecture is dominant by throughput as
 supposed to latency. 
 Compute, on and off-chip memory accesses, and network become an integrated pipeline;
-overall performance is limited by the pipeline stage with lowest throughput.
+overall performance is limited by the pipeline stage with the lowest throughput.
 The red terms in the equation are application-specific and capture the compute, memory, or IO-bound characteristics.
 The blue terms are the bandwidth and FLOPS available on the hardware.
 While the compute and memory access in application increases linearly with parallelization factor and pipelining depth,
@@ -263,8 +262,7 @@ compiler~\cite{spatial}.
 We address the programmability and scalability challenges from a software
 and a hardware direction.
 We first introduce the Plasticine compiler---\name---that maps Spatial applications to Plasticine.
-Next, we present several architectural augmentations to Plasticine to increase the flexibility in 
-interconnect, memory access patterns, and control flow.
+Next, we present several architectural augmentations to Plasticine to increase the flexibility in interconnect, memory access patterns, and control flow.
 
 The key contributions of this work are summarized below:
 \begin{enumerate}

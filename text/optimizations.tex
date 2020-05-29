@@ -45,7 +45,7 @@ For example, \name maps on-chip array to a scratchpad by default. However, if al
 writers of the array index into memory with constant addresses, often as a result of constant propagation of full
 parallelized loops, \name maps the memory to the input buffer of a context, and setup datapath to
 connect the reader and writer directly.
-\Cref{fig:msr} shows an example of strength reduce a scratchpad into an input buffer with additional
+\Cref{fig:msr} shows an example of strength reducing a scratchpad into an input buffer with additional
 operations.
 Fully parallelized loops are a common outcome of an automatic design space exploration of the parallelization factors.
 We also use it as a way for the user to explicitly program vectorized streaming operation for
@@ -80,7 +80,7 @@ reader (R2) if it can prove the propagation is safe.
 \Cref{fig:rtelm} shows examples of route-through opportunities.
 These patterns are often the
 outcome of multiple levels of compiler lowering and the \emph{msr} optimization. 
-Eliminating route-through patterns can simplify control hierarchy and reduce the number of basic blocks, which eliminates contexts.
+Eliminating route-through patterns can simplify the control hierarchy and reduce the number of basic blocks, which eliminates contexts.
 
 \begin{figure*}
 \centering

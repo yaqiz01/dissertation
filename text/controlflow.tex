@@ -221,7 +221,7 @@ scheduling in the hardware search for independent instructions to execute concur
 \name starts with executing \emph{all} basic blocks of a program concurrently,
 introducing minimum synchronizations wherever necessary.
 Unsurprisingly, a control-heavy program with lots of basic blocks can easily run out of PUs.
-Nonetheless, the intended workload for RDAs are data-analytical programs with relatively simple
+Nonetheless, the intended workloads for RDAs are data-analytical programs with relatively simple
 control flows and abundant data-level parallelism (i.e., most basic blocks having a high repetition
 count).
 The control flows, however, might not be simple enough that a SIMT architecture, designed for
@@ -247,9 +247,9 @@ enforcing the program order.
 %to serialize their execution order based on the program order.
 %This control token is no different from a regular data-dependency and can be viewed as 
 %an access grant to the shared memory across contexts. 
-%By controlling {\em where}, {\em how}, and {\em when} to pass the token, \name is able to maintain a consistent update ordering between the pipelined and parallelized contexts that access the shared memory.
+%By controlling {\em where}, {\em how}, and {\em when} to pass the token, \name can maintain a consistent update ordering between the pipelined and parallelized contexts that access the shared memory.
 
-%We refer to a memory access appeared in the input IR as a \emph{declared access}, as supposed to
+%We refer to memory access appeared in the input IR as a \emph{declared access}, as supposed to
 %memory accesses executed at runtime.
 %\texttt{W1} and \texttt{R1} are examples of two declared accesses in \Cref{fig:contexteg}
 %In the rest of this section, we will walk through how \name allocates control tokens
@@ -278,7 +278,7 @@ This is essential to ensure the memory effect of access $A$ is visible to access
 might take multiple cycles to serve a request.
 For any two accesses enclosed by a loop in the input IR, there could be a loop-carried dependency (LCD) from
 the later access in the program order to the earlier access.
-When inserting a token for a LCD, the receiver's token buffer is always initialized with at least one token,
+When inserting a token for an LCD, the receiver's token buffer is always initialized with at least one token,
 enabling the earlier access for the first iteration of the loop. \Cref{fig:contextalloc} (c) shows the
 forward and the backward token to enforce two accesses under a loop. The initial element in backward
 token breaks the cyclic dependency. 
@@ -363,7 +363,7 @@ Lastly, for each edge in the reduced dependency graph, \name inserts token betwe
 requesting contexts of the source and destination access explained earlier in the \emph{How} section.
 
 \subparagraph{Dependency Graph Construction}
-For every access in the IR, \name{} checks on other accesses that occured earlier in the program order
+For every access in the IR, \name{} checks on other accesses that occurred earlier in the program order
 for a possible forward dependency, and later in the program order for a possible loop-carried dependency (LCD). 
 %In the example in \Cref{fig:contexteg}, there is a forward data dependency between \texttt{W1} and
 %\texttt{R1}, and a write-after-read LCD between \texttt{R1} and \texttt{W1}. 
@@ -382,7 +382,7 @@ types.
 %address space}. 
 %%\gist{mension port virtualization}
 %Therefore, from the programmer's perspective, users do not need
-%to serialize the two contexts reading the same DRAM address. 
+%to to serialize the two contexts reading the same DRAM address. 
 %Plasticine's SRAMs, on the other hand, have a single read and write port. 
 %Programmers must guarantee that a PMU receives read requests from a single context
 %at any point in time for correctness.
@@ -537,8 +537,7 @@ types.
 
 %Enforcing all dependencies in the dependency graph may not be necessary, as enforcing a subset of
 %dependencies can be sufficient to enforce the order of the whole graph.
-\name reduces the dependency edges in two passes, processing edges for forward and
-backward dependencies separately.
+\name reduces the dependency edges in two passes, processing edges for the forward and backward dependencies separately.
 
 For forward dependencies, \name performs a transitive reduction (TR)\cite{tr} on the forward dependency
 graph. TR keeps the minimum of edges in a graph that preserves the connectivity of the original
