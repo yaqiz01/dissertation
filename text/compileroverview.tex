@@ -22,7 +22,7 @@ controller enables the child controllers one at a time; if the user chooses to m
   All units are distributed across an on-chip network that can introduce unpredictable latency.
   The number on the edges indicates event order.
   Here we show a scenario where read requests from \emph{C} do not observe the write requests from
-  \emph{B} that ocurr earlier in the program order due to network latency between \emph{B} and
+  \emph{B} that occur earlier in the program order due to network latency between \emph{B} and
   \emph{mem}.
   (b) Distributed controllers in \name. Each innermost controller makes a copy of all enclosing controllers. The signals from these controllers are used to generate synchronization between distributed compute units. To address the problem in (a), the memory also needs to provide a write acknowledgment per write request for synchronization.
 }
@@ -42,7 +42,7 @@ like Plasticine that has much less routing resource than an FPGA.
 Furthermore, synchronizing the compute only is insufficient to ensure memory effects are observed by
 the remotely distributed accessors, as shown in \Cref{fig:centralctrl} (a).
 
-To address this challenge, we want to eliminate the centralized outer controllers.
+To address this challenge, we want to eliminate centralized outer controllers.
 At high-level, \name performs loop divisions (discussed later in ~\Cref{sec:loopdiv}) on each outer controller, such that
 all innermost controllers are perfectly nested, as shown in \Cref{fig:centralctrl} (b).
 \name then allocates synchronization tokens across the distributed innermost controllers.
@@ -58,8 +58,7 @@ The second challenge in this mapping process is that controllers in the spatial 
 can consume an arbitrary amount of compute and memory resources, exceeding the capacity of individual
 PUs. For instance, a user might write a memory multiple times throughout the program with writers mapped to different PUs. The physical scratchpad, however, only has a single write
 port. 
-\name generates control tokens among the distributed writers to time-share the write port and 
-enforce the ordering between writers.
+\name generates control tokens among the distributed writers to time-share the write port and enforce the ordering between writers.
 With resource virtualization, \name composes or time-share the physical resources when software usage exceeding the hardware limit.
 
 \begin{figure*}
@@ -88,18 +87,18 @@ parallelized program executed in time.
 At the end of the allocation phase, a virtual unit can consume as many resources as the program
 requires. 
 
-\name further virtualizes resource allocation and hides the underlying resource constrains on
+\name further virtualizes resource allocation and hides the underlying resource constraints on
 this hierarchical architecture from the programmers.
-\Cref{sec:resalloc} dives into the \term{resource allocation} phase, where \name assign each VU to a
-PU that processes the required resources. If no PU can execute a VU, \name partitions the
-VU into multiple VUs to eliminate constraint violations. If there is insufficient PU or the VU cannot be partitioned, the mapping process fails with appropriate hints to the programmer for the
+\Cref{sec:resalloc} dives into the \term{resource allocation} phase, where \name assigns each VU to a
+PU that processes the required resources. If no PU can fit a VU, \name partitions the
+VU into multiple VUs to resolve the constraint violation. If there is insufficient PU or the VU cannot be partitioned, the mapping process fails with appropriate hints to the programmer for the
 limiting resources.
 
 Throughout the first two phases, \name introduces various \term{optimizations} that either reduce the
 the resource cost of the VUDFG, or alleviates potential performance bottleneck in the streaming
 pipeline.
 After all VU fits in at least one type of PU, \name performs a global optimization that merges small VUs into a larger VU to reduce resource fragmentations.
-\Cref{sec:opt} enumerates the optimizations \name perform.
+\Cref{sec:opt} enumerates the optimizations \name performs.
 
 The output of the resource allocation phase is a VUDFG with a tagged PU type for each VU.
 It is up to the
