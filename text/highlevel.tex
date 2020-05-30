@@ -59,20 +59,21 @@ directly applied.
 
 Although \name takes Spatial as the front-end language, \name can be equally
 integrated with other imperative languages with similar control constructs, such as C-based high-level
-synthesis language, the backend of the Halide IR~\cite{halide}, the TACO~\cite{taco} compiler, etc.
-Using Spatial as our front-end language, however, has a few advantages.
-Rather than adapting existing languages for processor architectures like in most HLS tools, 
-the design of spatial is engineered specifically for reconfigurable architectures.
+synthesis language, the back-end of the Halide IR~\cite{halide}, the TACO~\cite{taco} compiler, etc.
+Nonetheless, using Spatial as our front-end has a few advantages.
+Rather than adapting existing languages for processor architectures like most HLS languages, 
+Spatial is designed specifically for reconfigurable spatial architectures.
 Spatial's language constructs capture the scheduling scheme that can be explored by most
 spatial architectures, such as coarse-grained pipelining, streaming dataflow, hierarchical parallelization, 
 and finite state machines (FSM).
-These language constructs are missing from a processor-based language as they cannot be supported.
+These language constructs are missing from a processor-based language as they cannot be supported by
+a processor.
 Spatial IR also differs in its representation of control flow and memory constructs, which are more suitable for analyses of spatial architectures.
 
-Most compilers, such as LLVM, use control flow graphs to represent the control in an imperative program.
+Most compilers, such as LLVM~\cite{llvm}, use control flow graphs to represent the control constructs in an imperative program.
 The control flow graph implicitly assumes the program is executed in time, which makes it unsuitable
 for analysis of a reconfigurable architecture that executes the program in space. 
-Spatial uses a control hierarchy in the IR to capture the scheduling of the program.
+Instead, Spatial uses a control hierarchy in the IR to capture the scheduling of the program.
 The control hierarchy uses a tree structure to represent the nested control constructs, making it
 easier to analyze the relations between controllers.
 \Cref{fig:spatialegpar} (b) and (c) shows an example of a control flow graph vs. a control hierarchy.
@@ -82,8 +83,8 @@ A basic block is attached to each \emph{innermost} controller including instruct
 and memory accesses.
 If the program has instructions in an outer loop, Spatial automatically inserts a \emph{unit}
 controller to wrap the floating instructions.
-\name takes the backend of Spatial IR as the input, which is a control hierarchy after loop
-unrolling.
+\name takes the back-end of Spatial IR as input, which is a control hierarchy after loop
+unrolling shown in ~\Cref{fig:spatialegpar} (c).
 
 \begin{figure*}
 \centering
@@ -118,16 +119,15 @@ unrolling.
 
 %% Memory model
 The representation of data structures in traditional IRs often marries to the memory model of a 
-CPU. Traditional compilers treat data collections as pointers to a shared
-global address space, because
-CPUs provide a memory abstraction that any data within the global address space 
-can be equally accessible.
+CPU. Traditional compilers, such as LLVM~\cite{llvm}, treat data collections as pointers to a shared
+global address space because of the virtual memory abstraction in CPUs.
 The hardware, on the back-end, implicitly manage the data movement between an on-chip cache and the off-chip 
-memory; this scheme improves programmability of CPU at the cost of hardware complexity and unpredictability memory
+memory; this scheme improves programmability of CPU at the cost of hardware complexity and
+unpredictable memory
 performance.
 Accelerators on the other hand often have explicitly managed on-chip scratchpads.
-Therefore, modeling the data structures as disjoint memory space is more suitable than pointers for reconfigurable architectures.
+Therefore, modeling data structures as disjoint memory spaces as supposed to pointers is more suitable for reconfigurable architectures.
 
 Spatial is an embedded DSL in Scala.
-For simplicity and generality, we will use python-style pseudo code to represents the front-end programming
-abstraction for the rest of our discussion.
+For simplicity and generality, we will use python-style pseudo code to represent the imperative
+input program for the rest of our discussion.

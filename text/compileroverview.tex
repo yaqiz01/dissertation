@@ -8,7 +8,7 @@ First, unlike an FPGA, Plasticine cannot map arbitrary RTL functionality.
 In the Spatial abstraction, the execution order of the program is organized by a control hierarchy, where
 each level of the controller schedules the execution of the next level controllers.
 When mapping the example in \Cref{fig:spatialegpar} onto an FPGA, the outer controller \emph{A}
-sends an enable signal to each child controller, signaling back the parent controller when
+sends an enable signal to each child controller, which signals back the parent controller when
 completed. If the user chooses to sequentially execute the outer loop \emph{A}, the parent
 controller enables the child controllers one at a time; if the user chooses to metapipeline
 (coarse-grain pipeline) the outer loop \emph{A}, the outer controllers enables multiple child controllers in a pipelined fashion.
@@ -20,9 +20,9 @@ controller enables the child controllers one at a time; if the user chooses to m
 \caption{
   (a) A na\"ive mapping strategy to map the control hierarchy onto Plasticine.
   All units are distributed across an on-chip network that can introduce unpredictable latency.
-  The number on the edges indicates the order of the event.
+  The number on the edges indicates event order.
   Here we show a scenario where read requests from \emph{C} do not observe the write requests from
-  \emph{B} that appears earlier in the program order due to network latency between \emph{B} and
+  \emph{B} that ocurr earlier in the program order due to network latency between \emph{B} and
   \emph{mem}.
   (b) Distributed controllers in \name. Each innermost controller makes a copy of all enclosing controllers. The signals from these controllers are used to generate synchronization between distributed compute units. To address the problem in (a), the memory also needs to provide a write acknowledgment per write request for synchronization.
 }
@@ -37,28 +37,30 @@ introducing multiple cycles of network delay across PUs on the control path.
 Therefore, the multi-cycle handshaking signal between the parent and the child can introduce significant pipeline bubbles
 that undermines performance.
 Additionally, this scheme creates a communication hotspot around the parent controller \emph{A} as
-loop \emph{A} gets unrolled, which is devastating for a coarse-grained reconfigurable architecture
+loop \emph{A} gets unrolled, which is devastating for a CGRA
 like Plasticine that has much less routing resource than an FPGA.
 Furthermore, synchronizing the compute only is insufficient to ensure memory effects are observed by
 the remotely distributed accessors, as shown in \Cref{fig:centralctrl} (a).
 
-To address this challenge, we want to eliminate any of the centralized schedulers for the outer
-controllers.
-At high-level, \name achieves this by performing loop division for each outer controller, such that
+To address this challenge, we want to eliminate the centralized outer controllers.
+At high-level, \name performs loop divisions (discussed later in ~\Cref{sec:loopdiv}) on each outer controller, such that
 all innermost controllers are perfectly nested, as shown in \Cref{fig:centralctrl} (b).
-\name then allocates synchronization tokens across distributed innermost controllers.
-All innermost controllers have their own copies of the outer controllers, which are used
-to control when to send and consume the control tokens.
+\name then allocates synchronization tokens across the distributed innermost controllers.
+All innermost controllers have their own copies of the outer controllers, which are used to
+generate the control tokens.
 These control tokens ensure the execution order of the inner controllers is the same as if they are
 scheduled by a centralized outer controller. Instead of synchronizing all inner controllers under an outer controller, \name only synchronizes the ones accessing the same memory, such as \emph{B} and
-\emph{C} in \Cref{fig:spatialegpar}. This limits the synchronization among a small set of distributed nodes, 
+\emph{C} in \Cref{fig:spatialegpar}. This limits the synchronization among a small set of
+distributed nodes without impacting the result, 
 making our design much more scalable.
 
 The second challenge in this mapping process is that controllers in the spatial hierarchy
 can consume an arbitrary amount of compute and memory resources, exceeding the capacity of individual
 PUs. For instance, a user might write a memory multiple times throughout the program with writers mapped to different PUs. The physical scratchpad, however, only has a single write
-port. \name needs to virtualize resources, composing or time-sharing them when software usage
-exceeding the hardware limit.
+port. 
+\name generates control tokens among the distributed writers to time-share the write port and 
+enforce the ordering between writers.
+With resource virtualization, \name composes or time-share the physical resources when software usage exceeding the hardware limit.
 
 \begin{figure*}
 \centering
@@ -75,14 +77,11 @@ run on Plasticine. \Cref{fig:flow} shows \name's compilation flow.
 addresses the first challenge.
 \name allocates distributed on-chip resources to execute the program in spatially parallelized and
 pipelined fashion with appropriate synchronizations.
-A virtual unit (VU) is our intermediate representation that captures computations 
-%that will be
-%mapped onto 
-within the boundary of
-a physical unit (PU), such as a PCU and PMU.
+A virtual unit (VU) is our intermediate representation that captures the computation mapped
+within the boundary of a physical unit (PU), such as a PCU and PMU.
 Each VU can contain multiple contexts if their aggregated resource usage can fit in a PU.
 The hardware can limit the maximum number of contexts a PU can support and has resources that cannot be split across contexts.
-Most importantly, \name needs to ensure messages across VUs, which are mapped across the global network, must tolerate an arbitrary amount of network latencies; messages within a single VU across contexts takes only a single cycle.
+Most importantly, \name needs to ensure messages across VUs, which are mapped across the global network, tolerate an arbitrary amount of network latencies; messages within a single VU across contexts takes only a single cycle.
 The transformation phase generates a virtual unit dataflow graph (VUDFG) with appropriate
 synchronizations, such that a streaming pipelined execution over distributed on-chip resources produces the same result as a
 parallelized program executed in time.

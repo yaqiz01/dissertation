@@ -13,7 +13,7 @@
 %Therefore, as long as the computation is executed with the expected number of iterations and the memories are updated consistently, there is no need for any extra synchronization.
 %Next, we walk through how \name{} achieves this in more concrete detail.
 
-\subsection{Loop Division}
+\subsection{Loop Division}\label{sec:loopdiv}
 Between the front-end and the back-end abstractions of \name, an obvious gap is that 
 the imperative front-end language can contain arbitrarily nested control hierarchy, whereas
 the hardware compute engine can only execute operations that are control-free.
