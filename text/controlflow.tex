@@ -373,19 +373,21 @@ the accessing contexts to enforce a program-consistent accessing order.
 \end{table*}
 
 \paragraph{Where.}
-\name can serialize every accesses pair of a memory to enforce the program order. However, that
-would require $N^2$ tokens for a memory with $N$ accesses ($2N^2$ with LDCs) in the input IR, which can be
+\name can synchronize every pair of accesses of a memory to enforce the program order. However, that
+would require $N^2$ tokens for a memory with $N$ accesses in the input IR ($2N^2$ with LDCs), which can be
 unnecessarily expensive.
-The second question is how can we minimize the number of inserted token while ensuring a correct execution.
+The second question is how can we minimize the number of inserted token while ensuring a correct
+execution order.
 To tackle this problem, \name builds a dependency graph between all accesses of a memory in the input IR; 
-the dependency graph is \emph{per data-structure} without unnecessary ordering across different memories.
-Next, \name removes edges in the dependency graph, if the removed edge does not relax the ordering
+nodes of the graph are accesses and edges represent dependencies between accesses.
+The dependency graph is \emph{per data-structure} without unnecessary ordering across different memories.
+Next, \name removes edges in the graph, if the removed edge does not relax the ordering
 across accesses.
-Lastly, for each edge in the reduced dependency graph, \name inserts token between the receiving and
-requesting contexts of the source and destination access explained earlier in the \emph{How} section.
+Lastly, only for each edge within the reduced dependency graph does \name insert a token
+between the source and destination of the edge, using mechanism explained in the previous section.
 
 \subparagraph{Dependency Graph Construction}
-For every access in the IR, \name{} checks on other accesses that occurred earlier in the program order
+For every access in the input IR, \name{} checks other accesses on the same data-structure occurred earlier in the program order
 for a possible forward dependency, and later in the program order for a possible loop-carried dependency (LCD). 
 %In the example in \Cref{fig:contexteg}, there is a forward data dependency between \texttt{W1} and
 %\texttt{R1}, and a write-after-read LCD between \texttt{R1} and \texttt{W1}. 
@@ -395,21 +397,11 @@ for a possible forward dependency, and later in the program order for a possible
   \1 the type of the memory (e.g. SRAM, DRAM)
   \1 and location of the declared accesses in the control hierarchy.
 \end{outline}
-\Cref{tab:memtype} lists hardware memories available on reconfigurable architectures and software data-structures providing similar program semantics.
-The type of the memory matters because they have different programming interface on the hardware.
-\Cref{fig:depeg} shows examples of dependency graphs derived from programs.
-types.
-%For instance, two DRAM read accesses do not interfere because the DRAM interface permits
-%multiple concurrent access streams through multiple DAGs\footnote{All DAGs can access the full DRAM
-%address space}. 
-%%\gist{mension port virtualization}
-%Therefore, from the programmer's perspective, users do not need
-%to to serialize the two contexts reading the same DRAM address. 
-%Plasticine's SRAMs, on the other hand, have a single read and write port. 
-%Programmers must guarantee that a PMU receives read requests from a single context
-%at any point in time for correctness.
-%\Cref{tab:interferetab} shows the interference relation between different types of memory across
-%accesses.
+\Cref{tab:memtype} lists hardware memories available on Plasticine and software data-structures that
+can be mapped onto these memories.
+The type of the memories matters because they have different programming interface on the hardware.
+\Cref{tab:interferetab} shows the interference relations of different memories on Plasticine.
+\Cref{fig:depeg} shows derived dependency graphs of a few example programs.
 
 \begin{table*}
   \centering
@@ -425,6 +417,12 @@ types.
 \caption[Interferance Table]{
   Interference table for whether two accesses of the same memory needs to be synchronized by the
   software for each memory type.
+Two DRAM read accesses do not interfere because the DRAM interface permits
+multiple concurrent access streams through multiple AGs, where each AG can access the full off-chip
+address space. 
+  SRAMs, on the other hand, guarantees in-order response only within a single stream.
+  Therefore, it is software's responsibility to ensure the read port receives requests from a single
+  context at any point.
 }
 \label{tab:interferetab}
 \end{table*}
@@ -434,7 +432,7 @@ types.
 \begin{subfigure}[b]{0.34\textwidth}
 \inputminted{python}{code/dep1.py}
 \caption {
-  Example with outer loop parallelization.
+  Example with nested loops.
 }
 \end{subfigure}
 \hfill
@@ -442,7 +440,7 @@ types.
   \centering
 \includegraphics[width=0.6\textwidth]{figs/dep1.pdf}
 \caption{
-  Access dependency graph for \emph{mem} (on-chip) in (a)
+  Access dependency graph of \emph{mem} (on-chip) in (a)
 }
 \end{subfigure}
 \hfill
@@ -450,7 +448,7 @@ types.
   \centering
 \includegraphics[width=0.7\textwidth]{figs/dep2.pdf}
 \caption{
-  Access dependency graph for \emph{mem} (off-chip) in (a)
+  Access dependency graph of \emph{mem} (off-chip) in (a)
 }
 \end{subfigure}
 \\
@@ -468,24 +466,28 @@ types.
   Access dependency graphs for example programs. 
   Solid edges indicate forward dependencies and
   dashed edges indicate backward loop-carried dependencies (LCDs).
+  Each access in the dependency graph will be mapped to a context executed in space. 
   In (b) and (c),
   \emph{$W_0$} and \emph{$W_1$} are unrolled accesses for $W$ in lane 0 and 1 of loop \emph{A}
   in (a), respectively.
-  (b) is the dependency graph if the memory is mapped to an on-chip memory and (d)
-  is the dependency graph if the memory is mapped to an off-chip memory.
+  (b) is the dependency graph if \emph{mem} is mapped to an on-chip memory and (d)
+  is the dependency graph if \emph{mem} is mapped to an off-chip memory.
   The on-chip version does not need the cross-lane synchronization because 
   lane 0 and 1 are implicitly ordered when \name partitions \emph{mem} 
   (discussed later in \Cref{sec:memsplit}).
-  In (d), there is no forward dependency between \emph{W1} and \emph{R0} because the LCA controller of the two accesses is branch \emph{C}, which means the two accesses cannot happen concurrently in
-  the same iteration of \emph{A}.
-  There is, however, loop-carried dependencies between \emph{R0} and \emph{W1}. 
-  Loop-carried
-  dependency on the same access (such as between \emph{R0} and itself across iterations of loop \emph{A}) does not need to be enforced as the streaming memory interface preserves ordering
-  within a single requesting stream from the same access.
+  In (d), there is no forward dependency between \emph{W1} and \emph{R0} because the LCA controller
+  of the two accesses is branch \emph{C}, which means the two accesses cannot happen simultaneously 
+  for the same iteration of loop \emph{A}.
+  There is, however, loop-carried dependencies between \emph{R0} and \emph{W1}, preventing access
+  in iteration $i+1$ occur before iteration $i$ of loop \emph{A} between \emph{W1} and \emph{R0} in
+  two distributed contexts.
+  There is no need to enforce the LCD between an access and itself because 
+  the hardware guarantees a single request stream from the same context are served in-order.
   For each iteration of \emph{A}, \emph{R0} and \emph{W1} will produce and consume a credit from
   each other no matter what value the condition takes. 
-  \Cref{sec:datactrl} will elaborate more on branches.
-  \emph{R0} and \emph{R1} do not depend on each other because they are both DRAM read accesses.
+  \Cref{sec:datactrl} will elaborate more on how tokens are used for branches.
+  \emph{R0} and \emph{R1} do not depend on each other because they are both DRAM read accesses as
+  explained in \Cref{tab:interferetab}.
 }
 \label{fig:depeg}
 \end{figure*}
@@ -537,21 +539,22 @@ types.
 \end{subfigure}
 \definecolor{pureblue}{rgb}{0, 0, 255}
 \caption[Examples for dependency graph reduction]{
-  Dependency graphs (b,e) and reduced dependency graph (c,f) of the example programs (a,d).
+  Dependency graphs (b,e) and reduced dependency graph (c,f) of example programs in (a,d),
+  respectively.
   Solid edges indicate forward dependencies and
   dashed edges indicate backward loop-carried dependencies (LCDs).
   Colors of the LCD edges indicate the associated loop, \textcolor{pureblue}{blue} for loop \emph{A} and
   \textcolor{red}{red} for loop \emph{B}.
-  For the forward edges (black edges), \name uses transitive reduction to remove the redundant
-  edges.
-  For the backward edge, an edge can be removed if there is still a path from its source to
-  destination with all forward edges plus \emph{a single} backward edge with the same loop after the edge is
+  For forward edges (black edges), \name uses transitive reduction (TR) to remove the redundant
+  edges. The outputs of TR are shown in (c,f).
+  For backward edges, an edge can be removed if there is still a path from its source to
+  destination with all forward edges plus \emph{a single} backward edge of the same loop after the edge is
   removed.
-  For example in (c), edge \emph{R2-R1} is removed because there is path \emph{R2-W1-R1}.
-  Edge \emph{W2-W1} is removed because there is path \emph{W2-R2-W1}. 
+  For example from (b) to (c), edge \emph{R2-R1} is removed because there is path \emph{R2-W1-R1}.
+  Edge \emph{W2-W1} is removed because there is path \emph{W2-R2-W1} after the edge is removed in (c). 
   Edge \emph{R2-W1} cannot be removed because there is no path from \emph{R2} to \emph{W1} with a
   single back edge after the edge is removed.
-  \emph{R2-W1} cannot be
+  Similarly, \emph{R2-W1} cannot be
   removed in (e) because there is no path from \emph{R2} to \emph{W1} after the edge is removed.
 }
 \label{fig:graphred}
@@ -568,15 +571,19 @@ graph, enforcing the same ordering as the original dependency graph.
 Next, \name checks if each backward edge can be removed without breaking the execution order between
 accesses. 
 Each backward edge represents a loop-carried dependency (LCD) and is tagged with the associated loop.
-A backward edge can be removed if after removing the edge, there is a path from the source to the
-destination node of the edge; the path may contain any forward edges remained from the TR pass,
-with \emph{a single} backward edge tagged with the same loop as the removed edge.
-\Cref{fig:graphred} shows examples of dependency graph reduction.
+A backward edge can be removed, if after removing the edge, there is a path going from the source of the removed edge to the
+destination, with any forward edges remained from the TR pass and 
+\emph{a single} backward edge tagged on the same loop as the removed edge.
+\Cref{fig:graphred} demonstrates the dependency reduction with examples.
 
 The forward edges can be reduced with TR because the forward dependencies
-are monotonic, i.e. \emph{A} depends on \emph{B} and \emph{B} depends on \emph{C}
-enforces \emph{A} depends \emph{C}. The backward edges are non-monotonic because of the initial
-tokens in the destination buffers.
+are monotonic, i.e. \emph{A} depending on \emph{B} and \emph{B} depending on \emph{C}
+enforces \emph{A} depending on \emph{C}. The backward dependencies are non-monotonic because the initial
+token in the destination buffer of a backward edge enables the destination of an edge to execute
+before the source. 
+Therefore, having edges between \emph{A} and \emph{B}, and \emph{B} and \emph{C} do not
+enforce \emph{A} executing before \emph{C}. Hence, the backward edges cannot be concatenated to
+maintain dependency.
 
 %\begin{figure*}
 %\centering
@@ -593,11 +600,11 @@ tokens in the destination buffers.
 
 \subsection{Data-Dependent Control Flow} \label{sec:datactrl}
 Using the synchronization discussed in \Cref{sec:sync}, \name can support control constructs that 
-typically are not supported on dataflow accelerators, such as branches and while loops.
-Most dataflow accelerators do not support control divergence. SIMT architectures, like GPUs,
+typically are not supported on a dataflow accelerator, such as branches and while loops.
+Most accelerators do not support control divergence. SIMT architectures, like GPUs,
 implement branches with predication and pay the latency penalty of both branch cases.
-To enable these flexible control, the control path of the architecture must permit data dependencies.
-\Cref{fig:controlarch} details the required changes in the control path to support these features.
+To enable these flexible control constructs, the control path of the architecture must permit data dependencies.
+\Cref{fig:controlarch} details the required changes in Plasticine's control path to support these features.
 
 \paragraph{Dynamic Loop Range}
 \Cref{fig:dynrange} shows an example of loops with data-dependent ranges. 
@@ -615,10 +622,11 @@ that maps the loop body.
 \caption{Context data-flow graph}
 \end{subfigure}
 \caption[Example of dynamic loop range]{
-  (a) shows an example program with dynamic loop range. 
-  Expressions to generate the loop bounds belongs to a basic block that gets mapped to \texttt{ctx1}.
-  \name maps the loop bound as a data-dependnecy to context that maps the inner loop context, and
-  configures dequeue signal of \texttt{bound} stream to counter \texttt{B.done}.
+  (a) shows an example program with a dynamic loop range. 
+  Expressions to generate the loop bound in line 2 of (a) belongs to a basic block that gets mapped
+  to \texttt{ctxA} in (b).
+  \name treats the loop bound as a data-dependency of \texttt{ctxB}, and
+  configures the dequeue enable of \texttt{bound} stream to counter \texttt{B.done} in \texttt{ctxB}.
 }
 \label{fig:dynrange}
 \end{figure*}
@@ -654,19 +662,20 @@ that maps the loop body.
 
 \paragraph{Branch Condition}
 \name supports both predictions and branches with control divergence.
-Branches within the innermost loops are implemented with predication such that the loop can still be
+Branches within the innermost loops are implemented with predication, so that the innermost loop can still be
 vectorized across SIMD lanes.
-This is very similar to a SIMT architecture, where all lanes execute the \emph{if} clause followed by the \emph{else} clause, masking off the memory access for the disabled lanes.
+This is very similar to a SIMT architecture, where all lanes execute the \emph{if} clause followed
+by the \emph{else} clause, masking off the memory accesses in the disabled lanes.
 The total number of SIMD stages required is the total operations in both the \emph{if} and the \emph{else} clauses.
 
 For a branch in an outer loop,
-the branch condition is treated as a data-dependent enable signal for controllers under the branch clauses.
-If the controller is disabled, its \emph{done} signal raises to high immediately.
+the branch condition is treated as a data-dependent enable of a controller under the branch clauses.
+If the controller is disabled by the branch condition, its \emph{done} signal raises to high immediately.
 Output tokens depending on the {\em done} signal will be immediately sent out.
-This way, the controller under a branch condition does not need to execute if the outer branch
+This way, the controllers under a branch does not need to execute if the outer branch condition
 evaluates to false.
 
-\Cref{fig:branch} shows an example with a branch statement.
+\Cref{fig:branch} shows an example with an outer branch statement.
 The input program in (a) writes and reads the memory \emph{mem} on even and odd cycles of
 the outer loop \emph{A}, respectively. 
 \name maps the three basic blocks in the program in three

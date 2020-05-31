@@ -35,8 +35,7 @@ level controllers distributed among other PUs, as shown in \Cref{fig:centralctrl
 This strategy suffers from the expensive network round-trip delays between the parent and child controllers.
 To be scalable at a high clock frequency, Plasticine networks are pipelined at each switch,
 introducing multiple cycles of network delay across PUs on the control path.
-Therefore, the multi-cycle handshaking signals can lead to significant pipeline bubbles
-that undermines performance.
+Therefore, the multi-cycle handshaking signals can lead to significant pipeline bubbles that undermine performance.
 Additionally, this scheme creates a communication hotspot around the parent controller \emph{A} as
 loop \emph{A} gets unrolled, which is devastating for a CGRA
 like Plasticine that has much less routing resource than an FPGA.
@@ -61,8 +60,7 @@ can consume an arbitrary amount of compute and memory resources, exceeding the c
 PUs. For instance, a user might write an on-chip memory multiple times throughout the program with writers
 mapped to different PUs. The physical scratchpad, however, only has a single write port and write address
 pipeline. 
-\name maps a subset of the address computation externally in other PUs and 
-generates control tokens among the distributed writers, time-sharing the write port and enforcing the
+\name maps a subset of the address computation externally in other PUs and generates control tokens among the distributed writers, time-sharing the write port, and enforcing the
 ordering between distributed writers.
 Using resource virtualization, \name composes or time-share the physical resources when software usage exceeding the hardware limit.
 
