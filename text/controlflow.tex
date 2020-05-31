@@ -17,7 +17,7 @@
 Between the front-end and the back-end abstractions of \name, an obvious gap is that 
 the imperative front-end language can contain arbitrarily nested control hierarchy, whereas
 the hardware compute engine can only execute operations that are control-free.
-To address this issue, we introduce a new type of loop transformation---loop division---for streaming reconfigurable
+To address this issue, we introduce a new type of transformation---loop division---for streaming reconfigurable
 accelerators.
 Similar to loop fission, loop division breaks a single loop into multiple loops.
 The difference is that loop fission generates a sequence of sequentially executed loops, whereas
@@ -176,43 +176,50 @@ Example of an illegal loop fission and a legal loop division
 \caption{Timing on Plasticine for dense on-chip memory}
 \end{subfigure}
 \caption[Dense specialization]{
-  Specialization for dense memory lowering.
-  The same example as \Cref{fig:contextalloc} (a) if the memory is a dense scratchpad.
-  (a) and (b) shows the allocated contexts.
+  Specialization for dense memory lowering if the if the memory \emph{mem} in 
+  \Cref{fig:contextalloc} (a) is a dense scratchpad.
+  (a) and (c) shows the allocated contexts.
   Context \emph{rqstW1} and \emph{rqstR1} are allocated \emph{in the same} VU as the memory. The latency of 
   the forward token and the backward credit take only one cycle, which are not shown in (d).
   The latency to compute read and write addresses are also not shown.
   For complex address calculation, \name split the address computations to separate contexts shown
-  in (c). The addresses can be precomputed without waiting for \emph{wdata} for $rqstW1$ and 
-  \emph{token} for $rqstR1$.
+  in (b). The addresses can be precomputed in \emph{rqstW1} and \emph{rqstR1} and are back-pressured by 
+  \emph{rqstW1'} and \emph{rqstR1'}, respectively. This way, the latency of address calculation does
+  not create pipeline bubble even if token and credit are frequently exchanged (e.g. when loop B and C
+  runs a small number of iterations).
+  \emph{rqstW1} and \emph{rqstR1} can be mapped outside of the memory VU if running out of address
+  stages.
 }
 \label{fig:densespecial}
 \end{figure*}
 
 At high-level, \name executes the entire program in a pipelined fashion, where each basic block
 in the program is a pipeline stage.
-As a start, \name allocates a virtual memory to hold each data-structures, and 
-a context to execute each basic block within the innermost controllers. 
+%As a start, \name allocates a virtual memory to hold each data-structure in the program, and 
+%a context to execute each basic block within the innermost controllers. 
+%A basic block maps naturally to a context, as instructions within a basic block are control-free. 
+%\name makes a copy of all controllers enclosing the basic block in the corresponding context;
+%these controllers are later converted to counters and control configurations supported by the
+%hardware. 
+%\Cref{fig:contextalloc} (b) shows the result of context allocation of program (a).
+%Effectively, \name performs loop division such that all basic blocks are perfectly nested.
+%Contexts are concurrent workers producing and consuming the intermediate data-structures across basic
+%blocks.
+As a start, \name performs loop division at each level of the control hierarchy, such that all
+innermost basic blocks are perfectly nested. \name then maps each basic block to a context and each
+data-structure to a virtual memory, as shown in \Cref{fig:contextalloc} (b).
 A basic block maps naturally to a context, as instructions within a basic block are control-free. 
-\name makes a copy of all controllers enclosing the basic block in the corresponding context;
-these controllers are later converted to counters and control configurations supported by the
-hardware. 
-Effectively, \name performs loop division such that all basic blocks are perfectly nested.
-Contexts are concurrent workers producing and consuming the intermediate data-structures across basic
-blocks.
-
-With these controllers, each context can repeatedly execute their basic blocks for an expected number iterations. 
-However, data-structures written and read by different contexts are still accessed in random order.
-Next, for each virtual memory corresponding to a data-structure, \name examines all contexts accessing the memory,
-allocating synchronization tokens across these contexts.
-The control token can be viewed as an access grant to the intermediate memory passing between 
-the pipelined contexts; the token guarantees the access order of the concurrent contexts is consistent to
-the expected order of an imperative program.
-The insight is that \emph{as long as all memories are accessed with a program-consistent
+All ancestor controllers enclosing the basic block are duplicated into the corresponding context.
+With these controllers, contexts can repeatedly execute their basic blocks for expected number iterations. 
+For each virtual memory, \name examines all contexts reading or writing the memory,
+allocating synchronization tokens to enforce their access order.
+The token can be viewed as an access grant of the memory.
+By controlling how tokens are passed between the pipelined contexts, \name can enforce 
+that the memory is read and written with expected ordering of an imperative program.
+\emph{As long as each individual memory is accessed with a program-consistent
 order, the final result is identical to a sequentially executed program}.
 This way, \name introduces minimum point-to-point synchronizations among small groups of contexts; contexts
-accessing different data-structures are naturally parallelized without impacting the final output.
-\Cref{fig:contextalloc} (b) shows an example of the context allocation. 
+accessing \emph{different} data-structures are naturally parallelized without impacting the final output.
 \Cref{sec:controlalloc} explains how \name allocates the synchronization tokens based on the control
 hierarchy of the imperative program.
 
@@ -220,22 +227,25 @@ Unlike traditional out-of-order execution, where both static scheduling in the s
 scheduling in the hardware search for independent instructions to execute concurrently, 
 \name starts with executing \emph{all} basic blocks of a program concurrently,
 introducing minimum synchronizations wherever necessary.
-Unsurprisingly, a control-heavy program with lots of basic blocks can easily run out of PUs.
-Nonetheless, the intended workloads for RDAs are data-analytical programs with relatively simple
-control flows and abundant data-level parallelism (i.e., most basic blocks having a high repetition
-count).
-The control flows, however, might not be simple enough that a SIMT architecture, designed for
-massive embarrassingly parallel workloads, can still be heavily underutilized.
-To map a large program on Plasticine, the program graph must be sliced into multiple chunks.
-A single chunk is executed in-space, exploring on-chip parallelism and pipelining;
-different chunks are executed in-time by reconfiguring the accelerator.
+Unsurprisingly, a control-heavy program with many basic blocks can easily run out of PUs.
+Nonetheless, data-analytic programs, which are the intended workloads for RDAs, have relatively
+simple control flow and abundant data-level parallelism (i.e., few basic blocks with high repetition
+counts).
+%The control flows, however, might not be simple enough that a SIMT architecture, designed for
+%massive embarrassingly parallel workloads, can still be heavily underutilized.
+Supporting flexible control constructs, however, allows an RDA to accelerate a program with
+minimum host intervention, eliminating communication overheads and maximizing FLOPS utilization especially for a
+large-scale RDA.
+To map a large program that runs out of resources on Plasticine, the program graph must be sliced into multiple chunks.
+A single chunk is executed in-space, exploring on-chip parallelism and pipelining,
+while different chunks are executed in-time by reconfiguring the accelerator.
 
 \subsection{Control Allocation} \label{sec:controlalloc}
 \label{sec:sync}
-\name uses control tokens to enforce the memory access order in an imperative program on a dataflow
-architecture. 
+\name uses control tokens to enforce the memory access order in an imperative program, 
+which is the minimum synchronization necessary to produce a correct execution.
 In this section, we first explain \emph{how} \name uses tokens to enforce the memory access 
-order between distributed contexts and achieves complex control flows on a data-flow architecture;
+order between distributed contexts, achieving complex control flows on a data-flow architecture;
 next, we show \emph{where} \name inserts these tokens and how to minimize inserted tokens while
 enforcing the program order.
 
@@ -257,23 +267,24 @@ enforcing the program order.
 
 \paragraph{How.} 
 The first question is how do we enforce the access order of a memory from two remotely distributed contexts, given the
-global network and the memory itself can introduce unpredictable latency.
-The memory interface on Plasticine can take a stream of read or write requests, providing a response
+global network and the memory itself can introduce unpredictable delays.
+The streaming memory interface takes a stream of read or write requests, providing a response
 packet for each request packet.
 Within a single stream, the requests are guaranteed to be served in order. 
-Therefore, the read response is a stream of data (not tagged with request address) and the write response is a stream of control tokens without any payload.
+Therefore, the read responses are a stream of data packets (not tagged with requested address) and the
+write responses are a stream of control tokens without any payload.
 To eliminate the round-trip latency, \name divides each memory access in the input IR into a requesting and a receiving context, as shown in \Cref{fig:contextalloc} (c). 
 For a read access, \name maps the address generation in a separate requesting context, streaming
 addresses to the memory and streaming the data to the receiving context.
-Similarly, for a write access, \name allocates a receiving context to accumulate acknowledgments 
+Similarly for a write access, \name allocates a receiving context to accumulate the write acknowledgments 
 for synchronizations.
 
 %We refer to a memory access appeared in the input IR as a \emph{declared access}, as supposed to
 %memory accesses executed at runtime.
 %\texttt{W1} and \texttt{R1} are examples of two declared accesses in \Cref{fig:contexteg}
 To order an access $A$ before an access $B$,
-\name allocates a token between the receiving context of access $A$ ($resp_A$) and the requesting context
-of access $B$ ($rqst_B$).
+\name allocates a token between the \emph{receiving} context of access $A$ ($resp_A$) and the
+\emph{requesting} context of access $B$ ($rqst_B$).
 This is essential to ensure the memory effect of access $A$ is visible to access $B$, as the memory
 might take multiple cycles to serve a request.
 For any two accesses enclosed by a loop in the input IR, there could be a loop-carried dependency (LCD) from
@@ -284,17 +295,26 @@ forward and the backward token to enforce two accesses under a loop. The initial
 token breaks the cyclic dependency. 
 Borrowing the flow-control
 terminology\cite{credit}, we refer to a backward token as a credit.
-If the memory is multi-buffered, the credit is initialized with buffer-depth $D$ number of credit, 
-enabling the first access to execute $D$ iterations of the enclosed loop before back-pressured.
+If the memory is multi-buffered, the credit buffer is initialized with buffer-depth $D$ number of credit, 
+enabling the earlier access to execute $D$ iterations of the enclosed loop before back-pressured by
+the later access.
 
 \name wires up the enqueue/dequeue enable of a token with signals from the duplicated controllers 
 in the writer/reader context.
-For a token representing the dependency of a queue, the token should be generated/consumed every cycle when the producer/receiver context is active; to achieve this, \name configures the enqueue/dequeue signal
-to the \emph{valid} signal of the innermost controller in the requesting/receiving context.
-For a token corresponding to a scalar variable or an array, the program expects the producer/consumer
-to update/inspect the memory for every iteration of their LCA controller.
-\name finds the LCA controller between the writer and the reader contexts of a token,
-connecting the \emph{done} signal of LCA's immediate child in the writer/reader context's ancestor controllers to the enqueue/dequeue enable of the token.
+For dependencies of a queue, 
+the queue should be written and read every cycle when the producer/receiver basic block is active; 
+to achieve this, \name configures the enqueue and dequeue signal of the token that enforces the
+dependency to the \emph{valid} signals of the innermost controllers in the requesting and receiving
+contexts, respectively.
+For dependencies of a scalar variable or an array, the program expects the producer and consumer
+basic blocks update and inspect the memory per iteration of their LCA controller.
+For a token that enforces the dependency of two accesses, 
+\name finds the LCA controller between the two accesses in the control hierarchy.
+Then within contexts containing the respective accesses, \name finds the immediate child controllers
+of the LCA controller and connects its \emph{done} signal to the enqueue and dequeue enable of the allocated
+token, respectively.
+This way, a token is produced/consumed for every iteration of the LCA controller using the local
+controllers within the context containing the dependent/depending access.
 \Cref{fig:contextalloc} (c) shows an example of how the enqueue and dequeue signals are configured.
 
 By controlling \emph{when} a token is produced and consumed, \name is able to achieve the complex
@@ -302,18 +322,20 @@ and nesting control flows in an imperative program on a dataflow accelerator.
 \Cref{sec:datactrl} dives into more complex control constructs with 
 data-dependent control flows.
 
-The requesting and receiving contexts pair are general schemes we use on any type of memory with 
-multiple cycle access latencies, such as the off-chip DRAM.
+The requesting and receiving contexts pair are general schemes we use on general streaming memory
+interface with variable access latency, such as an off-chip DRAM or an on-chip SRAM when supporting 
+sparse accesses.
 In common cases, we can simplify the synchronization logic for certain on-chip memory types.
 
 \subparagraph{Specialization for dense on-chip scratchpad}
 Spatial can statically analyze the dense access pattern of on-chip arrays and partitions the memories
 to avoid bank conflicts. These memories have a guaranteed single-cycle access latency, 
-which simplifies the synchronization.
-\name allocates $rqst_A$ and $rqst_B$ contexts \emph{in the same} VB as the accessed memory.
-Instead of synchronizing between $resp_A$ and $rqst_B$, \name sends the forward token and the
-backward credit between $rqst_A$ and $rqst_B$,
-eliminating the need for a receiving context for the write access.
+which eliminates the need of write acknowledgments.
+Shown in \Cref{fig:densespecial} (a),
+\name allocates $rqst_A$ and $rqst_B$ contexts \emph{in the same} VB as the accessed memory with
+corresponding address computation.
+Instead of synchronizing between $resp_A$ and $rqst_B$, \name sets up the forward token and the
+backward credit between $rqst_A$ and $rqst_B$.
 Because memory requests are served in a single cycle, access $A$'s requests would be visible to
 access $B$ by the time $rqst_B$ receives the token. Hence, write acknowledgment is no longer needed.
 \Cref{fig:densespecial} shows the resulting contexts if \emph{mem} in \Cref{fig:contexteg} is a dense

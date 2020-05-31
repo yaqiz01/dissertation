@@ -30,11 +30,12 @@ controller enables the child controllers one at a time; if the user chooses to m
 \end{figure*}
 
 To achieve the same execution schedule on Plasticine in a na\"ive approach, 
-we can map each controller in the hierarchy into a PU, sending control signals to schedule the next level controllers distributed in other PUs, as shown in \Cref{fig:centralctrl} (a).
+we can map each controller in the hierarchy into a PU, sending control signals to schedule the next
+level controllers distributed among other PUs, as shown in \Cref{fig:centralctrl} (a).
 This strategy suffers from the expensive network round-trip delays between the parent and child controllers.
 To be scalable at a high clock frequency, Plasticine networks are pipelined at each switch,
 introducing multiple cycles of network delay across PUs on the control path.
-Therefore, the multi-cycle handshaking signal between the parent and the child can introduce significant pipeline bubbles
+Therefore, the multi-cycle handshaking signals can lead to significant pipeline bubbles
 that undermines performance.
 Additionally, this scheme creates a communication hotspot around the parent controller \emph{A} as
 loop \emph{A} gets unrolled, which is devastating for a CGRA
@@ -43,8 +44,9 @@ Furthermore, synchronizing the compute only is insufficient to ensure memory eff
 the remotely distributed accessors, as shown in \Cref{fig:centralctrl} (a).
 
 To address this challenge, we want to eliminate centralized outer controllers.
-At high-level, \name performs loop divisions (discussed later in ~\Cref{sec:loopdiv}) on each outer controller, such that
+At high-level, \name performs \term{loop divisions} on each outer controller, such that
 all innermost controllers are perfectly nested, as shown in \Cref{fig:centralctrl} (b).
+\Cref{sec:loopdiv} discusses the loop division transformation.
 \name then allocates synchronization tokens across the distributed innermost controllers.
 All innermost controllers have their own copies of the outer controllers, which are used to
 generate the control tokens.
@@ -54,12 +56,15 @@ scheduled by a centralized outer controller. Instead of synchronizing all inner 
 distributed nodes without impacting the result, 
 making our design much more scalable.
 
-The second challenge in this mapping process is that controllers in the spatial hierarchy
+The second challenge is that controllers in the Spatial hierarchy
 can consume an arbitrary amount of compute and memory resources, exceeding the capacity of individual
-PUs. For instance, a user might write a memory multiple times throughout the program with writers mapped to different PUs. The physical scratchpad, however, only has a single write
-port. 
-\name generates control tokens among the distributed writers to time-share the write port and enforce the ordering between writers.
-With resource virtualization, \name composes or time-share the physical resources when software usage exceeding the hardware limit.
+PUs. For instance, a user might write an on-chip memory multiple times throughout the program with writers
+mapped to different PUs. The physical scratchpad, however, only has a single write port and write address
+pipeline. 
+\name maps a subset of the address computation externally in other PUs and 
+generates control tokens among the distributed writers, time-sharing the write port and enforcing the
+ordering between distributed writers.
+Using resource virtualization, \name composes or time-share the physical resources when software usage exceeding the hardware limit.
 
 \begin{figure*}
 \centering
@@ -80,22 +85,22 @@ A virtual unit (VU) is our intermediate representation that captures the computa
 within the boundary of a physical unit (PU), such as a PCU and PMU.
 Each VU can contain multiple contexts if their aggregated resource usage can fit in a PU.
 The hardware can limit the maximum number of contexts a PU can support and has resources that cannot be split across contexts.
-Most importantly, \name needs to ensure messages across VUs, which are mapped across the global network, tolerate an arbitrary amount of network latencies; messages within a single VU across contexts takes only a single cycle.
+Most importantly, \name needs to ensure messages across VUs, mapped across the global network,
+tolerate an arbitrary amount of network latency; messages within a single VU across contexts takes only a single cycle.
 The transformation phase generates a virtual unit dataflow graph (VUDFG) with appropriate
-synchronizations, such that a streaming pipelined execution over distributed on-chip resources produces the same result as a
+synchronizations, such that the parallelized and pipelined program executed over distributed on-chip resources produces the same result as a
 parallelized program executed in time.
 At the end of the allocation phase, a virtual unit can consume as many resources as the program
 requires. 
 
-\name further virtualizes resource allocation and hides the underlying resource constraints on
-this hierarchical architecture from the programmers.
+\name further virtualizes resource allocation and hides the underlying resource constraints from the programmers.
 \Cref{sec:resalloc} dives into the \term{resource allocation} phase, where \name assigns each VU to a
 PU that processes the required resources. If no PU can fit a VU, \name partitions the
 VU into multiple VUs to resolve the constraint violation. If there is insufficient PU or the VU cannot be partitioned, the mapping process fails with appropriate hints to the programmer for the
 limiting resources.
 
 Throughout the first two phases, \name introduces various \term{optimizations} that either reduce the
-the resource cost of the VUDFG, or alleviates potential performance bottleneck in the streaming
+the resource cost of the VUDFG, or alleviate potential performance bottleneck in the streaming
 pipeline.
 After all VU fits in at least one type of PU, \name performs a global optimization that merges small VUs into a larger VU to reduce resource fragmentations.
 \Cref{sec:opt} enumerates the optimizations \name performs.
