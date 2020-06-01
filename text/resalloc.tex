@@ -283,8 +283,8 @@ optimization-based algorithm providing an optimal solution.
 
 \subsubsection{Traversal-based Solution}
 To address the cycle constraint, the traversal-based algorithm performs a topological sort of the dataflow graph.
-The topological traversal ignores the back edges in the graph. 
-Starting from the beginning of the sorted list, the algorithm iteratively adds nodes into a partition
+The topological sort ignores the back edges of the cycles during traversal. 
+Starting from one end of the sorted list, the algorithm iteratively adds nodes into a partition
 until it fits no more nodes. The algorithm then repeats the process with a new partition.
 This approach guarantees that no cycle is introduced with $O(V+E)$ complexity, 
 where $V$ and $E$ are the numbers of vertices and edges in the dataflow graph.
@@ -292,30 +292,32 @@ where $V$ and $E$ are the numbers of vertices and edges in the dataflow graph.
 The partitioning result is a function of the traversal order.
 We experienced with depth-first search (DFS) and breadth-first search (BFS) with forward and
 backward dataflow traversal orders.
-For DFS, we re-sort the remaining list each time we start with a new partition.
+For DFS, we re-sort the remaining list each time starting with a new partition.
 
 \subsubsection{Solver-based Solution}
 The convex optimization solution models the problem as a node-to-partition assignment problem.
-\Cref{tab:solver-eqns} gives our formulation.
+\Cref{tab:solver-eqns} gives our formulation and \Cref{tab:solver-variables} explains the notations
+used in \Cref{tab:solver-eqns}.
+
 At a high-level, we use a boolean matrix $B$ to keep track of the assignment. 
-$B$ has dimension equals to the number of nodes in the dataflow graph by the number of partitions, where$B[i,j]=1$ 
+$B$ has dimension equals to the number of nodes in the dataflow graph by the maximum number of partitions, where$B[i,j]=1$ 
 indicates node $i$ is assigned to partition $j$.
 In \Cref{tab:solver-eqns}, \emph{partition assignment} restricts each node to have a single partition assignment.
 The \emph{input and output arity constraints} show the formulations that limit the number of input
 and output for a subgraph.
 These are the two most challenging constraints as we need to identify broadcast edges across partitions.
 To address the cycle constraint, we introduce a delay vector $d_n$ with a size equivalent to the number of nodes. 
-The delay vector encodes a schedule to execute each node, and the values are selected by the solver.
-The \emph{dependency constraint} enforces scheduling a node no earlier than its input dependencies, and
+The delay vector encodes a time schedule to execute each node, whose values are selected by the solver.
+The \emph{dependency constraint} enforces a node can be scheduled no earlier than its input dependencies and
 no later than its output dependents.
 Since the operations within a partition have to be triggered atomically, there is another delay
-vector $d_p$ for the partitions. The \emph{delay consistency} enforces the schedule of a node equals to the
+vector $d_p$ for partitions. The \emph{delay consistency} enforces the schedule of a node equals to the
 schedule of its assigned partition.
 Finally, \emph{constant validity} limits the range of values the delay vectors can be chosen from.
 In addition to enforcing the cycle constraint, 
 these delay variables are also used to calculate where retiming is required and project the amount of introduced retiming VUs. 
-Finally, to reduce the solving time, we use the traversal-based solution to warm start the assignment matrix
-$B$.
+Finally, we use the traversal-based solution to warm start the assignment matrix
+$B$ and the delay vectors to reduce the solver runtime.
 
 \input{text/solver_table}
 
