@@ -462,7 +462,7 @@ To avoid bank conflicts, an important static analysis often used on reconfigurab
 For most address patterns, the compiler can derive a partitioning scheme such that every partition is accessed by a
 single worker at any time, which guarantees bandwidth at runtime.
 The output of the analysis is an expression for bank address (BA) and bank offset (BO), both are
-functions of the requested logical memory address.
+functions of the requested logical address.
 BA determines which partition each request is going to, and BO is the offset within the
 partition.
 
@@ -495,12 +495,14 @@ Because the static banking analysis guarantees no bank conflicts for all banks,
 \name can use a OR tree to merge the bank-aligned BOs into the final BO that gets send to
 banks in the partition. On the receiver side, \name uses an inverse shuffle to convert responses from
 partitions from bank-aligned back to access-aligned.
-\name uses another OR tree to merge the access-aligned responses, which produces the final vector data requested
-by the access lane.
-With large parallelization, both the merge OR tree and the respond OR tree can be
-partitioned across VUs if running out of stages in a VU, and to scale in the network bandwidth.
+\name uses another OR tree to merge the access-aligned responses, which produces the final data
+vector requested by the access lane.
+With large parallelization, both the request OR tree and the respond OR tree can be
+partitioned across VUs if running out of stages in a VU, scaling in the network bandwidth of the
+crossbar connection by burning more VUs.
 
-\todo{Talk about what if banking fails.}
+\Cref{sec:banking_arch} discusses the architectural changes to Plasticine to support this general
+banking scheme.
 
 \subsection{Register Allocation} \label{sec:regalloc}
 
