@@ -179,10 +179,15 @@ possible assignment for all VUs with sufficient PUs (\Cref{algo:check}), and pro
 Finally, \name assigns each VU to a PU type with a backtracking search on the pruned bipartite
 graph.
 
+\paragraph{PU configuration}
+After a VU is assigned to a PU type, \name sets up the configuration within the PU.
+This includes configuring the counters, I/O, pipeline stages, and the control path.
+
 This approach can be easily extended to handle new heterogeneous tiles in the architecture by registering
 the tile with existing or new types of resources with aggregation and partitioning rules.
 The rest of this section goes over two types of partitioning transformations--compute
 partitioning in \Cref{sec:compsplit} and memory partitioning in \Cref{sec:memsplit}.
+\Cref{sec:regalloc} details one pass of the PU configuration, which is register allocation.
 %We have another partitioner encoding valid rule to decompose a BlackBox IP block available on the RDA.
 
 \subsection{Compute Partitioning} 
@@ -249,12 +254,9 @@ enable execution.
 
   \includegraphics[width=0.8\columnwidth]{figs/partcycleeg.pdf}
   \caption[Compute partitioning examples with cycle]{
-    Compute partitioning examples with cycle in the dataflow graph.
-    Solution 1 is valid because there is no 
-    cycle between partitions after removing the back edge in
-    the original graph.
-    Solution 2 is invalid because there is still cycle between partition 1 and 2 after
-    removing the back edge.
+    Compute partitioning examples with a cycle in the dataflow graph.
+    Solution 1 is valid because there is no cycle between partitions after removing the back edge in the original graph.
+    Solution 2 is invalid because there is still a cycle between partition 1 and 2 after removing the back edge.
   }
   \label{fig:partcycleeg}
 \end{figure}
@@ -310,7 +312,7 @@ and output for a subgraph.
 These are the two most challenging constraints as we need to identify broadcast edges across partitions.
 To address the cycle constraint, we introduce a delay vector $d_n$ with a size equivalent to the number of nodes. 
 The delay vector encodes a time schedule to execute each node, whose values are selected by the solver.
-The \emph{dependency constraint} enforces a node can be scheduled no earlier than its input dependencies and
+The \emph{dependency constraint} enforces that a node can be scheduled no earlier than its input dependencies and
 no later than its output dependents.
 Since the operations within a partition have to be triggered atomically, there is another delay
 vector $d_p$ for partitions. The \emph{delay consistency} enforces the schedule of a node equals to the
@@ -354,8 +356,7 @@ $B$ and the delay vectors to reduce the solver runtime.
 \end{subfigure}
 \hfill
 \caption[Partitioning and merging algorithm comparisons]{
-  Partitioning and merging algorithm comparisons. (a) shows the normalized resource usage between
-  different algorithms (the lower the better). (b) and (c) shows the compile time of each algorithm.
+  Partitioning and merging algorithm comparisons. (a) shows the normalized resource usage between different algorithms (the lower the better). (b) and (c) shows the compile time of each algorithm.
   Benchmarks include BlackScholes (bs), multi-layer perceptron (mlp), and random forests (rf).
 }
 \label{fig:split}
@@ -369,7 +370,7 @@ The merging algorithm is very similar to the compute partitioning algorithm, whe
 dataflow graph corresponds to the VUs in a VUDFG. 
 The traversal and solver-based algorithms for partitioning can be extended to handle the merging
 problem.
-\Cref{sec:opt} will discuss merging problem in more detail.
+\Cref{sec:opt} will discuss the merging problem in more detail.
 
 We use a commercial solver, Gurobi~\cite{gurobi}, for the solver-based algorithm. 
 The evaluation is performed on an Intel Xeon E7-8890 CPU at 2.5GHz with 1TB DDR4 RAM. 
@@ -415,7 +416,7 @@ compile time. Nonetheless, the solver-solution treats the retiming and partition
 whereas the traversal-based solution solves these two problems in two separate passes,
 generating less optimal solutions.
 Moreover, the solver-based solution tends to produce a better result for PUs with a tight I/O
-bound (small number of I/Os and large number of stages).
+bound (a small number of I/Os and a large number of stages).
 The traversal-based solutions, on the other hand, can produce a decent solution in a short amount of
 time.
 However, the solution is a function of the traversal order; hence, the quality of the partitioning
@@ -454,11 +455,13 @@ providing the abstraction of a shared memory.
   \centering
   \includegraphics[width=0.6\columnwidth]{figs/memsplit2.pdf}
   \caption[Memory partitioning]{Example of memory partitioning across physical units. In this example, the program parallelizes the outer loop by two and vectorizes the inner loop by 4, which generates two vectorized access lanes. We need eight scratchpad banks to sustain the read bandwidth. 
-  \name groups the 8 banks in two virtual memory partitions, $P_A$ (bank 0-3) and $P_B$ (bank 4-7). The address generation contexts $A_0$ and $A_1$ contains the computation for logical address and address remapping, which output $BA$s and $BO$s. \name allocates one merge context per memory partition
+  \name groups the 8 banks in two virtual memory partitions, $P_A$ (bank 0-3) and $P_B$ (bank 4-7).
+  The address generation contexts $A_0$ and $A_1$ contains the computation for logical address and
+  address remapping, which output $BA$s and $BO$s. \name allocates one merging context per memory partition
   ($M_A$ and $M_B$),
-  merging requests from all access lanes. Inside the merge context, the shuffle operator converts the BO from access-aligned to bank-aligned. $A_0$, for example, requests offsets 
+  merging requests from all access lanes. Inside the merging context, the shuffle operator converts the BO from access-aligned to bank-aligned. $A_0$, for example, requests offsets 
   A, B, C, and D ($BO_0$) from banks 1,4,5,and 3 ($BA_0$). The shuffle operator picks the requests belonging to partition A and outputs a BO aligned with bank 0-3. If the bank $i$ in the partition has no request, the $i$th element in the output is marked as invalid.
-  The merge context contains one shuffle operator per request lane, and uses a tree of $OR$
+  The merging context contains one shuffle operator per request lane, and uses a tree of $OR$
   operators to combine all bank-aligned BOs into the final $BO_A$.
   On the receiver side, the memory broadcasts its response to all receiver lanes.
   The receiver context uses an inverse shuffle operator to convert the response from bank-aligned back to access-aligned, using the $BA$ forwarded from the address context. The response is then merged with another OR tree. 
@@ -487,8 +490,8 @@ current parallelization factors, and expressions for BAs and BOs.
 \name groups the banks into virtual memories, with group size limited by the number of banks in a PMU.
 For each access lane, \name allocates a context to compute the logical and remapped address, which
 outputs a vectorized BA and BO for each access lane. BAs and BOs are broadcasted to all memory partitions.
-For each memory partition, \name allocates a merge context, merging BOs from all requesting lanes.
-The merge context uses a shuffle operator to transform the vectorized BO from bank order specified by BA
+For each memory partition, \name allocates a merging context, merging BOs from all requesting lanes.
+The merging context uses a shuffle operator to transform the vectorized BO from bank order specified by BA
 (access-aligned) to bank order assigned to the current partition (bank-aligned).
 Because the static banking analysis guarantees no bank conflicts for all banks,
 \name can use a OR tree to merge the bank-aligned BOs into the final BO that gets send to
@@ -503,20 +506,128 @@ crossbar connection by burning more VUs.
 \Cref{sec:banking_arch} discusses the architectural changes to Plasticine to support this general
 banking scheme.
 
+\paragraph{Bank Grouping}
+Often time, the $BA$ expressions of access lanes can be statically resolved into a vector constant. 
+When this static knowledge is available, \name intelligently groups banks into PMUs to avoid
+crossbar connections between the memory partition and access lanes.
+For example, if $BA_0$ and $BA_1$ are constant vectors with value $[0,2,4,6]$ and $[1,3,5,7]$, an
+assignment of $P_A=[0,1,2,3]$ and $P_B=[4,5,6,7]$ would result in a crossbar connection.
+Instead, \name would assign $P_A=[0,2,4,6]$ and $P_B=[1,3,5,7]$, which corresponds to a one-to-one
+connection.
+
+To achieve this, \name models this as another bank-to-group assignment problem.
+The objective is to minimize the number of groups and the number of groups each access touches.
+As a start, \name assigns each bank to a group. 
+Next, starting with the access that touches the most banks, \name recursively merge groups
+containing the touched banks into a single group until no more groups can be merged.
+The same procedure is repeated for each access.
+
+This algorithm does not guarantee an optimum assignment but we found the solution sufficient in
+most cases we have seen.
+
 \subsection{Register Allocation} \label{sec:regalloc}
 
 \begin{figure}
   \centering
   \includegraphics[width=0.6\columnwidth]{figs/regalloc.pdf}
   \caption[Register Allocation]{
-    Register Allocaiton
+    Register Allocation. We show one lane of the 16 SIMD lanes in this diagram. 
+    The top diagrams show four types of connections of pipeline registers (PR). The SIMD pipeline contains a
+    parameterizable number of PRs per stage per lane. 
+    The function unit can read any PRs from the previous and the current stage, and write to PRs in the current stage.
+    The PRs can be configured to pass through PRs from the previous stage, store the output of the current stage, or be disabled.
+    The bottom diagram shows an example assignment of the PRs.
+    Certain PRs have special connections. 
+    For example, only the 0th register has a special reduction connection, 
+    register [0-2] connects to the counters in the first stage, and register
+    [0-2] can writes to scalar outputs in the last stage, etc.
+    The box around the PR indicates the live range of the registers.
+    The yellow registers hold the temporary variables across stages and can use any register.
   }
   \label{fig:regalloc}
 \end{figure}
 
-After a VU is assigned to a PU, \name setups the configuration within a PU.
-One of the configuration is assigning live variables in the dataflow graph to pipeline registers
-across stages, shown in \Cref{fig:contexta}.
+After a VU is assigned to a PU, \name setups configurations within a PU.
+One of the configurations is assigning variables in the dataflow graph to pipeline registers
+(PRs) across stages, shown in \Cref{fig:contexta}.
+\Cref{fig:regalloc} shows the PR connection in Plasticine and an example assignment.
+
+This process is very similar to register allocation in a traditional compiler.
+\name first builds an interference graph using a liveness analysis and then assigns each virtual register to a
+physical register with a backtracking assignment~\cite{regalloc}.
+There are some customization for Plasticine on the liveness analysis for a SIMD pipeline and
+additional restrictions during assignment due to special connections in PRs.
+
+\paragraph{Liveness Analysis}
+The liveness of certain PRs is defined by their special connection. 
+For example, only the first stage has a connection to counter values and streaming inputs, and only
+the last stage can write to the streaming outputs.
+As a result, the counter and stream-in PRs are live from the first stage until the stage with their last uses
+(exclusive),
+and the stream-out PRs are live from the first stage they are produced to the last stage (inclusive).
+The equation to compute liveness of each stage $s$ is shown below
+\begin{align}
+  \text{LIVE}_{out}(s) &= \begin{cases}
+    \text{STREAM}_{out} & s = \text{final} \\
+    \text{LIVE}_{in}(s+1) & s \neq \text{final}  \label{eq:liveout}\\
+  \end{cases} \\
+  \text{PROP}(s) &= \text{LIVE}_{out}(s) - \text{DEF}(s) \\
+  \text{LIVE}_{in}(s) &= (\text{USE}(s) - \text{ACCUM}(s))\cup \text{PROP}(s)
+\end{align}
+
+Liveness is a backward analysis starting from the last stage of the pipeline. 
+$\text{LIVE}_{in}(s)$ and $\text{LIVE}_{out}(s)$ are set of PRs that are live before and after
+a stage $s$, respectively.
+Since a context
+maps a single basic block, \Cref{eq:liveout} does not contain the $\cup \text{LIVE}_{in}$ in the conventional live-out
+equations.
+$\text{DEF}(s)$ and $\text{USE}(s)$ correspond to the set of PRs produced and consumed by stage $s$,
+respectively.
+$\text{ACCUM}(s)$ are accumulation PRs used in stage $s$. It is removed from the from $\text{LIVE}_{in}$
+because the stage operand connects to the PR of the current stage for accumulation as supposed to from the
+previous stage like other $\text{USE}(s)$.
+$\text{PROP}(s)$ contains the set of PRs whose values are propagated from the previous stage.
+
+\paragraph{Register Coloring}
+Certain PRs have special connections that other PRs do not have.
+\Cref{fig:regalloc} shows an example configuration where the reduction connection is only available in the first PR and PR 0-2 connect to the outputs of counter 0-2.
+For an address pipeline in a PMU, ADDR PR connecting to the address port of the scratchpad is
+another special output PR.
+These special connections set further restrictions on the virtual to physical PR assignment in
+addition to those enforced by the interference graph.
+
+To address this challenge, we model these special connections as colors tagged to the virtual and
+physical PRs.
+Each physical PRs have a set of colors, corresponding to multiple special connections (e.g. 
+PR3 in \Cref{fig:regalloc} has both ScalarIn and VectorOut colors).
+The virtual PRs are tagged with colors if they are produced or used specially, such as the output of
+a counter, or an input to a streaming output.
+If a virtual PR has multiple colors, the virtual PR is split into multiple PRs. 
+For example, if the output of a stage is used both as a scalar output and the address to the scratchpad, the stage is considered to produce two PRs, one for each color.
+If the user uses a counter value as the address to a PMU, \name inserts a MOVE operation
+to convert the CTR PR to an ADDR PR. The move operation can be eliminated if the input and the
+output PR of MOVE operation get assigned to the same physical PR after register allocation.
+A virtual PR carrying a live variable across stages may not have a color and can be assigned to any
+PR.
+
+When constructing the interference graph, any PRs in the same live-out set with different producers are
+considered as interfering with each other. Two PRs might have the same producer as the result of
+color splitting on virtual PR mentioned above.
+
+During the virtual to the physical assignment, a virtual PR can only be assigned to a physical PR if the physical PR contains
+the color of the virtual PR and does not map to another virtual PR that interferes with the current
+virtual PR.
+
+\paragraph{Configuration}
+After register allocation, \name configures the PRs and function unit operands of each stage. 
+For stage $s$, if a PR $pr \in \text{PROP}(s)$, \name connects $pr$'s input to the corresponding PR in
+the previous stage; 
+if $pr \in \text{DEF}(s)$, \name connects $pr$'s input to the output of the function unit; 
+otherwise, \name disables $pr$.
+\name configures all operands in $\text{USE}(s)$ to the corresponding PR in the previous stage,
+except for PRs in $\text{ACCUM}(s)$ and PRs in the first stage.
+For the first stage, $\text{USE}(0)$ do not go through registers, but rather directly connect to
+the output of counters and buffer outputs.
 
 %\subsubsection{Blackbox IP Pruning} \label{sec:bbsplit}
 %\yz{Cut this if out of the space}
