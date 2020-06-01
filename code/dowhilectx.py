@@ -4,7 +4,7 @@
 stop = ScalarStream(init=False)
 accum2 = ScalarStream()
 with Context() as ctxB:
-    accum1 = AccumPR()
+    accum1 = AccumPR(init=0)
     |\CL{A:}| for i in range(*):
         cond = stop.deq()
         if cond: break

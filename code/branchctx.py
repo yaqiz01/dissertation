@@ -11,16 +11,16 @@ with Context() as ctxD:
  |\CL{A:}| for i in range(A):
      |\CL{C:}| if even.deq():
          |\CL{D:}| for j in range(D):
-             addr1, data1 = ...
-             mem.waddr.enq(data1)
-             mem.wdata.enq(data1)
+                addr1, data1 = ...
+                mem.waddr.enq(data1)
+                mem.wdata.enq(data1)
         credit.deq()
 with Context() as rpstW:
  |\CL{A:}| for i in range(A):
      |\CL{C:}| if even.deq():
          |\CL{D:}| for j in range(D):
-             pass
-        token.deq()
+             mem.wack.deq()
+        token.enq()
 with Context() as rqstR:
  |\CL{A:}| for i in range(A):
      |\CL{C:}| if odd.deq():

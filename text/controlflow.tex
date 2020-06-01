@@ -214,8 +214,7 @@ With these controllers, contexts can repeatedly execute their basic blocks for e
 For each virtual memory, \name examines all contexts reading or writing the memory,
 allocating synchronization tokens to enforce their access order.
 The token can be viewed as an access grant of the memory.
-By controlling how tokens are passed between the pipelined contexts, \name can enforce 
-that the memory is read and written with expected ordering of an imperative program.
+By controlling how tokens are passed between the pipelined contexts, \name can enforce that the memory is read and written with the expected ordering of an imperative program.
 \emph{As long as each individual memory is accessed with a program-consistent
 order, the final result is identical to a sequentially executed program}.
 This way, \name introduces minimum point-to-point synchronizations among small groups of contexts; contexts
@@ -232,7 +231,7 @@ Nonetheless, data-analytic programs, which are the intended workloads for RDAs, 
 simple control flow and abundant data-level parallelism (i.e., few basic blocks with high repetition
 counts).
 %The control flows, however, might not be simple enough that a SIMT architecture, designed for
-%massive embarrassingly parallel workloads, can still be heavily underutilized.
+%massive embarrassingly parallel workloads can still be heavily underutilized.
 Supporting flexible control constructs, however, allows an RDA to accelerate a program with
 minimum host intervention, eliminating communication overheads and maximizing FLOPS utilization especially for a
 large-scale RDA.
@@ -276,8 +275,7 @@ write responses are a stream of control tokens without any payload.
 To eliminate the round-trip latency, \name divides each memory access in the input IR into a requesting and a receiving context, as shown in \Cref{fig:contextalloc} (c). 
 For a read access, \name maps the address generation in a separate requesting context, streaming
 addresses to the memory and streaming the data to the receiving context.
-Similarly for a write access, \name allocates a receiving context to accumulate the write acknowledgments 
-for synchronizations.
+Similarly, for a write access, \name allocates a receiving context to accumulate the write acknowledgments for synchronizations.
 
 %We refer to a memory access appeared in the input IR as a \emph{declared access}, as supposed to
 %memory accesses executed at runtime.
@@ -296,18 +294,15 @@ token breaks the cyclic dependency.
 Borrowing the flow-control
 terminology\cite{credit}, we refer to a backward token as a credit.
 If the memory is multi-buffered, the credit buffer is initialized with buffer-depth $D$ number of credit, 
-enabling the earlier access to execute $D$ iterations of the enclosed loop before back-pressured by
-the later access.
+enabling the earlier access to execute $D$ iterations of the enclosed loop before back pressured by the later access.
 
 \name wires up the enqueue/dequeue enable of a token with signals from the duplicated controllers 
 in the writer/reader context.
 For dependencies of a queue, 
 the queue should be written and read every cycle when the producer/receiver basic block is active; 
-to achieve this, \name configures the enqueue and dequeue signal of the token that enforces the
-dependency to the \emph{valid} signals of the innermost controllers in the requesting and receiving
+to achieve this, \name configures the enqueue and dequeue signal of the token that enforces the dependency to the \emph{valid} signals of the innermost controllers in the requesting and receiving
 contexts, respectively.
-For dependencies of a scalar variable or an array, the program expects the producer and consumer
-basic blocks update and inspect the memory per iteration of their LCA controller.
+For dependencies of a scalar variable or an array, the program expects the producer and consumer basic blocks to update and inspect the memory per iteration of their LCA controller.
 For a token that enforces the dependency of two accesses, 
 \name finds the LCA controller between the two accesses in the control hierarchy.
 Then within contexts containing the respective accesses, \name finds the immediate child controllers
@@ -421,8 +416,7 @@ Two DRAM read accesses do not interfere because the DRAM interface permits
 multiple concurrent access streams through multiple AGs, where each AG can access the full off-chip
 address space. 
   SRAMs, on the other hand, guarantees in-order response only within a single stream.
-  Therefore, it is software's responsibility to ensure the read port receives requests from a single
-  context at any point.
+  Therefore, it is the software's responsibility to ensure the read port receives requests from a single context at any point.
 }
 \label{tab:interferetab}
 \end{table*}
@@ -482,12 +476,11 @@ address space.
   in iteration $i+1$ occur before iteration $i$ of loop \emph{A} between \emph{W1} and \emph{R0} in
   two distributed contexts.
   There is no need to enforce the LCD between an access and itself because 
-  the hardware guarantees a single request stream from the same context are served in-order.
+  the hardware guarantees a single request stream from the same context is served in-order.
   For each iteration of \emph{A}, \emph{R0} and \emph{W1} will produce and consume a credit from
   each other no matter what value the condition takes. 
   \Cref{sec:datactrl} will elaborate more on how tokens are used for branches.
-  \emph{R0} and \emph{R1} do not depend on each other because they are both DRAM read accesses as
-  explained in \Cref{tab:interferetab}.
+  \emph{R0} and \emph{R1} do not depend on each other because they are both DRAM read accesses as explained in \Cref{tab:interferetab}.
 }
 \label{fig:depeg}
 \end{figure*}
@@ -654,7 +647,14 @@ that maps the loop body.
 \caption{Timing}
 \end{subfigure}
 \caption[Branching example]{
-  An example program with a branch. 
+  An example program with a outer branch statement. 
+  The LCA controller of the write access \emph{W} and the read access \emph{R} is branch \emph{C}.
+  Therefore, the enqueue enable of \emph{token} and dequeue enable of \emph{credit} is connected to
+  \emph{D.done}, and the dequeue enable of \emph{token} and enqueue enable of \emph{credit} is
+  connected to \emph{F.done} in their respective contexts.
+  If \emph{C}'s condition evaluates to \emph{true}, \emph{D.done} raises to high without executing
+  iterations of loop \emph{D}. Similarly for \emph{F.done} if \emph{C}'s condition evaluates to
+  \emph{false}.
   (d) shows the timing of execution with $A=4$, $D=3$, and $F=2$.
 }
 \label{fig:branch} 
@@ -662,7 +662,7 @@ that maps the loop body.
 
 \paragraph{Branch Condition}
 \name supports both predictions and branches with control divergence.
-Branches within the innermost loops are implemented with predication, so that the innermost loop can still be
+Branches within the innermost loops are implemented with predication so that the innermost loop can still be
 vectorized across SIMD lanes.
 This is very similar to a SIMT architecture, where all lanes execute the \emph{if} clause followed
 by the \emph{else} clause, masking off the memory accesses in the disabled lanes.
@@ -699,22 +699,26 @@ receiver's input buffer, enabling the \emph{if} contexts to execute two iteratio
 waiting for the \emph{else} contexts. For the second iteration of loop \emph{A} ($A_1$), the \emph{if} contexts
 receives a \texttt{false} condition for branch \emph{C}.
 Therefore, the enclosing loop controller \emph{D}'s \emph{done} signal is immediately high, sending the
-token to \emph{rqstR} context right away.
+token to \emph{rqstR} right away.
 On the other side, the $A_0$ of the \emph{else} contexts is blocked by the token from
 the \emph{if} contexts. 
-As soon as the token arrives, the \emph{else} contexts send out the credit immediately,
+As soon as the token arrives, the \emph{else} contexts send out the credit immediately without
+executing loop \emph{f} as the \emph{else} clause is disabled for $A_0$.
 Next, the \emph{else} contexts check for the second token, 
 and executes loop \emph{F} for $A_1$.
 
-Both the \emph{if} and the \emph{else} contexts only execute if their enclosed branch clauses are
+Both the \emph{if} and the \emph{else} contexts only execute if the enables of their enclosed branch clauses are
 evaluated to be true. More interestingly, \Cref{fig:branch} (d) shows a overlapping execution of the
 \emph{if} and \emph{else} clauses across iterations of A. 
-The hardware for both \emph{if} and \emph{else} clauses are active almost all time.
-If the latency of loop \emph{D} and \emph{F} are both $L$, 
-the total runtime for $N$ iterations of loop \emph{A} would be on the order of $\frac{N}{2}L+L$
-on Plasticine, assuming L and N are large.
-\emph{This is almost twice as fast as a traditional coarse-grained pipelining with hierarchical FMS
-schedulers}, like Spatial's FPGA back-end, whose runtime is $NL+L$.
+The contexts allocated for both \emph{if} and \emph{else} clauses are active almost all time if loop \emph{D}
+and \emph{F} runs for large number of iterations.
+If the latency of loop \emph{D} and \emph{F} are both $L$ and the branch has 50\% active for both clauses, 
+the total runtime for $N$ iterations of loop \emph{A} would be on the order of $\frac{N}{2}L$
+for Plasticine, assuming L and N are large.
+This is because the contexts mapping both clauses only executes if their clauses are enabled, which
+corresponds to $\frac{N}{2}$ iterations of the outer loop \emph{A}.
+\emph{The runtime is almost twice as fast as a traditional coarse-grained pipeline with hierarchical FMS
+schedulers}, like Spatial's FPGA back-end, which runs in $NL$.
 
 \paragraph{Do While Loops}
 
@@ -741,34 +745,16 @@ schedulers}, like Spatial's FPGA back-end, whose runtime is $NL+L$.
 \caption{Timing}
 \end{subfigure}
 \caption[Do while example]{
-  An example program for do while loop. 
+  An example program for a do while loop. 
   Loop \emph{A} in (a) is a loop running forever, with a conditional \emph{stop} variable.
-  The break statements in (c) corresponds to configuring the stop signal of the enclosing controller \emph{A}
-  to the output of the stop input buffer. The stop buffer is dequeued every cycle controller \emph{A} is active.
-}
-\label{fig:dowhile} 
-\end{figure*}
-
-The \emph{do while} construct is very useful to express iterative convergence algorithms or handle external
-data stream with a last-bit signal that terminates the execution.
-A \emph{do while} loop works very similarly to a loop with dynamic range, except the loop has a very long
-initialization interval. The earliest starting time for the second iteration of the loop is when the while condition is resolved.
-The while condition is a data-dependency to all contexts mapping the basic blocks enclosed by the while loop.
-%This while condition is a loop carried dependency, assuming the first value is produced after the first
-%iteration.
-There is a loop-carried dependency between the producer of the condition within the while loop body
-and the loop controller that consumes a value of condition every iteration.
-\Cref{fig:dowhile} shows an example with a do-while loop.
-
-%The break statement in (a) translates to a \emph{stop} register associated with the controller of loop
-%\emph{A}. 
 Loop \emph{A} reads and block \emph{C} writes a value of stop for every iteration of loop
 \emph{A}.
 \Cref{fig:dowhile} (b) shows the dataflow graph, mapping each basic block to a context.
 \emph{ctxC} computes the stop condition, which is used by both \emph{ctxC} and \emph{ctxB}.
-There is a loop-carried dependency between the reader of \emph{stop} from loop \emph{A} and the
-writer of stop from block \emph{C}. Therefore, the stop streams in (c) are initialized with 
-\texttt{False} to enable the execution of the first iteration.
+  The break statements in (c) correspond to configuring the stop signal of the enclosing controller \emph{A}
+  to the output of the stop input buffer. The stop buffer is dequeued in every iteration of loop \emph{A}.
+  Due to LCD,  the \emph{stop} stream is initialized with \texttt{False} to enable the execution of
+the first iteration of \emph{A}.
 The \emph{accum} variable in (a) has two readers in block \emph{B} and block \emph{D}; one has a
 loop-carried dependency with the writer (line 9) and the other has a forward data-dependency (line
 11). 
@@ -779,23 +765,47 @@ Without this optimization, \emph{accum1} would be another \texttt{ScalarStream} 
 element 0.
 The other \emph{accum} becomes a scalar stream \emph{accum2}, written by \emph{ctxB} when loop \emph{A}
 is done.
-(d) shows the timing of execution. As we can see, the initialization interval across iterations of
-A in the steady-state is bounded by the latency to evaluate \emph{stop}, which is the number of
-operations in stop expression rounded up to a multiple of 6 stages because the data must
-propagate to the end of each SIMD pipeline.
+  \emph{accum1}'s reset signal is connected to \emph{A.done}. The reset signal is determined by where
+  \emph{accum} is declared in (a), which in this case is outside of loop \emph{A}.
+}
+\label{fig:dowhile} 
+\end{figure*}
+
+The \emph{do while} construct is useful to express iterative convergence algorithms or handle an external
+data stream with a last-bit signal that terminates the execution of the accelerator.
+A \emph{do while} loop works very similarly to a loop with dynamic range, except the do-while loop has a much
+longer initiation interval (II)~\cite{II}. 
+The earliest starting time for the second iteration of the loop is when the while condition is resolved.
+The while condition is a data-dependency to all contexts with basic blocks enclosed by the do-while loop.
+There is a loop-carried dependency between the producer of the condition within the while loop body
+and the do-while loop controller that consumes a value of the condition for every loop iteration.
+\Cref{fig:dowhile} shows an example of a do-while loop.
+
+%The break statement in (a) translates to a \emph{stop} register associated with the controller of loop
+%\emph{A}. 
+%There is a loop-carried dependency between the reader of \emph{stop} from loop \emph{A} and the
+%writer of the stop from block \emph{C}. 
+(d) shows the timing of execution. As we can see, the (II) of loop \emph{A}
+in the steady-state is bounded by the latency to evaluate \emph{stop}, which is the number of
+operations in stop expression rounded up to a multiple of 6~\footnote{When mapping an expression
+with less than 6 operations to the SIMD pipeline in PCU, the latency of the expression is still 6 
+because the data must propagate to the end of the SIMD pipeline.}.
 
 \paragraph{Procedure Calls}
 Our front-end language Spatial currently does not capture procedure calls; 
 all functions are inlined in the IR and do not share resources. 
-In future work, we can extend \name's token mechanism to handle the procedure call easily. 
-The reused hardware corresponding for a function call 
-can be viewed as a shared resource like memories; contexts with callers and callees of the procedure call
-must pass tokens to serialize their access order.
+In future work, we can extend \name's token mechanism to handle the procedure calls, similar to how
+\name handles memory consistency.
+The reused hardware in a function call 
+can be viewed as a shared resource like memories; contexts containing callers of the function
+must pass around tokens to serialize their accessing order based on the program order of the
+callers; the order only matters if the function call is stateful and have side effects.
 
 \subsection{Virtual Unit Allocation}
 After all contexts and shared memory are allocated and synchronized, 
 \name moves each floating context into a VU, which later maps to a PU.
-In the resource allocation phase, \name might partition the big contexts into multiple VUs, and small contexts into a single VU. 
+In the resource allocation phase, \name partitions the big contexts into multiple VUs, 
+and merges small contexts into a single VU. 
 Contexts created with dense specialization mentioned earlier must stay in the same VU as their
 memory during partitioning.
 When contexts are merged into a single VU, they are still
