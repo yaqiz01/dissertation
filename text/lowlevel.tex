@@ -86,6 +86,7 @@ loop iterators used in the datapath.
     Only the first stage can read streams and counter values, and only the last stage can write to streams. 
     Other stages need to propagate the required values through PRs.
     (b) shows a simplified configuration where registers are implicitly allocated.
+    \Cref{sec:resalloc} discusses the register allocation.
     The \texttt{valid} signal of the inner most counter \texttt{j} is high whenever the context is
     enabled. The context is implicitly triggered whenever its input streams \texttt{streamA},
     \texttt{streamB}, and \texttt{streamC} are non-empty and output stream \texttt{outputD} is ready.

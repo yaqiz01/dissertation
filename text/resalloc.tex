@@ -505,6 +505,10 @@ banking scheme.
 
 \subsection{Register Allocation} \label{sec:regalloc}
 
+After a VU is assigned to a PU, \name setups the configuration within a PU.
+One of the configuration is assigning live variables in the dataflow graph to pipeline registers
+across stages, shown in \Cref{fig:contexta}.
+
 %\subsubsection{Blackbox IP Pruning} \label{sec:bbsplit}
 %\yz{Cut this if out of the space}
 %This step illustrates an example of integrating a customized partitioner for composable IP available on
