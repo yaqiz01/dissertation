@@ -356,21 +356,22 @@ $B$ and the delay vectors to reduce the solver runtime.
 \caption[Partitioning and merging algorithm comparisons]{
   Partitioning and merging algorithm comparisons. (a) shows the normalized resource usage between
   different algorithms (the lower the better). (b) and (c) shows the compile time of each algorithm.
+  Benchmarks include BlackScholes (bs), multi-layer perceptron (mlp), and random forests (rf).
 }
 \label{fig:split}
 \end{figure*}
 
-\todo{Benchmark Table}
 \Cref{fig:split} shows the comparison between the traversal-based and the solver-based solutions for both
 compute partitioning and global merging.
 Global merging is a global optimization merging small VUs into a large VU that can still fit in
 a PU. 
 The merging algorithm is very similar to the compute partitioning algorithm, where nodes in the
 dataflow graph corresponds to the VUs in a VUDFG. 
-The merging problem also has a traversal-based and solver-based solution.
-\Cref{sec:opt} will discuss merging in more detail.
+The traversal and solver-based algorithms for partitioning can be extended to handle the merging
+problem.
+\Cref{sec:opt} will discuss merging problem in more detail.
 
-We used a commercial solver, Gurobi~\cite{gurobi}, for the solver-based solutions. 
+We used a commercial solver, Gurobi~\cite{gurobi}, for the solver-based algorithm. 
 The evaluation is performed on an Intel Xeon E7-8890 CPU at 2.5GHz with 1TB DDR4 RAM. 
 Gurobi is parallelized across ten threads for each application.
 To speed up convergence, we configured Gurobi with a 15\% optimality gap, i.e., the solver is allowed to early stop after the solution is more than 85\% close to the optimum. 
