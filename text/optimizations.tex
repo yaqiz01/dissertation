@@ -1,12 +1,12 @@
 \section{Optimizations}\label{sec:opt}
 \name performs many of the standard compiler optimizations,
-such as Dead Code Elimination and Constant Propagation.
+such as dead code elimination and constant propagation.
 Some of them, however, play a much more important role for reconfigurable accelerator because they
 have a direct impact on resource usage.
 Other optimizations can be counter-intuitive, as they introduce redundant computation that
 reduces resources without necessarily impacting performance.
 In this discussion, we focus our primary objective on performance.
-Reducing resources is an indirect objective as resource reduction enable larger parallelization factors,
+Reducing resources is an indirect objective as resource saving enable larger parallelization factors,
 which in turn improves performance.
 Other objectives, such as power saving, is left as future work.
 
@@ -30,7 +30,7 @@ Other objectives, such as power saving, is left as future work.
   scratchpad, \name maps the memory into a non-indexable vector stream in (b). The vector stream
   stores address [0-15] of the original memory, whereas the reader $R1$ requests address [15-0] instead.
   \name uses a \texttt{shuffle} operator to swap the vector elements based on reader's expected order.
-  This is the same \texttt{shuffle} operator we introduced in the memory partitioning section
+  This is the same \texttt{shuffle} operator we introduced in the memory partitioning section in
   \Cref{sec:memsplit}. 
 }
 \label{fig:msr}
@@ -70,7 +70,7 @@ Plasticine.
   through is safe, \name needs to have access to all readers and writers of a memory, and analyze
   the control structure around the memory accesses.
   In addition to saving on the memory, the optimization eliminates the basic block in line 7 of (a)
-  and line 8 of (b), which saves a context.
+  and line 8 of (b), which saves a context in each example.
 }
 \label{fig:rtelm}
 \end{figure*}
@@ -97,7 +97,8 @@ Eliminating route-through patterns can simplify the control hierarchy and reduce
 \label{fig:retiming}
 \end{figure*}
 \subparagraph{Retiming with scratchpad (retime-mem).} 
-By default, \name{} uses input buffers in PU for retiming purposes. 
+By default, \name{} uses input buffers in PU for retiming during compute partitiong discussed
+in~\Cref{sec:compsplit}.
 This option enables \name{} to use scratchpad memory to retime paths requiring deep buffers.
 \Cref{fig:retiming} shows VUDFGs after retiming with and without scratchpad retiming. As we can see,
 allowing scratchpad and input buffer for retiming significantly reduces the total number of retiming
