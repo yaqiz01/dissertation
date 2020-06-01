@@ -4,7 +4,7 @@
 
 With the end of Dennard Scaling~\cite{dennard}, the amount of performance one can extract from a CPU is reaching a limit.
 To provide general-purpose flexibility, CPUs spend the majority of resources and energy on overheads, 
-including dynamic-instruction fetching and decoding, branch prediction, and a cache hierarchy, etc., 
+including dynamic-instruction fetching and scheduling, branch prediction, and a cache hierarchy, etc., 
 with less than 20\% of 
 the energy on the actual computation~\cite{mark}.
 Even worse, power wall is limiting the entire multicore family
@@ -15,16 +15,16 @@ For this reason, hardware acceleration is emerging in various compute-intensive 
 to provide orders of magnitude acceleration, enabling algorithms that were otherwise
 infeasible~\cite{genomicaccel, bioaccel, fpgadeeplearn, fpgacripto}.
 Examples include widely adopted General-Purpose Graphics Processing Units (GPGPUs) 
-in computational genomics, signal processing, graph processing, and
-deep learning, etc.~\cite{genomicaccel, bioaccel, fpgacloudsurvey}.
+in computational genomics, signal processing, and
+deep learning, graph processing~\cite{genomicaccel, bioaccel, fpgacloudsurvey}.
 Moreover, many recent efforts are spent on leveraging application domain knowledge in hardware design to enable 
 continued performance scaling while meeting the power budget~\cite{turinglecture}.
 As artificial intelligence receiving great success in industry and business,
-past years have seen a growing interest in machine learning accelerators;
+recent years have seen a growing interest in machine learning accelerators;
 these accelerators contain specialized circuits for ML kernels that dramatically improve the compute
 efficiency~\cite{dadiannao,tpu,eie,chen2017eyeriss,tangram,truenorth}.
 
-Nonetheless, it is non-trivial to achieve good utilization of these accelerators.
+Nonetheless, it is non-trivial to achieve good utilization with these accelerators.
 While the peak FLOPS of GPU has increased by over 20x in the past 10 years, the achievable FLOPS is
 not increasing accordingly~\cite{floptrend, gpuperfana}.
 The massive threads in GPU require embarrassedly parallel workloads to fully saturate the compute
@@ -37,9 +37,9 @@ However, ML algorithms evolve much faster than the development and manufacture c
 leading to inefficiency or even unsupported applications.
 For example, hybrid models, such as Mask R-CNN~\cite{maskrcnn} and DeepLab~\cite{deeplab}, contain
 combinations of GEMM-compatible and incompatible operations, both computationally expensive.
-Fix-functional accelerators focusing on GEMM operations, such as TPU~\cite{tpu}, 
+Fixed-functional accelerators focusing on GEMM operations, such as TPU~\cite{tpu}, 
 have to rely on CPUs for unsupported operations or
-convert non-GEMM operations to GEMM operations, resulting in a severe performance gap between the
+convert non-GEMM operations to GEMM operations, resulting in a large performance gap between the
 peak and effective FLOPS~\cite{effflexdnnaccel}.
 \Cref{fig:peakutil} illustrates a trade-off between average utilization of the peak FLOPS over a range
 of applications and the peak FLOPS available on the hardware.
@@ -65,12 +65,14 @@ of applications and the peak FLOPS available on the hardware.
 \label{fig:peakutil}
 \end{figure*}
 
-Reconfigurable spatial architectures overcome this limitation by changing their datapaths based on applications' needs.
-Applications are configured at the circuit-level without dynamic instruction fetching and decoding,
+Reconfigurable spatial architectures overcome this limitation by changing their datapaths based on
+an application's need.
+Applications are configured at the circuit-level without dynamic instruction fetching and scheduling,
 hence improving energy-efficiency~\cite{calhoun,fpgaPower}.
-In addition to instruction, data, and task-level parallelism explored by processor architectures, spatial architectures also explore instruction and task-level pipelining that further increases the compute throughput~\cite{spatial-computation}.
-Exploring pipeline parallelism enables spatial architectures to achieve a high-throughput
-without massively parallelize every stage of the program.
+In addition to instruction, data, and task-level parallelism exploited by processor architectures,
+spatial architectures also exploit instruction and task-level pipelining that further increases the compute throughput~\cite{spatial-computation}.
+Exploiting pipeline parallelism enables spatial architectures to achieve high-throughput
+without massively parallelizing every stage of the program.
 Flexible datapath also permits resource distribution proportional to the compute intensity of
 program stages.
 A key performance optimization on reconfigurable accelerators is an application-level design space
@@ -81,9 +83,10 @@ One of the mainstream reconfigurable spatial architecture is
 Field Programmable Gate Arrays (FPGAs) that support fine-grain, 
 bit-level reconfigurability with a soft logic fabric~\cite{fpga-survey}.
 The flexible interconnect and lookup table-based logic gate can be configured to implement arbitrary
-datapath.
+datapaths.
 FPGAs have been used to deploy services commercially~\cite{microsoft, baidu, deephi} and can be rented on the AWS F1 cloud~\cite{aws}. 
-Although around for a long time, FPGAs are not broadly accepted among high-level application programmers due to their low-level programming interface and long compilation time.
+Although they have been around for a long time, FPGAs are not broadly accepted among high-level
+application programmers due to their low-level programming interface and long compilation times.
 Fine-tuning applications on FPGAs requires expertise in digital design and takes a long development cycle, which hinder their accessibility to the general software community.
 As application-level accelerators, FPGAs also suffer from overhead in fine-grained reconfigurability; 
 studies have shown that over 60\% of the chip area of an FPGA is spent on routing resources~\cite{fpgaSurvey, calhoun, fpgaPower}. 
@@ -136,7 +139,7 @@ Applications are mapped to RDAs by distributing computations spatially across mu
 blocks and executing them in a pipelined, data-driven fashion. 
 In traditional Networks-on-Chip
 (NoCs) for multicore systems, communication is the result of explicit message passing between
-parallel workers or cache misses that generate messages for coherence protocol; these traffics are bursty and
+parallel workers or cache misses that generate messages for coherence protocol; this traffic is bursty and
 relatively infrequent. 
 On RDAs, however, applications are distributed by parallelizing and pipelining; 
 pipelining introduces frequent and throughput-sensitive communication. 
@@ -254,14 +257,14 @@ declarative streaming configurations.
 By support imperative constructs on a data-flow architecture efficiently, \name not only improves
 the programmability of Plasticine, but also enables cross kernel optimizations.
 These optimizations have demonstrated an average 30x speedup over a Tesla V100 GPU and 2x speedup over
-a Stratix 10 FPGA from a Plasticine with much less on-chip resource than the baseline architectures~\cite{tz_rnn}.
+a Stratix 10 FPGA with a Plasticine chip with much less on-chip resource than the baseline architectures~\cite{tz_rnn}.
 
 \section{Contribution}
 
-This thesis work is upon the prior works on the Plasticine architecture~\cite{plasticine} and the Spatial
+This thesis work builds upon the prior work on the Plasticine architecture~\cite{plasticine} and the Spatial
 compiler~\cite{spatial}.
 We address the programmability and scalability challenges from a software
-and a hardware angle.
+and a hardware perspective.
 We first introduce the Plasticine compiler---\name---that maps Spatial applications to Plasticine.
 Next, we present several architectural augmentations to Plasticine to increase the flexibility in interconnect, memory access patterns, and control flow.
 
