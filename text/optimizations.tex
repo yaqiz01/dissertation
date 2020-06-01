@@ -6,7 +6,7 @@ have a direct impact on resource usage.
 Other optimizations can be counter-intuitive, as they introduce redundant computation that
 reduces resources without necessarily impacting performance.
 In this discussion, we focus our primary objective on performance.
-Reducing resources is an indirect objective as resource saving enable larger parallelization factors,
+Reducing resources is an indirect objective as resource-saving enable larger parallelization factors,
 which in turn improves performance.
 Other objectives, such as power saving, is left as future work.
 
@@ -88,8 +88,7 @@ Eliminating route-through patterns can simplify the control hierarchy and reduce
 \centering
 \includegraphics[width=0.8\textwidth]{figs/retiming.pdf}
 \caption[Retiming]{
-  Virtual unit dataflow graph (VUDFG) after retiming. CU: virtual compute unit. MU: virtual memory
-  unit. MCI: memory controller interface.
+  Virtual unit dataflow graph (VUDFG) after retiming. CU: virtual compute unit. MU: virtual memory unit. MCI: memory controller interface.
   Left: retiming with input buffer only. Right: retiming with either input buffer or scratchpad.
   The yellow CUs are CUs used for retiming. The original program does not have MU and the yellow MU
   on the right are MUs used for retiming. 
@@ -97,7 +96,7 @@ Eliminating route-through patterns can simplify the control hierarchy and reduce
 \label{fig:retiming}
 \end{figure*}
 \subparagraph{Retiming with scratchpad (retime-mem).} 
-By default, \name{} uses input buffers in PU for retiming during compute partitiong discussed
+By default, \name{} uses input buffers in PU for retiming during compute partitioning discussed
 in~\Cref{sec:compsplit}.
 This option enables \name{} to use scratchpad memory to retime paths requiring deep buffers.
 \Cref{fig:retiming} shows VUDFGs after retiming with and without scratchpad retiming. As we can see,
@@ -142,9 +141,9 @@ parallelization in the common cases.
 Combined with \emph{msr} and \emph{rtelm} mentioned above, \name is able to 
 dramatically reduce the resource usage for certain parallelization factors.
 \Cref{fig:mlp} shows an interesting case study on an MLP presenting performance scaling and resource
-increase while increasing the parallelization factor on output dimension of all layers of the
+increase while increasing the parallelization factor on the output dimension of all layers of the
 MLP.
-\Cref{fig:mlp} (b) demonstrates that Plasticine can have resource
+\Cref{fig:mlp} (b) demonstrates that Plasticine can have a resource
 non-linearly increasing with parallelization factors, 
 while having perfect performance scaling, due to compiler optimizations.
 
@@ -217,7 +216,7 @@ eliminates the risk of infeasible assignment due to merging in the traversal-bas
 \label{fig:reversehoisting}
 \end{figure*}
 
-A common loop optimization on procesor-based architecture is to move loop-invariant expressions 
+A common loop optimization on processor-based architecture is to move loop-invariant expressions 
 outside of the loop body to reduce computation. 
 This transformation, however, can introduce more basic blocks in the program, that translates to
 more contexts on Plasticine.
@@ -234,9 +233,8 @@ Currently, we rely on the user to perform this optimization manually.
 \centering
 \includegraphics[width=0.8\textwidth]{figs/heat.pdf}
 \caption[Optimization effectiveness]{
-  Optimization effectiveness. Percentage resource reduction or performance improvement from each
-  optimization. The heat map shows the maximum differences when turning on/off the optimization, 
-  while fixing other optimizations at the most optimal combination for the application.
+  Optimization effectiveness. Percentage resource reduction or performance improvement from each optimization. 
+The heat map shows the maximum differences when turning on/off the optimization while fixing other optimizations at the most optimal combination for the application.
   Each application has a large design space with various parallelization factors in different loops, 
   we report a design point that has the maximum impact, either positively or negatively.
   Benchmarks include multi-layer perceptron (mlp), BlackScholes (bs), random forests (rf), page rank
