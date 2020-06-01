@@ -1,32 +1,32 @@
 \section{Resource Allocation} \label{sec:resalloc}
 
-The output of the transformation (\Cref{sec:control}) is a VUDFG that 
+The output of the imperative to dataflow transformation discussed in \Cref{sec:control} is a VUDFG that 
 can execute on a Plasticine with physical units (PUs) that have infinite resources.
 The \emph{Resource Allocation} phase enforces and addresses constraint violations given 
 the specification of the Plasticine units. 
 At the end of this phase, \name assigns each VU in the VUDFG graph to a PU type with required
 resources; the placer then takes the type assignments and determines the final placement.
 
-Accelerators often have heterogeneity in compute resources to improve efficiency for commonly used
+Accelerators often have heterogeneity in compute resources to improve efficiency for common
 special operations.
-In Plasticine, PMUs and DAGs have specialized compute pipelines for address calculation that are 
+In Plasticine, PMUs and AGs have specialized compute pipelines for address calculation that are 
 less capable than the compute pipeline in PCUs.
 However, heterogeneity tends to reduce average utilization because different applications, and even the same application with different data sizes, can vary highly in the desired ratio among different
 resource~\cite{tz_rnn}.
-A compute-bound application, for example, can heavily underutilize the DAGs and PMUs.
+A compute-bound application, for example, can heavily underutilize the AGs and PMUs.
 To address this problem, \name models the virtual to physical assignment as a constraint satisfaction problem; 
 each VU consumes a set of resources and can only be assigned to a PU if the PU processes the required resources. 
 %Instead of using heuristics to assign certain a type of VU to a type of PU, we
 \Cref{tab:resource} shows the types of resources \name models in Plasticine's heterogeneous units.
 For example, special connection to off-chip memory interface is
-also treated as a type of resource in the DAG, which forces virtual contexts accessing DRAM to map to DAGs. 
+also treated as a type of resource in the AG, which forces virtual contexts accessing DRAM to map to AGs. 
 On the other side, regular contexts with non-vectorized fixed-point operations can also be mapped to
-spare DAGs, which improves utilization.
+spare AGs, which improves utilization.
 \begin{table*}
   \centering
 \begin{tabular}{lcccc}
   \toprule
-  Feature & PCU & PMU & DAG & Host Unit\\ \midrule
+  Feature & PCU & PMU & AG & Host Unit\\ \midrule
   Vector lane width & 16 & 16 & 1 & 1 \\
   Fixed-point op & \cmark & \cmark & \cmark & \xmark\\
   Float-point op & \cmark & \xmark & \xmark & \xmark\\
