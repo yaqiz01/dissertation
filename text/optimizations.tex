@@ -142,27 +142,32 @@ parallelization in the common cases.
 Combined with \emph{msr} and \emph{rtelm} mentioned above, \name is able to 
 dramatically reduce the resource usage for certain parallelization factors.
 \Cref{fig:mlp} shows an interesting case study on an MLP presenting performance scaling and resource
-increase while scaling up parallelism.
+increase while increasing the parallelization factor on output dimension of all layers of the
+MLP.
 \Cref{fig:mlp} (b) demonstrates that Plasticine can have resource
-non-linearly increasing with parallelization factors, while having perfect performance scaling, due to compiler optimizations.
+non-linearly increasing with parallelization factors, 
+while having perfect performance scaling, due to compiler optimizations.
 
 \subparagraph{Read address duplication (dupra).} 
 %The long traveling path for BA from the address context to the receiver context showing in memory partitioning
 %\Cref{sec:memsplit} \Cref{fig:memsplit} can cause pipeline stalls due to the imbalance datapath between
 %the BA forwarding path and the memory data path.
-Between the address context and receiver contexts in memory partitioning shown in \Cref{sec:memsplit}
+Between the address context and receiver contexts in memory partitioning shown in 
 \Cref{fig:memsplit},
 the imbalance datapaths between BA forwarding and request datapath can cause significant pipeline
-stalls, limiting the overall application performance to a small fraction of the ideal throughput.
+stalls due to insufficient buffering on the BA forwarding path.
 When parallelizing the memory access, the OR tree in the merge context gets partitioned into a tree
 of contexts, which further increases the mismatch in latency between the imbalanced datapaths.
+This can limit the overall application performance to a small fraction of the ideal throughput.
 Instead of retiming BA forwarding path, 
 this compiler flag forces \name to duplicate the BA computation using local states
-within the receiver context, which could use fewer resources than retiming.
+within the receiver context, which could use fewer resources than retiming if address computation is
+simple.
 
 \subparagraph{Global Merging (merge).}
 After all VUs satisfy the hardware constraint, we perform a global optimization to compact small VUs into larger VUs. 
-Merging has a very similar problem statement as compute partitioning (\Cref{sec:compsplit}) except with more constraints.
+Merging has a very similar problem statement as compute partitioning discussed in
+\Cref{sec:compsplit} except with more constraints.
 For merging, the VUDFG is the graph, the VUs are the nodes, and the merged VUs are partitions.
 Unlike the partitioning problem, which uses a single set of cost metrics to determine if a partition
 is valid, the merged partition
@@ -212,7 +217,7 @@ eliminates the risk of infeasible assignment due to merging in the traversal-bas
 \label{fig:reversehoisting}
 \end{figure*}
 
-A common loop optimization on traditional CPU is to move loop-invariant expressions 
+A common loop optimization on procesor-based architecture is to move loop-invariant expressions 
 outside of the loop body to reduce computation. 
 This transformation, however, can introduce more basic blocks in the program, that translates to
 more contexts on Plasticine.
@@ -223,7 +228,7 @@ moving instructions into the loop body increases computation without hurting thr
 dominant the performance for spatial architecture.
 Currently, we rely on the user to perform this optimization manually.
 
-\subsection{Evaluation (WIP)}
+\subsection{Evaluation}
 
 \begin{figure*}
 \centering
@@ -231,9 +236,11 @@ Currently, we rely on the user to perform this optimization manually.
 \caption[Optimization effectiveness]{
   Optimization effectiveness. Percentage resource reduction or performance improvement from each
   optimization. The heat map shows the maximum differences when turning on/off the optimization, 
-  while fixing other optimizations at the most optimum combination for the application.
+  while fixing other optimizations at the most optimal combination for the application.
   Each application has a large design space with various parallelization factors in different loops, 
   we report a design point that has the maximum impact, either positively or negatively.
+  Benchmarks include multi-layer perceptron (mlp), BlackScholes (bs), random forests (rf), page rank
+  (pr), and long short-term memory recurrent neural network~\cite{hochreiter1997long}.
 }
 \label{fig:heat}
 \end{figure*}
@@ -244,7 +251,7 @@ optimizations discussed in \Cref{sec:des}.
 \emph{merge} and \emph{rtelm} are optimizations that gives a consistent resource improvement for most applications.
 \emph{dupra} and \emph{msr} helps \emph{\bf mlp} and \emph{\bf lstm}, which are heavily partitioned during the memory-partitioning stage.
 
-\emph{dupra} significantly reduces unbalancing in the data path caused due to the large merge tree generated by memory partitioning.
+\emph{dupra} significantly reduces unbalancing in the data path caused due to the large merging tree generated by memory partitioning.
 \emph{retime} can have a significant impact on the performance of the application at the cost of an increase in resource usage.
 Using scratchpad as a retiming buffer with the \emph{retime-mem} flag can significantly reduce resource usage.
 
