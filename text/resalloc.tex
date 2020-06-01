@@ -371,32 +371,39 @@ The traversal and solver-based algorithms for partitioning can be extended to ha
 problem.
 \Cref{sec:opt} will discuss merging problem in more detail.
 
-We used a commercial solver, Gurobi~\cite{gurobi}, for the solver-based algorithm. 
+We use a commercial solver, Gurobi~\cite{gurobi}, for the solver-based algorithm. 
 The evaluation is performed on an Intel Xeon E7-8890 CPU at 2.5GHz with 1TB DDR4 RAM. 
 Gurobi is parallelized across ten threads for each application.
-To speed up convergence, we configured Gurobi with a 15\% optimality gap, i.e., the solver is allowed to early stop after the solution is more than 85\% close to the optimum. 
+To speed up convergence, we configure Gurobi with a 15\% optimality gap, i.e., 
+the solver is allowed to early stop after the current solution is less than 15\% worse than the optimum
+solution. 
 %To speed up convergence, we use a 15\% optimality gap that stops the solver at a reasonable solution.
 The solving time increases dramatically as getting close to 100\% optimum.
 
-\Cref{fig:split} (a) shows the normalized resource in a number of VUs after partitioning and merging.
+\Cref{fig:split} (a) shows the normalized resources in the number of VUs after partitioning and merging.
 We can see that Gurobi provides almost the best solution for all applications when it can derive
 an answer in a reasonable amount of time. The missing solver bar in random forest (\emph{rf}) partitioning
 is due to timeout after a few days.
 The traversal-based algorithms can sometimes match or even outperform the solver slightly.
 However, because the partitioning result is a function of the traversal order, 
 each traversal order has adversarial cases, where they can be up to 1.7x worse in resource than the best possible solution.
-The forward (\emph{fwd}) traversal order schedules nodes as earlier as possible, which reduces the number of
+We found the forward (\emph{fwd}) traversal order schedules nodes as earlier as possible, reducing the number of
 external live variables; the backward traversal minimizes the number of internal live variables
 across partitions.
 The depth-first-search (DFS) traversal order minimizes the number of live variables between partitions, 
 albeit producing more imbalanced paths between partitions. 
 On the other hand, breath-first-search (BFS) produces more balanced partitioning with more live variables and partitions.
 
-There are two common graph patterns in applications that require partitioning. 
+There are two common graph patterns in the applications that require partitioning. 
 The first is a dataflow graph from a large basic block, which contains a small set of external
-live-in and live-out variables and abundant intermediate temporary variables.
+live-in and -out variables and many intermediate temporary variables.
 Such graphs typically end up with long-live variables across partitions that require retiming.
-\todo{show example and discuss the other pattern.}
+%\todo{show example and discuss the other pattern.}
+The second is a balanced tree structure as the result of partitioning
+a logical memory across PUs discussed later in \Cref{sec:memsplit}.
+The first structure favors the DFS traversal order, minimizing the number of partitions. The second
+structure favors the BFS traversal order, creating balanced partitions without additional
+retiming VUs.
 
 \Cref{fig:split} (b) and (c) shows the compile time for these algorithms. The single-threaded
 the traversal-based algorithm runs in minutes, which is significantly faster than the parallelized solver that takes hours to days.
@@ -406,18 +413,16 @@ In general, the solver runtime becomes quickly unbounded with a large amount of 
 In summary, the solver solution provides a guaranteed close-to-optimum solution at an expensive
 compile time. Nonetheless, the solver-solution treats the retiming and partitioning as a joint optimization,
 whereas the traversal-based solution solves these two problems in two separate passes,
-which is less optimum.
-Moreover, the solver-based solution tends to produce a better result for architectures with tight I/O
-bound and relax stage constraint.
+generating less optimal solutions.
+Moreover, the solver-based solution tends to produce a better result for PUs with a tight I/O
+bound (small number of I/Os and large number of stages).
 The traversal-based solutions, on the other hand, can produce a decent solution in a short amount of
 time.
 However, the solution is a function of the traversal order; hence, the quality of the partitioning
 is highly sensitive to the graph structures.
-Certain traversal orders show a 10-50\% worse in resource than the solver-based solution in 
-\Cref{fig:split} (a).
 In practice, we can combine the two approaches and invoke the expensive solver only when the
-traversal-based solution is insufficient. The quality of the traversal-based solution can be easily estimated by the resource utilization in each partition.
-
+traversal-based solution is insufficient. The quality of the traversal-based solution can be easily
+estimated with the resource utilization of a partition.
 
 \subsection{Memory Partitioning} \label{sec:memsplit}
 The memory pruner addresses virtual on-chip memory exceeding the capacity and bandwidth limit of a
