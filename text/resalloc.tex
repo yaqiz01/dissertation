@@ -450,22 +450,6 @@ providing the abstraction of a shared memory.
   \caption[Memory model of different architectures]{Memory model of different architectures}
   \label{fig:memmodel}
 \end{figure}
-
-The coherence protocol is both expensive in hardware complexity and hard to scale in bandwidth for
-streaming pipelined execution.
-Instead of making redundant copies of the data, we can partition the data across different memory
-partitions to get additional address port on a reconfigurable accelerator, as shown in
-\Cref{fig:memmodel} (b).
-Each parallel worker broadcasts the requests to all memory partitions.
-If the data accessed by two parallel workers live in the same bank, the bandwidth will be halved.
-To avoid bank conflicts, an important static analysis often used on reconfigurable accelerators is called static partitioning, or static banking~\cite{poly_cong}.
-For most address patterns, the compiler can derive a partitioning scheme such that every partition is accessed by a
-single worker at any time, which guarantees bandwidth at runtime.
-The output of the analysis is an expression for bank address (BA) and bank offset (BO), both are
-functions of the requested logical address.
-BA determines which partition each request is going to, and BO is the offset within the
-partition.
-
 \begin{figure}
   \centering
   \includegraphics[width=0.6\columnwidth]{figs/memsplit2.pdf}
@@ -481,6 +465,21 @@ partition.
   }
   \label{fig:memsplit}
 \end{figure}
+
+The coherence protocol is both expensive in hardware complexity and hard to scale in bandwidth for
+streaming pipelined execution.
+Instead of making redundant copies of the data, we can partition the data across different memory
+partitions to get additional address port on a reconfigurable accelerator, as shown in
+\Cref{fig:memmodel} (b).
+Each parallel worker broadcasts the requests to all memory partitions.
+If the data accessed by two parallel workers live in the same bank, the bandwidth will be halved.
+To avoid bank conflicts, an important static analysis often used on reconfigurable accelerators is called static partitioning, or static banking~\cite{poly_cong}.
+For most address patterns, the compiler can derive a partitioning scheme such that every partition is accessed by a
+single worker at any time, which guarantees bandwidth at runtime.
+The output of the analysis is an expression for bank address (BA) and bank offset (BO), both are
+functions of the requested logical address.
+BA determines which partition each request is going to, and BO is the offset within the
+partition.
 
 \Cref{fig:memsplit} shows how static banking is achieved on the Plasticine architecture.
 Banking analysis from Spatial specifies the number of banks required to sustain bandwidth for the
