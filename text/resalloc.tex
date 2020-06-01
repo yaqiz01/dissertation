@@ -299,6 +299,8 @@ The convex optimization solution models the problem as a node-to-partition assig
 \Cref{tab:solver-eqns} gives our formulation and \Cref{tab:solver-variables} explains the notations
 used in \Cref{tab:solver-eqns}.
 
+\input{text/solver_table}
+
 At a high-level, we use a boolean matrix $B$ to keep track of the assignment. 
 $B$ has dimension equals to the number of nodes in the dataflow graph by the maximum number of partitions, where$B[i,j]=1$ 
 indicates node $i$ is assigned to partition $j$.
@@ -319,9 +321,45 @@ these delay variables are also used to calculate where retiming is required and 
 Finally, we use the traversal-based solution to warm start the assignment matrix
 $B$ and the delay vectors to reduce the solver runtime.
 
-\input{text/solver_table}
-
 \subsubsection{Comparison}
+
+\begin{figure*}
+\centering
+\hfill
+\begin{subfigure}[b]{0.35\textwidth}
+\includegraphics[width=1\textwidth]{figs/algo2.pdf}
+\caption{Resource Comparison}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.64\textwidth}
+\centering
+\begin{tabular}{lccccc}
+  \toprule
+  \input{data/algo2_split.tex}
+ \bottomrule
+\end{tabular}
+\caption{
+  Compile time for spltting
+}
+\vspace{0.1cm}
+\begin{tabular}{lccccc}
+  \toprule
+  \input{data/algo2_merge.tex}
+ \bottomrule
+\end{tabular}
+\caption{
+  Compile time for merging
+}
+\vspace{0.65cm}
+\end{subfigure}
+\hfill
+\caption[Partitioning and merging algorithm comparisons]{
+  Partitioning and merging algorithm comparisons. (a) shows the normalized resource usage between
+  different algorithms (the lower the better). (b) and (c) shows the compile time of each algorithm.
+}
+\label{fig:split}
+\end{figure*}
+
 \todo{Benchmark Table}
 \Cref{fig:split} shows the comparison between the traversal-based and the solver-based solutions for both
 compute partitioning and global merging.
@@ -379,42 +417,6 @@ Certain traversal orders show a 10-50\% worse in resource than the solver-based 
 In practice, we can combine the two approaches and invoke the expensive solver only when the
 traversal-based solution is insufficient. The quality of the traversal-based solution can be easily estimated by the resource utilization in each partition.
 
-\begin{figure*}
-\centering
-\hfill
-\begin{subfigure}[b]{0.35\textwidth}
-\includegraphics[width=1\textwidth]{figs/algo2.pdf}
-\caption{Resource Comparison}
-\end{subfigure}
-\hfill
-\begin{subfigure}[b]{0.64\textwidth}
-\centering
-\begin{tabular}{lccccc}
-  \toprule
-  \input{data/algo2_split.tex}
- \bottomrule
-\end{tabular}
-\caption{
-  Compile time for spltting
-}
-\vspace{0.1cm}
-\begin{tabular}{lccccc}
-  \toprule
-  \input{data/algo2_merge.tex}
- \bottomrule
-\end{tabular}
-\caption{
-  Compile time for merging
-}
-\vspace{0.65cm}
-\end{subfigure}
-\hfill
-\caption[Partitioning and merging algorithm comparisons]{
-  Partitioning and merging algorithm comparisons. (a) shows the normalized resource usage between
-  different algorithms (the lower the better). (b) and (c) shows the compile time of each algorithm.
-}
-\label{fig:split}
-\end{figure*}
 
 \subsection{Memory Partitioning} \label{sec:memsplit}
 The memory pruner addresses virtual on-chip memory exceeding the capacity and bandwidth limit of a
