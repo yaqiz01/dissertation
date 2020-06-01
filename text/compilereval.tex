@@ -26,40 +26,28 @@
 %\label{fig:par}
 %\end{figure*}
 
-\newcommand{\mrow}[1]{\multirow{2}{*}{#1}}
 \begin{table}[t]
   \centering
     \footnotesize
-    \begin{tabular}{llcc}
+    \begin{tabular}{lcccccc}
     \toprule
-      \textbf{Benchmark} (Unit)       & \textbf{Compiler} & {\bf Latency }(ms) & {\bf Throughput}(Unit/s)     \\
+      \multirow{2}{*}{\textbf{Benchmark}} &
+      \multirow{2}{*}{\makecell[c]{\bf Throughout\\\bf Unit}} &
+      \multirow{2}{*}{\makecell[c]{\bf GPU\\\bf Compiler}} & \multicolumn{2}{c}{\textbf{Latency} (ms)} &
+      \multicolumn{2}{c}{\textbf{Throughput} (Unit/s)} \\
+                                & & & \name & GPU & \name & GPU     \\
       \midrule
-        SqueezeNet (batch-1)   & SARA                & 49.13          & 0.12 (1.1)           \\
-        {\em (kFrames)}        & TensorFlow          & 70.10          & 0.4                  \\
-                               & Speedup             & 1.43x          & 0.31x (2.75x)          \\ \addlinespace
-        LSTM (batch-32)         & SARA                & 3.61           & 8.8 (79.2)           \\
-        {\em (kSamples)}       & TensorFlow          & 6.81           & 4.7                  \\
-                               & Speedup             & 1.89x          & 1.87x (16.85x)         \\ \addlinespace
-        PageRank               & SARA                & 128.27         & 49                   \\
-        {\em (MEdges)}         & GunRock             & 829.39         & 7.5                  \\
-                               & Speedup             & 6.47x          & 6.5x                  \\ \addlinespace
-        BlackScholes           & SARA                & 0.09           & 88.88                \\
-        {\em (GOptions)}       & CUDA                & 0.10           & 80.02                \\
-                               & Speedup             & 1.11x          & 1.11x                 \\ \addlinespace
-        Random Forest          & SARA                & 0.10           & 1.04                 \\
-        {\em (MSamples)}       & CUDA                & 0.32           & 0.32                 \\
-                               & Speedup             & 3.25x          & 3.25x                 \\ \addlinespace
-        Merge Sort             & SARA                & 0.63           & 6.65                 \\
-        {\em (GElements)}      & CUDA                & 2.14           & 1.96                 \\
-                               & Speedup             & 3.4x           & 3.4x                 \\
-      \midrule
-      Geo-mean Speedup         &                     & \textbf{2.44x} & \textbf{1.89x (3.93x)} \\
+        SqueezeNet (batch-1) & {\em kFrames}   & TF+cuDNN & 49.13  & 70.10  & 0.12 (1.1) & 0.4   \\ \addlinespace
+        LSTM (batch-32)      & {\em kSamples}  & TF+cuDNN & 3.61   & 6.81   & 8.8 (79.2) & 4.7   \\ \addlinespace
+        PageRank             & {\em MEdges}    & GunRock & 128.27 & 829.39 & 49         & 7.5   \\ \addlinespace
+        BlackScholes         & {\em GOptions}  & CUDA & 0.09   & 0.10   & 88.88      & 80.02 \\ \addlinespace
+        Random Forest        & {\em MSamples}  & CUDA & 0.10   & 0.32   & 1.04       & 0.32  \\ \addlinespace
+        Merge Sort           & {\em GElements} & CUDA & 0.63   & 2.14   & 6.65       & 1.96  \\
       \bottomrule
     \end{tabular}
   \caption{Performance comparison of Plasticine with Tesla's V100 GPU (Normalized throughput to transistor count in parentheses).}
   \label{tab:gpu-comparison}
 \end{table}
-
 \begin{figure*}
 \centering
 \includegraphics[width=1\textwidth]{figs/slide_gpu.pdf}
