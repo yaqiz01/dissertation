@@ -24,30 +24,41 @@ On the other side, regular contexts with non-vectorized fixed-point operations c
 spare AGs, which improves utilization.
 \begin{table*}
   \centering
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccc}
   \toprule
-  Feature & PCU & PMU & AG & Host Unit\\ \midrule
-  Vector lane width & 16 & 16 & 1 & 1 \\
-  Fixed-point op & \cmark & \cmark & \cmark & \xmark\\
-  Float-point op & \cmark & \xmark & \xmark & \xmark\\
-  Number of stages & 6 & 10 & 5 & 0 \\
-  Number of pipeline registers & 8 & 8 & 4 & 0 \\
-  Reduction tree & \cmark & \xmark & \xmark & \xmark\\
-  \# Vector FIFO & 6 & 6 & 4 & 0\\
-  \# Scalar FIFO & 6 & 6 & 4 & 16\\
-  \# Control FIFO & 16 & 16 & 4 & 16\\
-  Scratchpad banks & 0 & 16 & 0 & 0 \\
-  Scratchpad capacity & 0 & 256kB & 0 & 0\\
-  MergeBuffer & \cmark & \xmark & \xmark & \xmark\\
-  Splitter & \cmark & \xmark & \xmark & \xmark\\
-  Scanner & \cmark & \xmark & \xmark & \xmark\\
-  Access to DRAM Interface & \xmark & \xmark & \cmark & \xmark \\
-  Access to Host IO & \xmark & \xmark & \xmark & \cmark \\
+  Feature & PCU & PMU & AG & Host Unit & Aggregation Function\\ \midrule
+  Vector lane width & 16 & 16 & 1 & 1 & \multirow{2}{*}{MAX}\\
+  \# pipeline register (PR) & 8 & 8 & 4 & 0 & \\ \hline
+  \# stages & 6 & 10 & 5 & 0 & \multirow{6}{*}{SUM}\\
+  Scratchpad banks & 0 & 16 & 0 & 0 &  \\
+  Scratchpad capacity & 0 & 256kB & 0 & 0 & \\
+  MergeBuffer & 1 & 0 & 0 & 0 & \\
+  Splitter & 1 & 0 & 0 & 0 & \\
+  Scanner & 1 & 0 & 0 & 0 & \\ \hline
+  Operation types & fix $\cup$ float & fix & fix & $\varnothing$ & $\cup$ \\ \hline
+  Reduction tree & \cmark & \xmark & \xmark & \xmark & \multirow{3}{*}{OR}\\
+  Access to DRAM Interface & \xmark & \xmark & \cmark & \xmark & \\
+  Access to Host IO & \xmark & \xmark & \xmark & \cmark & \\ \hline
+  \# Vector Input & 6 & 6 & 4 & 0 & \multirow{6}{*}{G}\\
+  \# Scalar Inputs & 6 & 6 & 4 & 16 & \\
+  \# Control Inputs & 16 & 16 & 4 & 16& \\
+  \# Vector Outputs & 6 & 6 & 4 & 0 & \\
+  \# Scalar Outputs & 6 & 6 & 4 & 16 & \\
+  \# Control Outputs & 8 & 8 & 2 & 16 & \\
  \bottomrule
 \end{tabular}
-\caption[Mapping between data-structure to hardware memories]{
-  MergeBuffer, Splitter, and Scanner are new hardware introduced in \cite{gorgon} and \cite{capstan}
+\caption[Resources specification of heterogeneous units and aggregation function]{
+  A list of resources \name models in four types of configurable units in Plasticine. The host unit
+  models the host registers I/Os.
+  MergeBuffer, Splitter, and Scanner are new hardware units introduced in \cite{gorgon} and recent work
   to support database and sparsity in Plasticine.
+  The aggregation function indicates how to compute the aggregated resource cost when two contexts are merged
+  into a single virtual unit (VU). G indicates the aggreated value is the output of a graph traversal of the
+  merged graph. How to count \# I/O is discussed later in \Cref{sec:compsplit}.
+  While the aggreation function of \#PR of two merged contexts is MAX, the \#PR of a
+  context is the maximum number of live variables of its dataflow graph, which is also an output of
+  a topological traversal.
+  This table reflects a different Plasticine configuration as the original Plasticine in \cite{plasticine}.
 }
 \label{tab:resource}
 \end{table*}
@@ -65,7 +76,7 @@ spare AGs, which improves utilization.
     prune(G, pruners)\;
     \tcc{Global merging}
     merge(G)\;
-    \tcc{Heuristic check on whether assignment is feasible}
+    \tcc{Heuristic check on whether assigning all VUs in V is feasible}
     check(G)\;
     \tcc{Virtual to physical assignment}
     backtracking\_assign(G)\;
@@ -77,7 +88,8 @@ spare AGs, which improves utilization.
     and fixes constraint violations}
     \KwResult{The function update G by removing VU-PU edges that violates constraints guarded by
     pruners. The function may fail and raise an exception.}
-
+    \tcc{All PUs on the hardware}
+    P = G.values()\;
     \For{pruner \KwTo pruners}{
       \For{v \KwTo G.keys()}{
         \For{p \KwTo G[v]} {
@@ -91,7 +103,7 @@ spare AGs, which improves utilization.
           If succeeded, the function returns a new set of VUs.}
           V' = pruner.partition(v)\;
           G' = \KwNew BipartiteGraph()\;
-          G'[V'] = G.values()\;
+          G'[V'] = P\;
           prune(G',pruners)\;
           G -= v\;
           G[V'] = G'[V']\;
@@ -100,8 +112,9 @@ spare AGs, which improves utilization.
     }
   }
   \caption{Resource allocation. The bipartite graph \texttt{G} contains a bi-directional many-to-many
-  map. \texttt{G[key]} returns the set of values connecting to key (dom(key)), and \texttt{G[value]}
+  map. \texttt{G[key]} returns the set of values connecting to the key (dom(key)), and \texttt{G[value]}
   returns the set of keys connecting to the value.
+  \texttt{G[key] = value} connects an edge between key and value.
   \texttt{G[KeySet] = ValueSet} creates all-to-all connection between \texttt{KeySet} and
   \texttt{ValueSet}.}
   \label{algo:resalloc}
@@ -110,10 +123,10 @@ spare AGs, which improves utilization.
 \begin{algorithm}
   \Fn(\tcc*[h]{Assignment feasibility check}){check(G)}{
     \KwData{G: bipartite graph}
-    \KwResult{whether assignment is possible}
+    \KwResult{Whether it is possible to assign all VUs in V with a different PU in P}
     \tcc{For every value set in \texttt{G}}
     \For{V \KwTo G.values().toSet()} {
-      K = $\emptyset$\;
+      K = $\varnothing$\;
       \For{v \KwTo V} {
         \For{k \KwTo G[v]} {
           \If{G[k] $\subset$ V} {
@@ -130,7 +143,7 @@ spare AGs, which improves utilization.
   \caption{Heuristic check on whether it is possible to assign all key with an value in a bipartite
   graph. Given there are only a few types of hardware tiles, $G.values().toSet()$ is
   relatively small. This algorithm roughly runs in $O(|G.keys()|\times|G.values()|)$, which is
-  still much faster than the backtracking assignment, which has exponential runtime.}
+  still much faster than the backtracking assignment with exponential runtime.}
   \label{algo:check}
 \end{algorithm}
  
@@ -156,7 +169,8 @@ If succeeded, the original graph \emph{G} is updated with \emph{V'} and their pr
 After all VUs have at least one PU in the bipartite graph, \name triggers a global optimization that merges 
 small VUs into a larger VU to reduce fragmentation in allocation.
 Each type of resource has an aggregation rule to compute how the resource cost changes if two VUs are merged
-together. Most aggregation rules are simple, such as addition, logical or, max, or union.
+together, as shown in \Cref{tab:resource}. 
+Most aggregation rules are simple, such as addition, logical or, max, or union.
 The in- and out-degree costs are tricker and will be detailed in \Cref{sec:compsplit}.
 
 \paragraph{Virtual to Physical Assignment}
@@ -166,8 +180,8 @@ Finally, \name assigns each VU to a PU type with a backtracking search on the pr
 graph.
 
 This approach can be easily extended to handle new heterogeneous tiles in the architecture by registering
-new types of resources with aggregation and partitioning rules.
-The rest of this section will focus on two types of partitioning transformations--compute
+the tile with existing or new types of resources with aggregation and partitioning rules.
+The rest of this section goes over two types of partitioning transformations--compute
 partitioning in \Cref{sec:compsplit} and memory partitioning in \Cref{sec:memsplit}.
 %We have another partitioner encoding valid rule to decompose a BlackBox IP block available on the RDA.
 
@@ -199,7 +213,7 @@ as a guiding constraint for partitioning.
     \1 live in/out variables (I/O ports) \vspace{-0.2cm}
     \1 operations (pipeline stages), \vspace{-0.2cm}
     \1 and live variables across operations (pipeline registers), etc.\vspace{-0.2cm}
-  \0 No \emph{new} cycles can be formed across partitions other than the cycles in the original
+  \0 No \emph{new} cycles can form across partitions other than the cycles in the original
   dataflow graph.
   \end{outline}
   \end{minipage}
@@ -223,32 +237,13 @@ enable execution.
 \Cref{fig:parteg} shows examples of valid and invalid partitioning solutions.
 \Cref{fig:partcycleeg} shows another partitioning example of a dataflow graph with cycles.
 
-\paragraph{Community Detection}
-The formulation of compute partitioning is similar to the community detection problem\cite{community}, which has a similar
-objective. The major difference is that the latter often takes the number of output partitions as an
-input to the algorithm, whereas our problem partitions until all subgraphs satisfy all constraints.
-Moreover, community detection algorithms do not enforce the cycle constraints. 
-Finally, the edge connectivity in community detection counts the number of edges across partitions, as supposed to broadcast edges.
-
-\paragraph{Retiming}
-Imbalanced data paths across partitions can cause pipeline stalls at runtime.
-To ensure full-throughput pipelining, \name needs to insert retiming buffers along the imbalanced data path across
-partitions.
-\todo{add an example.}
-Retiming introduces new VUs in addition to the partitioned VUs, which attributes to the cost in
-\Cref{tab:partprob}'s objective.
-
-In the following sections, we present two algorithms to solve this problem:
-a traversal-based algorithm providing a decent solution with fast compile time, and a convex
-optimization-based algorithm with an optimal solution but long compile time.
-
 \begin{figure}
   \centering
   \includegraphics[width=1\columnwidth]{figs/parteg.pdf}
   \caption[Compute partitioning examples]{
-    Compute partitioning examples. Solution 1 and 2 are both valid partitioning. Solution 2 is
-    better because it has less number of broadcast edges (3 as supposed to 4 in Solution 1) across partitions. 
-    Solution 3 is an illegal partition result due to the cycle between partition 1 and 2.
+    Compute partitioning examples. Solution 1 and 2 are both valid. Solution 2 is
+    better because it has less number of broadcast edges across partitions (3 as supposed to 4 in Solution 1). 
+    Solution 3 is an illegal partitioning due to the cycle between partition 1 and 2.
   }
   \label{fig:parteg}
 
@@ -263,6 +258,28 @@ optimization-based algorithm with an optimal solution but long compile time.
   }
   \label{fig:partcycleeg}
 \end{figure}
+
+\paragraph{Community Detection}
+The formulation of compute partitioning is similar to the community detection
+problem\cite{community} that has a similar objective. 
+The major difference is that the latter often takes the number of output partitions as an
+input to the algorithm, whereas our problem partitions until all subgraphs satisfy all constraints.
+Moreover, community detection algorithms do not enforce the cycle constraints. 
+Finally, the edge connectivity in community detection counts the number of edges across partitions, 
+as supposed to broadcast edges as in our problem.
+
+\paragraph{Retiming}
+Imbalanced data paths across partitions can cause pipeline stalls at runtime if the long-live path is not
+sufficiently buffered.
+To ensure full-throughput pipelining, \name needs to insert retiming buffers along the imbalanced data path across
+partitions.
+Retiming introduces new VUs in addition to the partitioned VUs, which attributes to the cost in
+\Cref{tab:partprob}'s objective.
+
+In the following sections, we present two algorithms to resolve the problem described in
+\Cref{tab:partprob}:
+a fast traversal-based algorithm providing a decent solution, and a slow convex
+optimization-based algorithm providing an optimal solution.
 
 \subsubsection{Traversal-based Solution}
 To address the cycle constraint, the traversal-based algorithm performs a topological sort of the dataflow graph.
