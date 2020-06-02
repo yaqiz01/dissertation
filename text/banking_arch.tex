@@ -53,5 +53,5 @@ bit of the access; if the predicate bit equals zero, the request will be dropped
 Therefore, a valid address zero would be xF0000000 to distinguish with an invalid address 0.
 
 The shuffle operator can be expensive, requiring a $16\times16$ 32-bit crossbar with parallel
-integer comparators for equality. We expect to add one or two shuffle operators per SIMD pipeline,
+integer comparators for equality. We expect one or two shuffle operators per SIMD pipeline,
 and the operator can be pipelined across multiple stages to meet timing.
