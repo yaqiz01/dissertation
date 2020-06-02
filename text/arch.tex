@@ -1,23 +1,15 @@
 \chapter{Architecture} \label{sec:arch}
 
 In this section, we discuss the architectural advancement on top of the original Plasticine architecture
-introduced in~\cite{plasticine}. These architectural additions help increase the application
+introduced in~\cite{plasticine}. These architectural additions either help increase the application
 coverage or improve the mapping strategies of existing applications by supporting new language
-constructs, data types, and improves the utilization of the hardware. 
-Specifically, \Cref{sec:banking_arch} layouts the datapath changes in order to support more
-flexible banking schemes required by general access patterns supported in Spatial; 
+constructs, data types, and improving resource utilizations.
+Specifically, \Cref{sec:network} provides an extensive study on on-chip network selection for
+reconfigurable spatial architectures;
 \Cref{sec:rnn_arch} discusses the hardware specialization and architectural sizing for machine
-learning applications; \Cref{network} provides an extensive study on on-chip network selection 
-reconfigurable spatial architectures.
-
-\begin{figure*}
-\centering
-\includegraphics[width=1\textwidth]{figs/pie.pdf}
-\caption[Area and power breakdown of Plasticine]{
-  Area and power breakdown of Plasticine
-}
-\label{fig:breakdown}
-\end{figure*}
+learning applications; 
+\Cref{sec:banking_arch} layouts the changes in datapaths to support more
+flexible banking schemes required by the general access patterns supported in Spatial.
 
 \input{text/network}
 \input{text/rnn_arch}

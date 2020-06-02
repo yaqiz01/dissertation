@@ -1,45 +1,47 @@
-\section{On-chip Network}
+\section{On-chip Network} \label{sec:network}
 
 Achieving scalable performance using spatial architectures while supporting diverse applications requires a flexible, high-bandwidth interconnect.
   %Unfortunately, bandwidth and flexibility are often conflicting goals; static interconnects guarantee bandwidth but lack flexibility due to poor sharing.
   %Dynamic interconnects provide flexibility with better resource sharing but can cause bandwidth bottlenecks due to congestion while requiring more area and power.
- Because modern CGRAs support vector units with wide datapaths, designing an interconnect that balances dynamism, communication granularity, and programmability is a challenging task.
+ Because modern RDAs support vector units with wide datapaths, designing an interconnect that balances dynamism, communication granularity, and programmability is a challenging task.
 
 On-chip interconnects can be classified into two broad categories: \emph{static} and \emph{dynamic.}
  {Static interconnects} use switches programmed at compile time to reserve high-bandwidth links between communicating units for the lifetime of the application.
-CGRAs traditionally employ static interconnects~\cite{cgraSurvey1, cgraSurvey2}.
+RDAs traditionally employ static interconnects~\cite{cgraSurvey1, cgraSurvey2}.
 In contrast, {dynamic interconnects}, or NoCs, contain routers that allow links to be shared between more than one pair of communicating units.
 NoC communication is typically packet-switched, and routers use allocators to fairly share links between multiple competing packets.
-Although static networks are fast, they require over-provisioning bandwidth and can be underutilized when a dedicated static link is reserved for a logical link that is not 100\% active. 
-While dynamic networks allow link sharing, the area and energy cost to transmit one bit of data is higher for routers than for switches, making bandwidth scaling more expensive in dynamic networks than in static networks.
+Although static networks are fast, they require over-provision in bandwidth and can be underutilized
+when a dedicated static link is reserved for a logical link that is not frequently active. 
+While dynamic networks allow link sharing, the area and energy cost to transmit the same amount of data is higher for routers than for switches, making bandwidth scaling more expensive in dynamic networks than in static networks.
 
 In this section, we explore the space of spatial architecture interconnect dynamism, granularity, and programmability.
 We start by characterizing several benchmarks' communication patterns and showing links' imbalanced
 bandwidth requirements, fanout, and data width in \Cref{sec:appchar}. 
 Using these insights, we describe a hybrid network with both static and dynamic capabilities to enable both high bandwidth traffic and high resource sharing.
-\Cref{sec:network} identifies a space of interconnection networks with static and dynamic capabilities, at multiple granularities. 
+\Cref{sec:networkds} identifies a space of interconnection networks with static and dynamic capabilities, at multiple granularities. 
 Next, We explain our methodology on performance, area, and power modeling in \Cref{sec:net_char}.
 Finally, \Cref{sec:net_dse} perform a detailed evaluation of the identified design space for a variety of benchmarks.
 
-Because CGRAs encompass a broad range of architectures, we narrow our study on tile-based CGRAs with
+Because RDAs encompass a broad range of architectures, we narrow our study on tile-based RDAs with
 a streaming dataflow execution model, like Plasticine.
-At high-level, the architecture may contain a pool of heterogeneous compute and memory tiles (we referring as physical units (PUs)) with a global network.
+At high-level, the architecture may contain a pool of heterogeneous compute and memory tiles (we referring as 
+physical units (PUs)) with a global network.
 The network guarantees exactly-once, in-order delivery with variable latency, and communication 
 between PUs can have varying granularities (e.g., 512-bit vector or 32-bit scalar).
 
-To generalize the study, we introduce a variant processing engine (PE) style than Plasticine's
-pipeline SIMD unit.
-The alternative style uses time-scheduled execution, where each PU 
-contains a vector function unit (FU) that can execute a small loop of instructions repeatedly in
-time.
+To generalize the study, we introduce a variance in the style of processing engine (PE) in addition
+to Plasticine's SIMD pipeline unit (pipelined RDA architecture).
+The alternative style is a small vector processor that can execute a small loop of instructions repeatedly in
+time (scheduled RDA architecture).
 The scheduling window is small enough that instructions are stored as part of the configuration fabric, 
-without dynamic instruction fetch overhead. 
+without dynamic instruction fetching overhead. 
 Compared to the pipelined architecture, 
-this execution model creates more interleaved pipelining across PUs with communication that is tolerant of lower network throughput, which provides an opportunity to share links.
+this execution model creates more interleaved pipelining across PUs with communication that is
+tolerant of lower network throughput, which creates an opportunity for link sharing.
 
 \subsection{Application Characteristics} \label{sec:appchar}
-The requirements of an interconnection network are a function of the communication pattern of the
-application, underlying CGRA architecture, and compilation process.
+The requirements of an interconnection network are a function of the applications' communication
+pattern, underlying RDA architecture, and compilation process.
 We identify the following key characteristics of spatially mapped applications:
 
 \paragraph{Vectorized communication}
@@ -49,7 +51,7 @@ Coarser-grained computation typically increases the size of communication, but g
 This variation in communication motivates specialization for the optimal area- and energy-efficiency: separate networks for different communication granularities.
 
 \paragraph{Broadcast and incast communication} 
-A key optimization to achieve good performance on spatial reconfigurable accelerators is to explore multiple levels
+A key optimization to achieve good performance on RDA is to explore multiple levels
 of parallelization and pipelining, within and across PUs.
 By default, pipeline parallelism across PUs introduces high-bandwidth one-to-one communication between dependent stages.
 To balance the pipeline throughput, we often need to parallelize the pipeline stage with the most
@@ -67,8 +69,6 @@ This differs from the NoCs used in multi-processors, where each core has a local
 Studies have shown that for large-scale multiprocessor systems, network latency---not throughput---is the primary performance limiter~\cite{noc}.
 For spatial accelerators, however, compute performance is limited by network throughput, and latency is comparatively less important.
 
-\paragraph{Communication-aware compilation}
-
 \begin{figure}
 \centering
 \includegraphics[width=0.8\columnwidth]{network/figs/util_bw2.pdf}
@@ -76,7 +76,7 @@ For spatial accelerators, however, compute performance is limited by network thr
   Physical resource and bandwidth utilization for various applications.}\label{fig:util_bw}
 \centering
 \includegraphics[width=0.8\columnwidth]{network/figs/link7.pdf}
-  \caption[Application communication patterns]{Application communication patterns on pipelined (a,b) and scheduled (c,d) CGRA architectures.
+  \caption[Application communication patterns]{Application communication patterns on pipelined (a,b) and scheduled (c,d) RDA architectures.
   (a) and (c) show the activation rate distribution of logical links at runtime. 
   Links sorted by granularity, then rate; darker boxes indicate higher rates.
   The split between green and pink shows the ratio of logical vector to scalar links. (b) and (d) show the distribution of broadcast link fanouts.
@@ -118,7 +118,7 @@ Finally, LSTM, GRU, and LeNet are applications that are limited by on-chip memor
 For compute- and memory-intensive applications, high utilization translates to a large interconnection network bandwidth requirement to sustain application throughput. 
 
 Figure~\ref{fig:link}(a,b) shows the communication pattern of applications
-characterized on the pipelined CGRA architecture, including the variation in communication granularity. 
+characterized on the pipelined RDA architecture, including the variation in communication granularity. 
 Compute and on-chip memory-bound applications show a significant amount of high-bandwidth communication (links with almost 100\% activity). 
 A few of these high-bandwidth links also exhibit a high broadcast fanout. 
 Therefore, a network architecture must provide sufficient bandwidth and efficient broadcasts to sustain program throughput.
@@ -137,14 +137,14 @@ the partitioning described in \Cref{sec:resalloc}.
 The blue bars show the number of VUs, number of logical links, and maximum VU input/output degrees in the original parallelized program; the yellow and green bars show the same statistics after partitioning. 
 Fewer VUs are partitioned for hybrid networks and dynamic networks with the time-scheduled
 architecture.
-When a VU in a pipelined CGRA consumes too many inputs or produces too many \emph{distinct} outputs,
+When a VU in a pipelined RDA consumes too many inputs or produces too many \emph{distinct} outputs,
 \name partitions it to reduce its degree and meet the input/output bandwidth constraints of a purely static network. 
 For dynamic and hybrid networks, partitioning is not strictly necessary, but it improves performance
 by decreasing congestion at the network ejection port associated with a PU.
 We do not partition broadcasts with high output degrees because they are handled natively within the network. 
 Finally, the output degree does not change with partitioning because most outputs with a large degree are from broadcast links.
 
-\subsection{Design Space for Network Architectures} \label{sec:network}
+\subsection{Design Space for Network Architectures} \label{sec:networkds}
 
 We start with several statically allocated network designs, where each SIMD pipeline connects to several switches, and vary flow control strategies and network bisection bandwidth.
 In these designs, each switch output connects to exactly one switch input for the duration of the program.
@@ -175,7 +175,7 @@ To respect the switch allocator's constraints, each router sends broadcasts to o
 This is because the switch allocator can only grant one output port per input port in every cycle, and the RTL router's allocator does not have sufficient timing slack to add additional functionality.
 We also explore different flit widths on the dynamic network, with a smaller bus taking multiple cycles to transmit a packet.
 
-Because CGRA networks are streaming---each PU pushes the result to the next PU(s) without explicit request---the network cannot handle routing schemes that may drop packets; otherwise, application data would be lost.
+Because RDA networks are streaming---each PU pushes the result to the next PU(s) without explicit request---the network cannot handle routing schemes that may drop packets; otherwise, application data would be lost.
 Because packet ordering corresponds directly to control flow, it is also imperative that all packets arrive in the order they were sent; this further eliminates adaptive or oblivious routing from consideration.
 We limit our study of dynamic networks to statically placed and routed source routing due to these architectural constraints.
 PUs propagate backpressure signals from their outputs to their inputs, so they must be considered as part of the network graph for deadlock purposes~\cite{hansson2007avoiding}.
@@ -190,22 +190,23 @@ By using compiler knowledge to identify the relative importance of links---the l
 \subsection{Performance, Area, and Energy Modeling} \label{sec:net_char}
 
 Next section gives a quantitative analysis of the performance, area, and energy trade-offs involved 
-in choosing a CGRA network, using benchmarks showing in \Cref{tab:benchmark}.
+in choosing a RDA network, using benchmarks showing in \Cref{tab:benchmark}.
 This section outlines our methodology on how we capture the network performance, area, and energy in our evaluations.
-\Cref{tab:notation} gives our notation for various network parameters.
+\Cref{tab:notation} gives our notation for various network parameters discussed
+in~\Cref{sec:networkds}.
 
 \begin{table}
 \footnotesize
   \centering
-\begin{tabular*}{0.65\textwidth}{p{1cm} p{8cm}}
+\begin{tabular*}{0.65\textwidth}{c l}
   \bottomrule
   \textbf{Notation} & \textbf{Description} \\\midrule
   $[$S,H,D$]$ & Static, hybrid, and dynamic network \\\midrule
-  x\# & Static bandwidth on vector network (\#links between switches) \\\midrule
+  x<\#> & Static bandwidth on vector network (\#links between switches) \\\midrule
   %$s\#$ & Number of links between switches on static scalar network \\\midrule
-  f\# & Flit width of a router or vector width of a switch \\\midrule
-  v\# & Number of VC in router \\\midrule
-  b\# & Number of buffers per VC in router \\\midrule
+  f<\#> & Flit width of a router or vector width of a switch \\\midrule
+  v<\#> & Number of VC in router \\\midrule
+  b<\#> & Number of buffers per VC in router \\\midrule
   $[$db,cd$]$ & Buffered vs. credit-based flow control in switch \\\midrule
   %$[Scheduled, Pipelined]$ & Time scheduled vs deep pipelined accelerator architectures \\\midrule
 \end{tabular*}
@@ -309,7 +310,7 @@ size of $14\times14$ end-point PUs. All vector networks use a vectorization fact
 \begin{figure}
 \centering
 \includegraphics[width=0.8\columnwidth]{network/figs/scale.pdf}
-\caption{Performance scaling with increased CGRA grid size for different networks.}\label{fig:scale}
+\caption{Performance scaling with increased RDA grid size for different networks.}\label{fig:scale}
 \end{figure}
 \subsubsection{Bandwidth scaling with network size}\label{sec:scale}
 Figure~\ref{fig:scale} shows how different networks allow several applications to scale to different numbers of PUs.
@@ -408,12 +409,20 @@ This is because the compiler imposes less stringent IO constraints on PUs when p
 \includegraphics[width=0.7\textwidth]{network/figs/radar_best.pdf}
   \caption{Geometric mean improvement for the best network configurations, relative to the worst configuration.}\label{fig:radar_best}
 \end{figure}
+\begin{figure*}
+\centering
+\includegraphics[width=0.8\textwidth]{figs/pie.pdf}
+\caption[Area and power breakdown of Plasticine]{
+  Area and power breakdown of Plasticine using a static-dynamic hybrid network.
+}
+\label{fig:breakdown}
+\end{figure*}
 
-In Figure~\ref{fig:radar_best}, we summarize the best perf/watt and perf/area (among network configurations with <10\% performance overhead) for pipelined and scheduled CGRA architectures. 
+In Figure~\ref{fig:radar_best}, we summarize the best perf/watt and perf/area (among network configurations with <10\% performance overhead) for pipelined and scheduled RDA architectures. 
 Pure dynamic networks are not shown because they perform poorly due to insufficient bandwidth.
-On the pipelined CGRA, the best hybrid network provides a 6.4x performance increase, 2.3x better energy efficiency, and a 6.9x perf/area increase over the worst network configuration. 
+On the pipelined RDA, the best hybrid network provides a 6.4x performance increase, 2.3x better energy efficiency, and a 6.9x perf/area increase over the worst network configuration. 
 The best static network provides 7x better performance, 1.2x better energy efficiency, and 6.3x better perf/area. 
 The hybrid network gives the best perf/area and perf/watt, with a small degradation in performance when compared to the static network. 
-On the time-scheduled CGRA, both static and hybrid networks have an 8.6x performance improvement. 
+On the time-scheduled RDA, both static and hybrid networks have an 8.6x performance improvement. 
 The hybrid network gives a higher perf/watt improvement at 2.2x, whereas the static network gives a higher perf/area improvement at 2.6x.
 Overall, the hybrid networks deliver better energy efficiency with shorter routing distances by allowing an escape path on the dynamic network.
