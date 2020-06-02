@@ -1,6 +1,6 @@
 \chapter{Related Work} \label{sec:related}
 
-\section{Compiler}
+\section{Compilers}
 \subsection{Streaming Dataflow IRs}
 Although many works claim to emit efficient and information-rich dataflow IRs for the downstream compilers, 
 very few of them can capture the high-level parallel patterns and implementation details that are critical 
@@ -87,9 +87,10 @@ Most previous works \cite{nowatzki, spatial-computation} only consider allocatin
 %\Cref{sec:control} and \Cref{sec:resalloc},
 %the Plasticine compiler allocates one VB for a specific type of PB and underutilizes resources within PBs.
 
-\section{On-Chip Network}
+\section{On-Chip Networks}
 
 Multiple decades of research have resulted in a rich body of literature, both in CGRAs~\cite{cgraSurvey1, cgraSurvey2} and on-chip networks~\cite{ocn-synthesis}. We discuss relevant prior work under the following categories:
+
 \subsection{Tiled Processor Interconnects} Architectures such as Raw~\cite{raw} and Tile~\cite{tile} use scalar operand networks~\cite{son}, which combine static and dynamic networks. Raw has one static and two dynamic interconnects: the static interconnect is used to route normal operand traffic, one dynamic network is used to route runtime-dependent values which could not be routed on the static network, and the second dynamic network is used for cache misses and other exceptions. Deadlock avoidance is guaranteed only in the second dynamic network, which is used to recover from deadlocks in the first dynamic network. However, as described in Section~\ref{sec:intro}, wider buses and larger flit sizes create scalability issues with two dynamic networks, including higher area and power. In addition, our static VC allocation scheme ensures deadlock freedom in our single dynamic network, obviating the need for deadlock recovery.
 The dynamic Raw network also does not preserve operand ordering, requiring an operand reordering mechanism at every tile.
 
@@ -104,7 +105,7 @@ Several works have also proposed a statically scheduled interconnect~\cite{van20
 \subsection{Design Space Studies} Several prior studies focus on tradeoffs with various network topologies, but do not characterize or quantify the role of dynamism in interconnects.
 The Raw design space study~\cite{dse-raw} uses an analytical model for applications as well as architectural resources to perform a sensitivity analysis of compute and memory resources focused on area, power, and performance, without varying the interconnect. The ADRES design space study~\cite{dse-adres} focuses on area and energy tradeoffs with different network topologies with the ADRES~\cite{adres} architecture, where all topologies use a fully static interconnect. KressArray Xplorer~\cite{dse-kressarray} similarly explores topology tradeoffs with the KressArray~\cite{kress} architecture. Other studies explore topologies for mesh-based CGRAs~\cite{dse-date} and more general CGRAs supporting resource sharing~\cite{dse-tvlsi}. Other tools like Sunmap~\cite{sunmap} allow end users to construct and explore various topologies.
 
-\subsection{Compiler Driven NoCs (WIP)}
+\subsection{Compiler Driven NoCs}
 Other prior works have used compiler techniques to optimize various facets of NoCs.
 Some studies have explored statically allocating virtual channels~\cite{staticVC-isca, staticVC-nocs} to multiple concurrent flows to mitigate head-of-line blocking. These studies propose an approach to derive deadlock-free allocations based on the turn model~\cite{turnModel}. While our approach also statically allocates VCs, our method to guarantee deadlock freedom differs from the aforementioned study as it does not rely on the turn model.
 Ozturk et al. \cite{ozturk2010compiler} propose a scheme to increase the reliability of NoCs for chip multiprocessors by sending packets over multiple links.
