@@ -20,8 +20,8 @@ cycle-accurate simulator to model the HBM2 technology, providing a \SI{1}{TB/s} 
 \begin{figure*}
 \centering
 \includegraphics[width=1\textwidth]{/Users/yaqiz/pldi20/paper/figures/par_thesis.pdf}
-\caption[Scalability Evaluation]{
-  Scalability Evaluation. 
+\caption[Scalability evaluation]{
+  Scalability evaluation. 
   Benchmarks include multi-layer perceptron (mlp), BlackScholes (bs), random forests (rf), page rank
   (pr), and long short-term memory recurrent neural network~\cite{hochreiter1997long}.
   The first four charts show the scaling of
@@ -36,7 +36,7 @@ cycle-accurate simulator to model the HBM2 technology, providing a \SI{1}{TB/s} 
 \label{fig:par}
 \end{figure*}
 
-\subsection{Scalability}
+\subsection{Scalability Evaluation}
 \Cref{fig:par} shows how performance and on-chip resources vary as the application gets parallelized in
 (a-d). 
 For each parallelization factor, we evaluate a combination of various compiler flags, presenting the
@@ -79,14 +79,6 @@ different parallelization factors and compiler optimizations.
 We can see that compiler optimizations play an important role in improving performance or
 reducing resource that pushes the Pareto leftwards and upwards.
 
-%\begin{figure*}
-%\centering
-%\includegraphics[width=1\textwidth]{/Users/yaqiz/pldi20/paper/figures/par.pdf}
-%\caption[Performance comparison with V100 GPU]{
-%}
-%\label{fig:par}
-%\end{figure*}
-
 \subsection{Comparison with a GPU}
 
 \Cref{tab:gpu-comparison} shows the throughput and latency comparison with a Tesla V100 GPU.
@@ -117,7 +109,9 @@ on-chip resources.
         Merge Sort           & {\em GElements} & CUDA & 0.63   & 2.14   & 6.65       & 1.96  \\
       \bottomrule
     \end{tabular}
-  \caption{Performance comparison of Plasticine with Tesla's V100 GPU (Normalized throughput to transistor count in parentheses).}
+  \caption[Performance comparison of Plasticine with a Tesla V100 GPU]{
+Performance comparison of Plasticine with a Tesla V100 GPU (Normalized throughput to transistor count in parentheses).
+}
   \label{tab:gpu-comparison}
 \end{table}
 \begin{figure}[H]

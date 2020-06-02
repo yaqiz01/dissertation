@@ -129,7 +129,7 @@ Even applications limited by on-chip resources have less than a 30\% firing rate
 \begin{figure}
 \centering
 \includegraphics[width=0.9\columnwidth]{network/figs/graph.pdf}
-\caption{Characteristics of program graphs.}\label{fig:graph}
+\caption[Characteristics of program graphs]{Characteristics of program graphs.}\label{fig:graph}
 \end{figure}
 
 Figure~\ref{fig:graph} shows statistics describing the VU dataflow graph (VGDFG) before and after
@@ -210,7 +210,7 @@ in~\Cref{sec:networkds}.
   $[$db,cd$]$ & Buffered vs. credit-based flow control in switch \\\midrule
   %$[Scheduled, Pipelined]$ & Time scheduled vs deep pipelined accelerator architectures \\\midrule
 \end{tabular*}
-\caption{Network design parameter summary.}
+  \caption[Network design parameter summary]{Network design parameter summary.}
 \label{tab:notation}
 \end{table}
 
@@ -253,7 +253,7 @@ where $P_{\text{inactive}},$ $E_{\text{flit}},$ and $\#\text{flit}$ are tabulate
 \begin{figure}
 \centering
 \includegraphics[width=0.8\columnwidth]{network/figs/sweep.pdf}
-  \caption{Switch and router power with varying duty cycle.}\label{fig:sweep}
+  \caption[Switch and router power with varying duty cycle]{Switch and router power with varying duty cycle.}\label{fig:sweep}
 \end{figure}
 
 
@@ -273,7 +273,7 @@ Increasing the number of VCs or buffer depth per VC also significantly increases
 \begin{figure}
 \centering
 \includegraphics[width=0.8\columnwidth]{network/figs/char.pdf}
-  \caption{Area and per-bit energy for (a,d) switches and (b,c,f) routers. 
+  \caption[Area and per-bit energy for switches and routers]{Area and per-bit energy for (a,d) switches and (b,c,f) routers. 
   The router only has a vector granularity and can be partially clock-gated when sending scalar packets.
   Subplots (f) show the energy of the vector router when used for scalar values (32-bit).}\label{fig:char}
 \end{figure}
@@ -363,7 +363,7 @@ Because dynamic network communication is infrequent, hybrid networks with fewer 
 \begin{figure}
 \centering
 \includegraphics[width=0.75\textwidth]{network/figs/vc.pdf}
-  \caption{Number of VCs required for dynamic and hybrid networks. (No VCs indicates that all traffic is mapped to the static network.)}\label{fig:vc}
+  \caption[Number of VCs required for dynamic and hybrid networks]{Number of VCs required for dynamic and hybrid networks. (No VCs indicates that all traffic is mapped to the static network.)}\label{fig:vc}
 \end{figure}
 
 We also explore the effects of reducing dynamic network bandwidth by using smaller routers;
@@ -376,7 +376,7 @@ The right side of Figure~\ref{fig:radar_router} shows that, for a hybrid network
 \begin{figure*}
 \centering
 \includegraphics[width=1\linewidth]{network/figs/perf.pdf}
-  \caption{Normalized performance for different network configurations.}\label{fig:perf}
+  \caption[Normalized performance for different network configurations]{Normalized performance for different network configurations.}\label{fig:perf}
 \end{figure*}
 
 Figure~\ref{fig:perf} shows the normalized performance for each application running on several network configurations.
@@ -388,7 +388,7 @@ For compute-bound applications, performance primarily correlates with network ba
 \begin{figure}
 \centering
   \includegraphics[width=0.9\textwidth]{network/figs/energy.pdf} 
-\caption{(a,d): Normalized performance/watt. (b,e): Percentage of compute and memory PUs utilized for each network configuration. 
+  \caption[Performance/watt, PU utilization, and data movement for netork configurations]{(a,d): Normalized performance/watt. (b,e): Percentage of compute and memory PUs utilized for each network configuration. 
   (c,f): Total data movement (hop count).}
 \label{fig:energy}
 \end{figure}
@@ -408,7 +408,7 @@ hybrid network (as explained in Section~\ref{sec:appchar}), which results in few
 \begin{figure}
   \centering
 \includegraphics[width=0.7\textwidth]{network/figs/radar_best.pdf}
-  \caption{Geometric mean improvement for the best network configurations, relative to the worst configuration.}\label{fig:radar_best}
+  \caption[Best newtork configurations]{Geometric mean improvement for the best network configurations, relative to the worst configuration.}\label{fig:radar_best}
 \end{figure}
 \begin{figure*}
 \centering

@@ -245,7 +245,7 @@ enable execution.
 \begin{figure}
   \centering
   \includegraphics[width=1\columnwidth]{figs/parteg.pdf}
-  \caption[Compute partitioning examples]{
+  \caption[Compute partitioning]{
     Compute partitioning examples. Solution 1 and 2 are both valid. Solution 2 is
     better because it has less number of broadcast edges across partitions (3 as supposed to 4 in Solution 1). 
     Solution 3 is an illegal partitioning due to the cycle between partition 1 and 2.
@@ -253,7 +253,7 @@ enable execution.
   \label{fig:parteg}
 
   \includegraphics[width=0.8\columnwidth]{figs/partcycleeg.pdf}
-  \caption[Compute partitioning examples with cycle]{
+  \caption[Compute partitioning with cycle]{
     Compute partitioning examples with a cycle in the dataflow graph.
     Solution 1 is valid because there is no cycle between partitions after removing the back edge in the original graph.
     Solution 2 is invalid because there is still a cycle between partition 1 and 2 after removing the back edge.
@@ -530,8 +530,8 @@ most cases we have seen.
 \begin{figure}
   \centering
   \includegraphics[width=0.6\columnwidth]{figs/regalloc.pdf}
-  \caption[Register Allocation]{
-    Register Allocation. We show one lane of the 16 SIMD lanes in this diagram. 
+  \caption[Register allocation]{
+    Register allocation. We show one lane of the 16 SIMD lanes in this diagram. 
     The top diagrams show four types of connections of pipeline registers (PR). The SIMD pipeline contains a
     parameterizable number of PRs per stage per lane. 
     The function unit can read any PRs from the previous and the current stage, and write to PRs in the current stage.

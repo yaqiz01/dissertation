@@ -43,7 +43,7 @@ Each loop generated from loop division can only execute if all of their input qu
 \inputminted{python}{code/loopexp1division.py}
 \caption{Loop Division}
 \end{subfigure}
-\caption[Example of loop fission vs. loop division]{
+\caption[Loop fission vs. loop division]{
   (b) and (c) shows the output of loop fission and loop division of the input program (a), respectively.
   In (b), the first loop is executed entirely before executing the second loop. The intermediate
   result \texttt{tmp} is materialized into an array with the same size as the loop range.
@@ -89,8 +89,8 @@ data-dependencies to preserve program order.
 \inputminted{python}{code/loopexp2division.py}
 \caption{Loop Division}
 \end{subfigure}
-\caption[Example of an illegal loop fission and a legal loop division]{
-Example of an illegal loop fission and a legal loop division
+\caption[An example of an illegal loop fission and a valid loop division]{
+An example of an illegal loop fission and a legal loop division
 }
 \label{fig:loopexp2}
 \end{figure*}
@@ -358,8 +358,8 @@ the accessing contexts to enforce a program-consistent accessing order.
   queue & FIFO \\
  \bottomrule
 \end{tabular}
-\caption[Mapping between data-structure to hardware memories]{
-  Mapping between user declared data-structure to underlying hardware memories. 
+\caption[Mapping of data-structures to hardware memories]{
+  Mapping of user declared data-structures to underlying hardware memories. 
   Programmers explicitly specify the desired hardware type inside Spatial. 
   In other languages, this table specifies a mapping between software data-structures 
   and hardware memory types on Plasticine.
@@ -409,7 +409,7 @@ The type of the memories matters because they have different programming interfa
   write-after-write (WAW) & \cmark & \cmark & \cmark & \cmark \\
  \bottomrule
 \end{tabular}
-\caption[Interferance Table]{
+\caption[Interferance table for different memory types]{
   Interference table for whether two accesses of the same memory needs to be synchronized by the
   software for each memory type.
 Two DRAM read accesses do not interfere because the DRAM interface permits
@@ -456,7 +456,7 @@ address space.
   \caption{Access dependency graph for \emph{mem} (off-chip) in (d)}
 \end{subfigure}
 
-\caption[Examples for access dependency graph]{
+\caption[Access dependency graph]{
   Access dependency graphs for example programs. 
   Solid edges indicate forward dependencies and
   dashed edges indicate backward loop-carried dependencies (LCDs).
@@ -531,7 +531,7 @@ address space.
 }
 \end{subfigure}
 \definecolor{pureblue}{rgb}{0, 0, 255}
-\caption[Examples for dependency graph reduction]{
+\caption[Dependency graph reduction]{
   Dependency graphs (b,e) and reduced dependency graph (c,f) of example programs in (a,d),
   respectively.
   Solid edges indicate forward dependencies and
@@ -614,7 +614,7 @@ that maps the loop body.
 \inputminted{python}{code/dynrangectx.py}
 \caption{Context data-flow graph}
 \end{subfigure}
-\caption[Example of dynamic loop range]{
+\caption[Dynamic loop range]{
   (a) shows an example program with a dynamic loop range. 
   Expressions to generate the loop bound in line 2 of (a) belongs to a basic block that gets mapped
   to \texttt{ctxA} in (b).
@@ -744,7 +744,7 @@ schedulers}, like Spatial's FPGA back-end, which runs in $NL$.
 \includegraphics[width=0.6\textwidth]{figs/dowhiletiming.pdf}
 \caption{Timing}
 \end{subfigure}
-\caption[Do while example]{
+\caption[Do-while loop example]{
   An example program for a do while loop. 
   Loop \emph{A} in (a) is a loop running forever, with a conditional \emph{stop} variable.
 Loop \emph{A} reads and block \emph{C} writes a value of stop for every iteration of loop
