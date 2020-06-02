@@ -49,24 +49,24 @@ Kernel-specific loop optimization
 %%% Dataflow accelerators
 %\1 A runtime reconfigurable dataflow processor for vision
 %\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
-%\1 %% domain specific loop fushion inter change
+%\1 %% domain-specific loop fashion interchange
 %\1 Truenorth: Design and tool flow of a 65 mw 1 million neuron programmable neurosynaptic chip. from
 %IBM
 %\1 Memristive Boltzmann machine: A hardware accelerator for combinatorial optimization and deep
 %learning. 
-%\1 Scalable hierarchical network-on- chip architecture for spiking neural network hardware
+%\1 Scalable hierarchical network-on-chip architecture for spiking neural network hardware
 %implementations. 
-%\1 Diannao: A small-footprint high-throughput accel- erator for ubiquitous machine-learning.
+%\1 Diannao: A small-footprint high-throughput accelerator for ubiquitous machine-learning.
 %\1 Pudiannao: A polyvalent machine learning accelerator. In ACM SIGARCH Computer Architecture News, Vol.
 %43. ACM, 369–381.
-%\1 Eyeriss: An energy- efficient reconfigurable accelerator for deep convolutional neural networks. I
+%\1 Eyeriss: An energy-efficient reconfigurable accelerator for deep convolutional neural networks. I
 %\1 EIE: efficient inference engine on compressed deep neural network.
 %\1 Design and evolution of modular neural network architectures
 %\1 In-Datacenter Performance Analysis of a Tensor Processing Unit. 
 %\1 RENO: A high- efficient reconfigurable neuromorphic computing accelerator design.
 %\1 Convolution engine: balancing efficiency \& flexibility in specialized computing.
-%\1 Minerva: Enabling low-power, highly-accurate deep neural network acceler- ators. 
-%\1 DNPU: An 8.1TOPS/W Reconfigurable CNN-RNN Processor for General Purpose Deep Neu- ral Networks. 
+%\1 Minerva: Enabling low-power, highly accurate deep neural network accelerators. 
+%\1 DNPU: An 8.1TOPS/W Reconfigurable CNN-RNN Processor for General Purpose Deep Neural Networks. 
 %\1 C-Brain: A deep learning accelerator that tames the diversity of CNNs through adaptive data-level
 %\1 parallelization. 
 %\end{outline}
@@ -91,19 +91,19 @@ Most previous works \cite{nowatzki, spatial-computation} only consider allocatin
 
 Multiple decades of research have resulted in a rich body of literature, both in CGRAs~\cite{cgraSurvey1, cgraSurvey2} and on-chip networks~\cite{ocn-synthesis}. We discuss relevant prior work under the following categories:
 
-\subsection{Tiled Processor Interconnects} Architectures such as Raw~\cite{raw} and Tile~\cite{tile} use scalar operand networks~\cite{son}, which combine static and dynamic networks. Raw has one static and two dynamic interconnects: the static interconnect is used to route normal operand traffic, one dynamic network is used to route runtime-dependent values which could not be routed on the static network, and the second dynamic network is used for cache misses and other exceptions. Deadlock avoidance is guaranteed only in the second dynamic network, which is used to recover from deadlocks in the first dynamic network. However, as described in Section~\ref{sec:intro}, wider buses and larger flit sizes create scalability issues with two dynamic networks, including higher area and power. In addition, our static VC allocation scheme ensures deadlock freedom in our single dynamic network, obviating the need for deadlock recovery.
+\subsection{Tiled Processor Interconnects} Architectures such as Raw~\cite{raw} and Tile~\cite{tile} use scalar operand networks~\cite{son}, which combine static and dynamic networks. Raw has one static and two dynamics interconnects: the static interconnect is used to route normal operand traffic, one dynamic network is used to route runtime-dependent values which could not be routed on the static network, and the second dynamic network is used for cache misses and other exceptions. Deadlock avoidance is guaranteed only in the second dynamic network, which is used to recover from deadlocks in the first dynamic network. However, as described in Section~\ref{sec:network}, wider buses, and larger flit sizes create scalability issues with two dynamic networks, including higher area and power. In addition, our static VC allocation scheme ensures deadlock freedom in our single dynamic network, obviating the need for deadlock recovery.
 The dynamic Raw network also does not preserve operand ordering, requiring an operand reordering mechanism at every tile.
 
-TRIPS~\cite{trips} is a tiled dataflow architecture with dynamic execution. TRIPS does not have a static interconnect, but contains two dynamic networks~\cite{trips-network}: an operand network  to route operands between tiles, and an on-chip network  to communicate with cache banks. Wavescalar~\cite{wavescalar} is another tiled dataflow architecture with four levels of hierarchy, connected by dynamic interconnects that vary in topology and bandwidth at each level. The Polymorphic Pipeline Array~\cite{ppa} is a tiled architecture built to target mobile multimedia applications. While compute resources are either statically or dynamically provisioned via hardware virtualization support, communication uses a dynamic scalar operand network.
+TRIPS~\cite{trips} is a tiled dataflow architecture with dynamic execution. TRIPS does not have a static interconnect but contains two dynamic networks~\cite{trips-network}: an operand network to route operands between tiles, and an on-chip network to communicate with cache banks. Wavescalar~\cite{wavescalar} is another tiled dataflow architecture with four levels of hierarchy, connected by dynamic interconnects that vary in topology and bandwidth at each level. The Polymorphic Pipeline Array~\cite{ppa} is a tiled architecture built to target mobile multimedia applications. While compute resources are either statically or dynamically provisioned via hardware virtualization support, communication uses a dynamic scalar operand network.
 
 \subsection{CGRA Interconnects}
 Many previously proposed CGRAs use a word-level static interconnect, which has better compute density than bit-based routing~\cite{bus-fpga}. CGRAs such as HRL~\cite{hrl}, DySER~\cite{dyser}, and Elastic CGRAs~\cite{elasticCGRAs} commonly employ two static interconnects: a word-level interconnect to route data and a bit-level interconnect to route control signals.
 Several works have also proposed a statically scheduled interconnect~\cite{van2009static, dimitroulakos2006exploring, wave} using a modulo schedule. While this approach is effective for inner loops with predictable latencies and fixed initiation intervals, variable latency operations and hierarchical loop nests add scheduling complexity that prevents a single modulo schedule. HyCube~\cite{hycube} has a similar statically scheduled network, with the ability to bypass intermediate switches in the same cycle. This allows operands to travel multiple hops in a single cycle, but creates long wires and combinational paths and adversely affects the clock period and scalability.
-%However, applications with a hierarchical nesting of loops provide two poor options to arrive a single modulo schedule: the II can be extended to cover the entirety of the innermost loop, or the outer loop can have resources reserved in the inner loop schedule.
+%However, applications with a hierarchical nesting of loops provide two poor options to arrive at a single modulo schedule: the II can be extended to cover the entirety of the innermost loop, or the outer loop can have resources reserved in the inner loop schedule.
 %The first option is frequently not realistic because scheduled hardware has a hard cap on the II, and loops can be of arbitrary length.
-%If outer loops have resources reserved in the inner loop schedule, then the schedule will become congested with reserved, but infrequently used, resources.
+%If outer loops have resources reserved in the inner loop schedule, then the schedule will become congested with reserved, but infrequently used resources.
 \subsection{Design Space Studies} Several prior studies focus on tradeoffs with various network topologies, but do not characterize or quantify the role of dynamism in interconnects.
-The Raw design space study~\cite{dse-raw} uses an analytical model for applications as well as architectural resources to perform a sensitivity analysis of compute and memory resources focused on area, power, and performance, without varying the interconnect. The ADRES design space study~\cite{dse-adres} focuses on area and energy tradeoffs with different network topologies with the ADRES~\cite{adres} architecture, where all topologies use a fully static interconnect. KressArray Xplorer~\cite{dse-kressarray} similarly explores topology tradeoffs with the KressArray~\cite{kress} architecture. Other studies explore topologies for mesh-based CGRAs~\cite{dse-date} and more general CGRAs supporting resource sharing~\cite{dse-tvlsi}. Other tools like Sunmap~\cite{sunmap} allow end users to construct and explore various topologies.
+The Raw design space study~\cite{dse-raw} uses an analytical model for applications as well as architectural resources to perform a sensitivity analysis of compute and memory resources focused on area, power, and performance, without varying the interconnect. The ADRES design space study~\cite{dse-adres} focuses on area and energy tradeoffs with different network topologies with the ADRES~\cite{adres} architecture, where all topologies use a fully static interconnect. KressArray Xplorer~\cite{dse-kressarray} similarly explores topology tradeoffs with the KressArray~\cite{kress} architecture. Other studies explore topologies for mesh-based CGRAs~\cite{dse-date} and more general CGRAs supporting resource sharing~\cite{dse-tvlsi}. Other tools like Sunmap~\cite{sunmap} allow end-users to construct and explore various topologies.
 
 \subsection{Compiler-Driven NoCs}
 Other prior works have used compiler techniques to optimize various facets of NoCs.
@@ -115,23 +115,8 @@ Kapre et al. \cite{kapre2011noc} develop a workflow to map applications to CGRAs
 
 %Our approach provides an extension of these techniques by using a ``closed-loop'' iterative process.
 %Instead of doing each step (placement, routing, deadlock avoidance) sequentially, we are able to use heuristics to quantify the impact that each step has on the badness of the overall design.
-%For example, this allows us to fix routing pathologies by re-placement, because we can identify the specific placement decisions that led to the poor set of routes.
+%For example, this allows us to fix routing pathologies by re-placement because we can identify the specific placement decisions that led to the poor set of routes.
 
-
-% Ignore arch for now; we assume arch
-
-% \paragraph{Plasticine Compiler}
-% The Plasticine compiler described in the original paper also uses a token-based control protocal.
-% However, the Plasticine compiler still allocates VB for each level of the controller hierarchy in Spatial
-% and pass tokens between the parent and child controllers, which creates communication hot-spot around the
-% parant controller and suffers from bubble during warmup phase of the loop iteartions.
-% \yz{Rephrase this}
-% In addition, their compiler assigns a single memory PB to each logical memory in the program; 
-% the compiler cannot handle logical memory exceeding capacity or bank limit of the physical PBs.
-% The simple strided banking scheme also disallows parallelized access on multiple dimension of the memory,
-% which can greatly limits the application design space.
-% Finally, unlike spaerate allocation and assignment phases described in \Cref{sec:alloc} and \Cref{sec:pruning},
-% they allocate a VB for a specific type of PB, which under under utilizes resource whin PBs.
 
 
 % \gist{
@@ -155,11 +140,11 @@ Kapre et al. \cite{kapre2011noc} develop a workflow to map applications to CGRAs
 % Summary:
 % Looks like we are not the first one trying to map imperative language to spatial architecture. But there are still major differences.
 % Some of the work is mapping to FPGAs, similar to high-level synthesis tools.
-% Many of the other works like \cite{zaidi} only focus on the data-flow graph and do not handle memory accesses. Although we both trying to support imperative language on spatial accelerator, our focus is never to accelerate control heavy code on the accelerator, but rather to target data intensive application with more flexibility.
+% Many of the other works like \cite{zaidi} only focus on the data-flow graph and do not handle memory accesses. Although we both trying to support imperative language on the spatial accelerator, our focus is never to accelerate control heavy code on the accelerator, but rather to target data-intensive application with more flexibility.
 
-% \cite{synaid} is actually very relevant but the architecture is at a much smaller scale. It does have distributed on-chip memory but their memory is a stack used to store program for processors. None of the prior work has consider using distributed memory to compose logically single memory with strong-consistency and coherence. Another major difference is that these architecture does not have global network and DRAM that introduces variable latency. 
-% So this changes how the application is mapped onto the accelerator. Our approach is completely distributed streaming approach while they tends to use statically scheduled approach.
-% Finally the applications are very different. Most of their applications are very small kernels or image/audio encoding/decoding. Our benchmarks has a mix of full ML models + graph + others
+% \cite{synaid} is actually very relevant but the architecture is at a much smaller scale. It does have distributed on-chip memory but their memory is a stack used to store programs for processors. None of the prior work has considered using distributed memory to compose logically single memory with strong-consistency and coherence. Another major difference is that these architecture does not have a global network and DRAM that introduces variable latency. 
+% So this changes how the application is mapped onto the accelerator. Our approach is a completely distributed streaming approach while they tend to use a statically scheduled approach.
+% Finally the applications are very different. Most of their applications are very small kernels or image/audio encoding/decoding. Our benchmarks have a mix of full ML models + graph + others
 % }
 
 % Maybe related \cite{sparseaccel}
@@ -168,15 +153,15 @@ Kapre et al. \cite{kapre2011noc} develop a workflow to map applications to CGRAs
 % Tartan\cite{tartan}
 
 % \gist{
-% 	\begin{itemize}
-% 		\item Plasticine compiler: \cite{plasticine}
-% 		\item Tartan: \cite{tartan} Single op partitions w/ handshaking, direct template translation.
-% 		\item Zaidi Thesis: \cite{zaidi} Conversion to bluespec, also uses token-based control. No partitioning / merging.
-% 		\item Partitioning: \cite{nowatzki} Solver-based partitioning, very small arrays (4x4 dyser, etc.), with statically known delays and single-op partitions. Does not handle merging.
-% 		\item SparseAccel: \cite{sparseaccel}\ Architecture paper, basically nothing about compilers.  (NR)
-% 		\item streamit for RAW: \cite{streamit} No memory consistency due to pure stream structure, fine grained arch. Mesh of processors.
-% 		\item Triggered Instructions \cite{ti} Fine grained processor architecture, with caches. (Micro paper: manual mapping, assembly, NR)
-% 		\item Chlorophyll: \cite{synaid} Maps subset of C to GreenArrays (small spatial stack-processor architecture). Distinct Non-distributed arrays vs distributed arrays, optional partition annotations, static for loops (unrestricted while), uses Rosette backend solver (branch and bound, SA, Ant, Tabu Search, picked Simulated Annealing). Actual generation is synthesis based.
-% 		\item Spatial computation \cite{spatial-computation} Maps ANSI C to Verilog, handshake + token based execution with speculative execution. Uses crossbar network for memory (although we assume pre-banked memory). Fine grained control, uses Pegasus for memory dependence graph and tokens for synchronization. Does not address partitioning / merging.
-% 	\end{itemize}
+%     \begin{itemize}
+%         \item Plasticine compiler: \cite{plasticine}
+%         \item Tartan: \cite{tartan} Single op partitions w/ handshaking, direct template translation.
+%         \item Zaidi Thesis: \cite{zaidi} Conversion to bluespec, also uses token-based control. No partitioning / merging.
+%         \item Partitioning: \cite{nowatzki} Solver-based partitioning, very small arrays (4x4 dyser, etc.), with statically known delays and single-op partitions. Does not handle merging.
+%         \item SparseAccel: \cite{sparseaccel}\ Architecture paper, basically nothing about compilers.  (NR)
+%         \item streamit for RAW: \cite{streamit} No memory consistency due to pure stream structure, fine-grained arch. Mesh of processors.
+%         \item Triggered Instructions \cite{ti} Fine-grained processor architecture, with caches. (Micro paper: manual mapping, assembly, NR)
+%         \item Chlorophyll: \cite{synaid} Maps subset of C to GreenArrays (small spatial stack-processor architecture). Distinct Non-distributed arrays vs distributed arrays, optional partition annotations, static for loops (unrestricted while), uses Rosette backend solver (branch and bound, SA, Ant, Tabu Search, picked Simulated Annealing). The actual generation is synthesis based.
+%         \item Spatial computation \cite{spatial-computation} Maps ANSI C to Verilog, handshake + token-based execution with speculative execution. Uses a crossbar network for memory (although we assume pre-banked memory). Fine-grained control uses Pegasus for memory dependence graph and tokens for synchronization. Does not address partitioning/merging.
+%     \end{itemize}
 % }
