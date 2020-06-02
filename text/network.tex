@@ -342,7 +342,7 @@ As shown in Section~\ref{sec:scale}, any increase in accelerator size must be co
 This indicates that network overhead will increase with the size of an accelerator.
 
 The right side of Figure~\ref{fig:radar_switch} shows that, although credit-based flow control reduces the amount of buffering in switches and decreases network area and energy, application performance is significantly impacted. 
-This is the result of imbalanced data-flow pipelines in the program: when there are parallel long and short paths over the network, there must be sufficient buffer space on the short path equal to the product of throughput and the difference in latency. 
+This is the result of imbalanced dataflow pipelines in the program: when there are parallel long and short paths over the network, there must be sufficient buffer space on the short path equal to the product of throughput and the difference in latency. 
 Because performance is our most important metric, credit-based flow control is not feasible, especially because the impact of bubbles increases with communication distance, and therefore network size.
 
 \subsubsection{VC count and reduced flit width in routers}
@@ -402,7 +402,8 @@ With the same static bandwidth, most hybrid networks have better energy efficien
 This is a result of allowing a small amount of traffic to escape onto the dynamic network: with the dynamic network as a safety net, static PaR tends to converge to better placements with less overall communication.
 This can be seen in Figures~\ref{fig:energy}(c,f), where most static networks have larger hop counts than the corresponding hybrid network; hop count is the sum of all runtime link traversals, normalized per-application to the network configuration with the most hops.
 Subplots (e,f) show that more PUs are utilized with static networks than hybrid networks.
-This is because the compiler imposes less stringent IO constraints on PUs when partitioning for the hybrid network (as explained in Section~\ref{sec:partition}), which results in fewer PUs, less data movement, and greater energy efficiency for hybrid networks.
+This is because the compiler imposes less stringent IO constraints on PUs when partitioning for the
+hybrid network (as explained in Section~\ref{sec:appchar}), which results in fewer PUs, less data movement, and greater energy efficiency for hybrid networks.
 
 \begin{figure}
   \centering
@@ -426,3 +427,5 @@ The hybrid network gives the best perf/area and perf/watt, with a small degradat
 On the time-scheduled RDA, both static and hybrid networks have an 8.6x performance improvement. 
 The hybrid network gives a higher perf/watt improvement at 2.2x, whereas the static network gives a higher perf/area improvement at 2.6x.
 Overall, the hybrid networks deliver better energy efficiency with shorter routing distances by allowing an escape path on the dynamic network.
+\Cref{fig:breakdown} shows the area and power breakdown of Plasticine when using the hybrid network
+configuration in \Cref{fig:radar_best} (a).
