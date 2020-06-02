@@ -4,7 +4,7 @@ To support Spatial's generic banking scheme for on-chip SRAM mentioned in \Cref{
 we need to introduce a few microarchitectural changes to Plasticine's datapath.
 As a background, the static banking analysis searches an address remapping scheme, which we refer as
 banking scheme, that remaps the logical address space into partitions, such that addresses accessed
-in parallel belongs to different partitions. 
+in parallel belongs to different partitions~\cite{poly_cong}. 
 Each partition corresponds to a physical memory bank that comes with an additional address port.
 If the compiler can find a way to partition the data such that all parallel workers are sent to
 different physical banks, the memory is guaranteed to feed all workers at full-throughput, which
@@ -20,12 +20,13 @@ both are functions of the original user-requested logical addresses.
 BA is an expression that selects the partition for each request, and BO is the offset within the partition.
 The banking analyzer searches the parameters in the equation and injects these computations to
 memory accesses in the program. 
-The first addition to Plasticine is the ability to compute independent BI and BO for each vector
+The first addition to Plasticine is the ability to compute independent BA and BO for each vector
 lanes. 
 We introduce vectorized address pipelines in PMUs, which was originally a scalar pipeline.
 
-The generic banking scheme also requires a full crossbar datapath between all access lanes (workers) and
-physical banks. To support this, we introduce the shuffle operator shown in \Cref{fig:memsplit}.
+The generic banking scheme also requires a full crossbar datapath between individual lanes within
+the vector access lanes and physical banks within PMUs. 
+To support this, we introduce the shuffle operator shown in \Cref{fig:memsplit}.
 The shuffle operator takes three vectorized operands: a from address $\overrightarrow{FA}$, a to address
 $\overrightarrow{TA}$, and a base $\overrightarrow{B}$.
 The output $O$ equals to $B$ shuffled from the order specified in $\overrightarrow{FA}$ to the order in
