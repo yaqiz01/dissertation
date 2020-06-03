@@ -16,24 +16,25 @@ the performance, area, and energy overhead in dynamic scheduling and conventiona
 To adapt to the compute intensity in modern data-analytic workloads, particularly in the deep learning
 domain, RDAs are increasing to a scale that was unprecedented before.
 With an area footprint of $133\text{mm}^2$ at 28nm, 
-Plasticine is a hierarchical RDA supplying 12.3 TFLOPs of computing power~\cite{plasticine}.
+Plasticine is a large-scale RDA supplying 12.3 TFLOPs of computing power~\cite{plasticine}.
 Prior work has shown an up to 76x performance/watt benefit from Plasticine over a Stradix V FPGA 
 due to an advantage in clock frequency and resource density.
 The increase in scale introduces new challenges in network-on-chip design to maintain 
 the throughput and energy efficiency of RDAs.
-Furthermore, targeting and managing RDAs at this scale also require new strategies in mapping, 
+Furthermore, targeting and managing RDAs at this scale require new strategies in mapping, 
 memory management, and flexible control to fully utilize their compute power. 
 
 In this work, we focus on two aspects of the software-hardware co-design that impact the usability
 and scalability of the Plasticine accelerator. 
 Although RDAs are flexible to support a wide range of applications, 
-the biggest challenge that hinders the adoption of these accelerators is 
+the largest challenge that hinders the adoption of these accelerators is 
 the required low-level knowledge in microarchitecture design and hardware constraints in
 order to efficiently implement a new application.
 To address this challenge, we introduce a compiler stack--\name--that raises the programming abstraction of
-Plasticine to an imperative-style domain-specific language (DSL) with nested control
+Plasticine to an imperative-style domain-specific language with nested control
 flow for general spatial architectures.
-Besides architecture-agnostic, this abstraction contains explicit loop constructs, enabling cross-kernel optimizations that are often not explored when programming RDAs.
+Besides architecture-agnostic, this abstraction contains explicit loop constructs, enabling
+cross-kernel optimizations that are often not exploited when programming RDAs.
 \name efficiently translates imperative control constructs to a streaming
 dataflow graph that scale performance with distributed on-chip resources.
 By virutalizing resources, \name systematically handles the physical constraints, hiding
