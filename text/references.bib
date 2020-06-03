@@ -538,19 +538,6 @@ ISSN={0278-0070},}
  keywords = {MIMD processors, MIMD processors, on-chip interconnection networks, multicore architectures, mesh networks, parallel architectures, mesh networks, multicore architectures, on-chip interconnection networks, parallel architectures},
 }
 
-@INPROCEEDINGS{trips,
-author={Karthikeyan Sankaralingam and Ramadass Nagarajan and Haiming Liu and Changkyu Kim and Jaehyuk Huh and Doug Burger and Stephen W. Keckler and Charles R. Moore},
-booktitle={30th Annual International Symposium on Computer Architecture, 2003. Proceedings.},
-title={Exploiting ILP, TLP, and DLP with the polymorphous TRIPS architecture},
-year={2003},
-volume={},
-number={},
-pages={422-433},
-keywords={parallel architectures;grid computing;performance evaluation;system-on-chip;multi-threading;concurrency control;storage allocation;cache storage;ILP;instruction-level parallelism;TLP;thread-level parallelism;DLP;data-level parallelism;polymorphous TRIPS architecture;on-chip memory system;out-of-order grid processor core;wide-issue grid processor core;fine-grained parallelism;cache storage;performance evaluation;Parallel processing;Computer architecture;Hardware;Concurrent computing;Out of order;Microprocessors;Streaming media;Process design;Space technology;Field programmable gate arrays},
-doi={10.1109/ISCA.2003.1207019},
-ISSN={1063-6897},
-month={June},}
-
 @inproceedings{piton,
  author = {Balkind, Jonathan and McKeown, Michael and Fu, Yaosheng and Nguyen, Tri and Zhou, Yanqi and Lavrov, Alexey and Shahrad, Mohammad and Fuchs, Adi and Payne, Samuel and Liang, Xiaohua and Matl, Matthew and Wentzlaff, David},
  title = {OpenPiton: An Open Source Manycore Research Framework},
@@ -817,31 +804,6 @@ keywords={microprocessor chips;mobile computing;mobile radio;multimedia communic
 doi={},
 ISSN={1072-4451},
 month={Dec},}
-
-@InProceedings{adres,
-author="Mei, Bingfeng
-and Vernalde, Serge
-and Verkest, Diederik
-and De Man, Hugo
-and Lauwereins, Rudy",
-editor="Y. K. Cheung, Peter
-and Constantinides, George A.",
-title="ADRES: An Architecture with Tightly Coupled VLIW Processor and Coarse-Grained Reconfigurable Matrix",
-booktitle="Field Programmable Logic and Application",
-year="2003",
-publisher="Springer Berlin Heidelberg",
-address="Berlin, Heidelberg",
-doi={10.1007/978-3-540-45234-8_7},
-pages="61--70",
-abstract="The coarse-grained reconfigurable architectures have advantages over the traditional FPGAs in terms of delay, area and configuration time. To execute entire applications, most of them combine an instruction set processor(ISP) and a reconfigurable matrix. However, not much attention is paid to the integration of these two parts, which results in high communication overhead and programming difficulty. To address this problem, we propose a novel architecture with tightly coupled very long instruction word (VLIW) processor and coarse-grained reconfigurable matrix. The advantages include simplified programming model, shared resource costs, and reduced communication overhead. To exploit this architecture, our previously developed compiler framework is adapted to the new architecture. The results show that the new architecture has good performance and is very compiler-friendly.",
-isbn="978-3-540-45234-8"
-}
-
-@inproceedings{kress,
-  title={A Fast Reconfigurable ALU for Xputers},
-  author={Rainer Kress},
-  year={1996}
-}
 
 @ARTICLE{cgraSurvey1,
 author={Russel Tessier and Kenneth Pocek and Andr\'{e} DeHon},
@@ -1377,22 +1339,6 @@ month={May},}
  address = {New York, NY, USA},
  keywords = {reconfigurable accelerators, spatial programming},
 }
-@inproceedings{dyser,
- author = {Govindaraju, Venkatraman and Ho, Chen-Han and Sankaralingam, Karthikeyan},
- title = {Dynamically Specialized Datapaths for Energy Efficient Computing},
- booktitle = {Proceedings of the 2011 IEEE 17th International Symposium on High Performance Computer Architecture},
- series = {HPCA '11},
- year = {2011},
- isbn = {978-1-4244-9432-3},
- pages = {503--514},
- numpages = {12},
- url = {http://dl.acm.org/citation.cfm?id=2014698.2014884},
- doi={10.1109/HPCA.2011.5749755},
- acmid = {2014884},
- publisher = {IEEE Computer Society},
- address = {Washington, DC, USA},
-}
-
 @inproceedings{hycube,
  author = {Karunaratne, Manupa and Mohite, Aditi Kulkarni and Mitra, Tulika and Peh, Li-Shiuan},
  title = {HyCUBE: A CGRA with Reconfigurable Single-cycle Multi-hop Interconnect},
@@ -2340,4 +2286,127 @@ eprint = {
   year = 2016
 }
 
-
+@ARTICLE{cgra1,
+  author={R. W. {Hartenstein} and A. G. {Hirschbiel} and M. {Riedmuller} and K. {Schmidt} and M. {Weber}},
+  journal={IEEE Journal of Solid-State Circuits}, 
+  title={A novel ASIC design approach based on a new machine paradigm}, 
+  year={1991},
+  volume={26},
+  number={7},
+  pages={975-989},}
+@ARTICLE{cgra2,
+  author={D. C. {Chen} and J. M. {Rabaey}},
+  journal={IEEE Journal of Solid-State Circuits}, 
+  title={A reconfigurable multiprocessor IC for rapid prototyping of algorithmic-specific high-speed DSP data paths}, 
+  year={1992},
+  volume={27},
+  number={12},
+  pages={1895-1904},}
+@inproceedings{dyser,
+ author = {Govindaraju, Venkatraman and Ho, Chen-Han and Sankaralingam, Karthikeyan},
+ title = {Dynamically Specialized Datapaths for Energy Efficient Computing},
+ booktitle = {Proceedings of the 2011 IEEE 17th International Symposium on High Performance Computer Architecture},
+ series = {HPCA '11},
+ year = {2011},
+ isbn = {978-1-4244-9432-3},
+ pages = {503--514},
+ numpages = {12},
+ url = {http://dl.acm.org/citation.cfm?id=2014698.2014884},
+ doi={10.1109/HPCA.2011.5749755},
+ acmid = {2014884},
+ publisher = {IEEE Computer Society},
+ address = {Washington, DC, USA},
+}
+@InProceedings{adres,
+author="Mei, Bingfeng
+and Vernalde, Serge
+and Verkest, Diederik
+and De Man, Hugo
+and Lauwereins, Rudy",
+editor="Y. K. Cheung, Peter
+and Constantinides, George A.",
+title="ADRES: An Architecture with Tightly Coupled VLIW Processor and Coarse-Grained Reconfigurable Matrix",
+booktitle="Field Programmable Logic and Application",
+year="2003",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="61--70",
+isbn="978-3-540-45234-8"
+}
+@INPROCEEDINGS{trips,
+author={Karthikeyan Sankaralingam and Ramadass Nagarajan and Haiming Liu and Changkyu Kim and Jaehyuk Huh and Doug Burger and Stephen W. Keckler and Charles R. Moore},
+booktitle={30th Annual International Symposium on Computer Architecture, 2003. Proceedings.},
+title={Exploiting ILP, TLP, and DLP with the polymorphous TRIPS architecture},
+year={2003},
+volume={},
+number={},
+pages={422-433},
+keywords={parallel architectures;grid computing;performance evaluation;system-on-chip;multi-threading;concurrency control;storage allocation;cache storage;ILP;instruction-level parallelism;TLP;thread-level parallelism;DLP;data-level parallelism;polymorphous TRIPS architecture;on-chip memory system;out-of-order grid processor core;wide-issue grid processor core;fine-grained parallelism;cache storage;performance evaluation;Parallel processing;Computer architecture;Hardware;Concurrent computing;Out of order;Microprocessors;Streaming media;Process design;Space technology;Field programmable gate arrays},
+doi={10.1109/ISCA.2003.1207019},
+ISSN={1063-6897},
+month={June},}
+@article{pactxpp,
+author = {Baumgarte, V. and Ehlers, G. and May, F. and N\"{u}ckel, A. and Vorbach, M. and Weinhardt, M.},
+title = {PACT XPP—A Self-Reconfigurable Data Processing Architecture},
+year = {2003},
+issue_date = {September 2003},
+publisher = {Kluwer Academic Publishers},
+address = {USA},
+volume = {26},
+number = {2},
+issn = {0920-8542},
+url = {https://doi.org/10.1023/A:1024499601571},
+doi = {10.1023/A:1024499601571},
+journal = {J. Supercomput.},
+month = sep,
+pages = {167–184},
+numpages = {18},
+keywords = {XPP, adaptive computing, reconfigurable processor, run-time reconfiguration, partial reconfiguration}
+}
+  
+@article{cgrasurvey,
+author = {Liu, Leibo and Zhu, Jianfeng and Li, Zhaoshi and Lu, Yanan and Deng, Yangdong and Han, Jie and Yin, Shouyi and Wei, Shaojun},
+title = {A Survey of Coarse-Grained Reconfigurable Architecture and Design: Taxonomy, Challenges, and Applications},
+year = {2019},
+issue_date = {January 2020},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {52},
+number = {6},
+issn = {0360-0300},
+url = {https://doi.org/10.1145/3357375},
+doi = {10.1145/3357375},
+journal = {ACM Comput. Surv.},
+month = oct,
+articleno = {118},
+numpages = {39},
+keywords = {reconfigurable computing, scheduling, CGRA, spatial architecture, dataflow}
+}
+@inproceedings{kress,
+  title={A Fast Reconfigurable ALU for Xputers},
+  author={Rainer Kress},
+  year={1996}
+}
+@article{morphosys,
+author = {Singh, Hertej and Lee, Ming-Hau and Lu, Guangming and Kurdahi, Fadi and Bagherzadeh, Nader and Filho, Eliseu},
+year = {2000},
+month = {06},
+pages = {465 - 481},
+title = {MorphoSys: An integrated reconfigurable system for data-parallel and computation-intensive applications},
+volume = {49},
+journal = {Computers, IEEE Transactions on},
+doi = {10.1109/12.859540}
+}
+@ARTICLE{piperanch,
+  author={S. C. {Goldstein} and H. {Schmit} and M. {Budiu} and S. {Cadambi} and M. {Moe} and R. R. {Taylor}},
+  journal={Computer}, 
+  title={PipeRench: a reconfigurable architecture and compiler}, 
+  year={2000},
+  volume={33},
+  number={4},
+  pages={70-77}}
+@article{wavecomputing,
+  title={A coarse grain reconfigurable array (cgra) for statically scheduled data flow computing},
+  author={Nicol, Chris},
+  journal={Wave Computing White Paper}
+}

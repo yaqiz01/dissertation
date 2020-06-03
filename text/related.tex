@@ -1,19 +1,107 @@
 \chapter{Related Work} \label{sec:related}
 
-\section{Compilers}
-\subsection{Streaming Dataflow IRs}
-Although many works claim to emit efficient and information-rich dataflow IRs for the downstream compilers, 
-very few of them can capture the high-level parallel patterns and implementation details that are critical 
-to RDA mappings. 
-For example, TensorFlow \cite{tensorflow} emits dataflow IR composed of tensor operations. 
-However, its IR lacks information on the parallel patterns within these operations. 
-In contrast, most of 
-the streaming languages \cite{streamit, synaid, maxj} are not able to extract nested loop-level parallelism 
-from modern data-intensive applications. 
-For example, StreamIt \cite{streamit}, a language tailored for streaming computing, also adopts distributed 
-control as in \name{}. 
-However, it lacks the necessary language features to describe deeply and irregularly nested loops that are 
-common in modern data-intensive applications.
+Multiple decades of research have resulted in a rich body of literature, both in CGRAs~\cite{cgraSurvey1, cgraSurvey2} and on-chip networks~\cite{ocn-synthesis}. We discuss relevant prior work under the following categories:
+
+\section{Traditional CGRAs and their Compilers}
+Emerging around the 1990s and rapidly developed in 2000s, CGRAs were first introduced as near-ASIC efficient accelerators with
+post-fabrication reconfigurability providing a high-speed 
+DSP datapath in a very long instruction word (VLIW) design~\cite{cgrasurvey,cgra1,cgra2,adres,trips,pactxpp,dyser,ti}.
+Most of the early CGRAs are small reconfigurable fabrics that tightly integrate with a 
+processor~\cite{dyser, adres,morphosys,piperanch}. 
+The processor frequently invokes and reconfigures the CGRA to accelerate compute-intensive regions of the program.
+For example, DySER communicates data and enables memory accesses through instruction registers set and
+received by a processor~\cite{dyser}.
+ADRES uses a shared register file to communicate with a VLIW core~\cite{adres}.
+MorphoSys extends the RISC ISA to configure the accelerator and initiate memory transfer
+to the accelerator's on-chip buffer~\cite{morphosys}.
+The accelerator, often time, handles a subgraph of a basic block at a time, leaving the control
+handling to a CPU~\cite{dyser, adres, piperanch}. 
+PipeRanch~\cite{piperanch}, for example, require a straight-line single assignment program, 
+achieved by fully unrolling loops and inlining functions.
+This strategy does not work with applications requiring data-dependent control flow and irregular memory
+accesses, such as sparse applications, and dense applications with intensive computation that are
+too expensive to fully unroll.
+
+The co-processor model and low-level ISAs in these CGRAs introduce challenges in the programmability
+of the hardware.
+\cite{dyser} identifies a series of manually performed transformations required to efficiently convert the input program to the expected program graph of a DySER array.
+Prior works also have looked into using integer linear programming (ILP) to address constraints in traditional CGRAs. 
+\cite{nowatzki} uses ILP to optimize the scheduling, placement, and routing of a dataflow graph within a basic block on the DySER fabric.
+
+Nonetheless, this level of CGRA-processor integration undermines the processor performance due to frequent accelerator
+interruption. 
+Furthermore, it is hard to scale in compute and memory density demanded by today's data-analytic
+workloads.
+Plasticine is a recently proposed large-scale CGRA 
+designed as an independent accelerator with dedicated accelerator DRAM~\cite{plasticine}.
+The host communicates to the accelerator via a PCIe bus, similar to an FPGA and GPU.
+With the flexibility of a CGRA, Plasticine delivers comparable compute and memory density to
+a fixed-function ML accelerator.
+
+At high-level, Plasticine resembles a DySER array replacing the function units with a compute or
+memory tile, each supplying a compute density comparable to the entire DySER array.
+As a large reconfigurable accelerator, Plasticine takes a longer time to reconfigure, around 10s
+of $\mu s$ as supposed cycles in traditional CGRAs~\cite{dyser}.
+As a result, the expected reconfiguration window for Plasticine is around milliseconds or even
+seconds.
+To keep the accelerator busy for such a long period of time, Plasticine must support more flexible
+control flow in the program to minimize host intervention that compromises the utilization of the hardware.
+The consideration of flexible control supports with scalable performance and memory
+bandwidth is what differentiates \name's approach from conventional CGRAs' mapping strategy.
+While Chlorophyll targeting a GreenArrays 144 chip also support branches, their compute tile is a processor that can execute instructions unlike the SIMD pipeline in Plasticine~\cite{synaid}. 
+Chlorophyll focuses on data partitioning across distributed scratchpads. However,
+they do not explore pipeline parallelism across compute tiles.
+Instead of accelerating a single basic block at a time in traditional CGRAs, 
+\name pipelines the entire program with nested control flow onto Plasticine.
+By exploring multiple-degrees of concurrency, including instruction-level, data-level, and kernel-level
+pipelining and parallelism, \name achieves a good utilization on kernels with both massive and fine-grained
+basic blocks.
+%The difference in scale determines a completely different mapping strategy that \name exploits compared
+%to traditional compiler works on CGRAs.
+
+Wave DPU is another large-scale RDA developed commercially targeting deep learning applications.
+It uses a dataflow execution model with a globally asynchronous and locally synchronous (GALS) scheme
+that ensures a highly scalable architecture~\cite{wavecomputing}.
+With three levels of hierarchy, Wave DPU includes a mesh of CGRA clusters partitioned into compute
+machines that provide multiple memory and data I/O ports to an SoC AXI4 NOC; each cluster
+further contains a grid of accumulation PE and arithmetic units.
+Like Plasticine, Wave DPU is also an independent accelerator that does not require CPU to facilitate
+execution.
+Wave claims to be able to execute any language that can compile to an LLVM IR.
+From the description of the hardware, it is unclear whether Wave can handle data-dependent control flow and
+irregular memory accesses outside of the deep learning domain.
+
+%\subsection{Streaming Dataflow IRs}
+%Many recent work in high-level DSL uses a dataflow oriented programming abstraction.
+%Example includes ML frameworks like TensorFlow~\cite{tensorflow} that uses a dataflow graph to
+%describe the network architecture.
+%These dataflow graphs, however, cannot be directly mapped to a dataflow architecture, due to the
+%mismatching in their node definitions.
+%A node in TensorFlow data graph corresponds to a kernel, which itself is 
+%one or multiple invocations of accelerator kernel that contains a sub dataflow graph.
+%\name provides an imperative programming front-end for Plasticine to implement these kernels in a
+%high-level abstraction that enables cross-kernel optimizations.
+
+%StreamIt is a DSL for streaming applications targeting the RAW architecture,
+%a microprocessor array exposing scalable ISAs that maps instructions across
+%processors.
+%StreamIt have explicit streaming interface across processing pipelines, similar to the output of
+%\name's imperative to streaming transformation.
+%Unlike Plasticine, the compute engine for RAW is a processor core that can execute arbitrary
+%controlflow.
+
+%Although many works claim to emit efficient and information-rich dataflow IRs for the downstream compilers, 
+%very few of them can capture the high-level parallel patterns and implementation details that are critical 
+%to RDA mappings. 
+%For example, TensorFlow \cite{tensorflow} emits dataflow IR composed of tensor operations. 
+%However, its IR lacks information on the parallel patterns within these operations. 
+%In contrast, most of 
+%the streaming languages \cite{streamit, synaid, maxj} are not able to extract nested loop-level parallelism 
+%from modern data-intensive applications. 
+%For example, StreamIt \cite{streamit}, a language tailored for streaming computing, also adopts distributed 
+%control as in \name{}. 
+%However, it lacks the necessary language features to describe deeply and irregularly nested loops that are 
+%common in modern data-intensive applications.
 
 %\paragraph{Hardware Architectures}
 %Spatial reconfigurable accelerators (\eg, Dyser~\cite{dyser} and Tartan~\cite{tartan}) have only one-level of hierarchy.
@@ -39,10 +127,10 @@ common in modern data-intensive applications.
 %\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
 %\end{outline}
 
-Kernel-specific loop optimization
-\begin{outline}
-\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
-\end{outline}
+%Kernel-specific loop optimization
+%\begin{outline}
+%\1 Tangram: Optimized Coarse-Grained Dataflow for Scalable NN Accelerators
+%\end{outline}
 
 %\paragraph{ML Accelerators}
 %\begin{outline}
@@ -71,9 +159,9 @@ Kernel-specific loop optimization
 %\1 parallelization. 
 %\end{outline}
 
-\subsection{Spatial Compilers}
-Most previous works \cite{nowatzki, spatial-computation} only consider allocating resources at the same level. 
-\name{} takes a more general assumption by co-allocating resources at multiple levels of an accelerator's hierarchy.
+%\subsection{Spatial Compilers}
+%Most previous works \cite{nowatzki, spatial-computation} only consider allocating resources at the same level. 
+%\name{} takes a more general assumption by co-allocating resources at multiple levels of an accelerator's hierarchy.
 
 %The Plasticine compiler~\cite{plasticine} is similar to \name{} that it also uses a token-based control protocol.
 %However, it performs worse than \name{} due to the following reasons.
@@ -88,8 +176,6 @@ Most previous works \cite{nowatzki, spatial-computation} only consider allocatin
 %the Plasticine compiler allocates one VB for a specific type of PB and underutilizes resources within PBs.
 
 \section{On-Chip Networks}
-
-Multiple decades of research have resulted in a rich body of literature, both in CGRAs~\cite{cgraSurvey1, cgraSurvey2} and on-chip networks~\cite{ocn-synthesis}. We discuss relevant prior work under the following categories:
 
 \subsection{Tiled Processor Interconnects} Architectures such as Raw~\cite{raw} and Tile~\cite{tile} use scalar operand networks~\cite{son}, which combine static and dynamic networks. Raw has one static and two dynamics interconnects: the static interconnect is used to route normal operand traffic, one dynamic network is used to route runtime-dependent values which could not be routed on the static network, and the second dynamic network is used for cache misses and other exceptions. Deadlock avoidance is guaranteed only in the second dynamic network, which is used to recover from deadlocks in the first dynamic network. However, as described in Section~\ref{sec:network}, wider buses, and larger flit sizes create scalability issues with two dynamic networks, including higher area and power. In addition, our static VC allocation scheme ensures deadlock freedom in our single dynamic network, obviating the need for deadlock recovery.
 The dynamic Raw network also does not preserve operand ordering, requiring an operand reordering mechanism at every tile.

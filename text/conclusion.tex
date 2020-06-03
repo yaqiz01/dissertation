@@ -9,6 +9,8 @@ virtualization.
 We develop a compiler, \name{}, that constructs a dataflow graph from an imperative program with nested
 control flow. We use dataflow tokens to enforce sequential consistency across distributed memory
 accesses, incurring minimum communication overhead.
+Using token synchronizations, \name is the first compiler supporting arbitrary levels of parallelization and pipelining 
+of a nested control flow graph on an RDA.
 Furthermore, \name efficiently compose distributed resource to provide an abstraction of larger
 logical resources to the programmers.
 Our optimizations effectively eliminate pipelining stall and reduce resource fragmentation with
