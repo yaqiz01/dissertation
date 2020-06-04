@@ -17,27 +17,28 @@
 Plasticine is a tile-based RDA designed for a wide range of data-intensive
 workloads.
 With an area footprint of $113mm^2$ at 28-nm process, Plasticine packs 12.3 TFLOPS of compute
-throughput and 16 MB of on-chip memory. 
+density and 16 MB of on-chip memory. 
 Without bit-level reconfiguration overhead,
-Plasticine runs a higher clock frequency than most FPGAs at 1GHz with a thermal design power at 49W. 
-Previous work has shown a up to 77X performance-per-watt improvement from Plasticine over a Stratix
+Plasticine runs at a higher clock frequency than most FPGAs---at 1GHz with a thermal design power at 49W. 
+Previous work has shown a up to 77x performance-per-watt improvement with Plasticine over a Stratix
 V FPGA~\cite{plasticine}.
 \Cref{fig:plasticine} shows the chip-level design of Plasticine.
 
 At high-level, Plasticine contains an array of resource tiles connected by a global interconnect.
 The mesh network is statically configured, providing a guaranteed in-order transmission
 of packet streams between any tiles.
-The network comes with three granularity: a 512-bit vector data bus, a 32-bit scalar data bus, and a
+The network comes with three granularities: a 512-bit vector data bus, a 32-bit scalar data bus, and a
 single-bit control bus.
 The data networks contain a single valid bit traveled along with the data;
 the control network has only the valid bit without a payload, transmitting control pulses across tiles.
 There are three types of configurable units: the pattern compute units (PCUs) perform the most
 heavy lifting computation on Plasticine; the pattern memory units (PMUs) contain all distributed
-scratchpad on-chip; and the DRAM Address Generation Units (AGs) that generate DRAM requests going to
+scratchpads on-chip; and the DRAM address generation units (AGs) that generate DRAM requests going to
 the off-chip memory.
 
 Like FPGAs, Plasticine can also support multiple-level of parallelization and pipelining explained
-in the previous section.
+in the previous section. \Cref{sec:control} explains how \name achieves this using token-based
+control flow.
 
 For the rest of this section, we will explain the native programming interfaces of the three
 configurable units.

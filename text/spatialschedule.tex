@@ -30,16 +30,17 @@ Exploiting multiple levels of pipeline parallelism gives a total throughput of $
 \end{figure*}
 
 The key advantage of reconfigurable spatial accelerators, compared to processor-based architectures, 
-is the ability to explore multiple levels of pipeline parallelism. 
+is their ability to explore multiple levels of pipeline parallelism. 
 In traditional Von Neumann architectures~\cite{vonneumann}, like CPUs and GPUs,
 a computer consists of a processing unit that performs
-computation, a memory unit that stores the program states, and a control unit that tracks execution states and fetches the instruction to execute. This computing model inherently assumes that
+computation, a memory unit that stores the program states, and a control unit that tracks execution states and fetches the instruction to execute. 
+This computing model inherently assumes that
 instructions within a program are executed in time, maximizing the flexibility to context switching between different workloads dynamically.
 
-Reconfigurable accelerators are a direct violation of the von Neumann execution model; 
+Reconfigurable accelerators are direct violations of the von Neumann execution model; 
 instructions are statically embedded in the datapath and executed in space as supposed to in time.
 The disadvantage of static reconfiguration is paying the resource cost for infrequently
-executed instructions, making it unsuitable for control-heavy workloads that traditional
+executed routines, making it unsuitable for control-heavy workloads that traditional
 processors are efficient at.
 On the other hand, RDAs are particularly competitive in providing high-throughput, 
 low-latency, and energy-efficiency acceleration for data-analytical workloads.
@@ -48,28 +49,28 @@ recognition, machine translation, digital signal processing, network processing,
 These applications exhibit a rich amount of data-level parallelism with relatively static control
 flow.
 
-\Cref{fig:pipeexec} shows an example of the hierarchical parallelism and pipelining exploit by
-a spatial architecture.
-The overall compute throughput of a parallelized and pipelined program is 
+\Cref{fig:pipeexec} shows an example of a
+hierarchically parallelized and pipelined program on a spatial architecture.
+The overall compute throughput of the program is 
 the product of the total parallelization factors and pipelining depth.
-By exploring multiple dimensions of concurrency in the program, spatial architecture is more likely
+By exploring multiple dimensions of concurrency in the program, spatial architectures are more likely
 to saturate the compute throughput of the hardware for a wide range of applications.
 For applications that are expensive to parallelize due to irregular access patterns, spatial
-architectures can increase on the pipelining dimension;
+architectures can increase throughput by pipelining the program;
 for application with embarrassingly parallel workloads, spatial architecture can budget most
-resource on increasing parallelism.
+resources on increasing parallelism.
 
 Pipelined execution is also beneficial for achieving good memory performance.
 Data accessed by different stages of the pipelines are stored in disjoint scratchpads instead of a
 shared cache, improving the address bandwidth and effective on-chip capacity.
-Using explicitly managed scratchpads with application knowledge also tends to improve locality
+Using scratchpads explicitly managed with application knowledge tends to improve locality
 and eliminate cache performance issues, such as thrashing.
 Across kernels, pipelined execution reduces the amount of off-chip accesses for intermediate
 data.
 SIMT architectures, like GPUs, relying on high-bandwidth DRAM technologies, such as HBM, to sustain
 the compute throughput of massively parallelized threads.
 While providing over 10x more bandwidth than traditional DDR technologies, HBM is very limited in
-capacity, around 16GB as supposed to on the orders of TB for DDR.
+capacity, around 16GB as supposed to over TBs for DDR.
 As a result, the limited off-chip capacity often restricts the type of applications that
 GPUs can support.
 
