@@ -4,9 +4,9 @@ Multiple decades of research have resulted in a rich body of literature, both in
 
 \section{Traditional CGRAs and their Compilers}
 Emerging around the 1990s and rapidly developed in 2000s, CGRAs were first introduced as near-ASIC efficient accelerators with
-post-fabrication reconfigurability providing a high-speed 
+post-fabrication reconfigurability that provide a high-speed 
 DSP datapath in a very long instruction word (VLIW) design~\cite{cgrasurvey,cgra1,cgra2,adres,trips,pactxpp,dyser,ti}.
-Most of the early CGRAs are small reconfigurable fabrics that tightly integrate with a 
+Most of the early CGRAs are small reconfigurable fabrics tightly integrated with a 
 processor~\cite{dyser, adres,morphosys,piperanch}. 
 The processor frequently invokes and reconfigures the CGRA to accelerate compute-intensive regions of the program.
 For example, DySER communicates data and enables memory accesses through instruction registers set and
@@ -18,7 +18,7 @@ The accelerator, often time, handles a subgraph of a basic block at a time, leav
 handling to a CPU~\cite{dyser, adres, piperanch}. 
 PipeRanch~\cite{piperanch}, for example, require a straight-line single assignment program, 
 achieved by fully unrolling loops and inlining functions.
-This strategy does not work with applications requiring data-dependent control flow and irregular memory
+This strategy, however, does not work with applications requiring data-dependent control flow and irregular memory
 accesses, such as sparse applications, and dense applications with intensive computation that are
 too expensive to fully unroll.
 
@@ -29,19 +29,19 @@ Prior works also have looked into using integer linear programming (ILP) to addr
 \cite{nowatzki} uses ILP to optimize the scheduling, placement, and routing of a dataflow graph within a basic block on the DySER fabric.
 
 Nonetheless, this level of CGRA-processor integration undermines the processor performance due to frequent accelerator
-interruption. 
+interruptions. 
 Furthermore, it is hard to scale in compute and memory density demanded by today's data-analytic
 workloads.
 Plasticine is a recently proposed large-scale CGRA 
 designed as an independent accelerator with dedicated accelerator DRAM~\cite{plasticine}.
-The host communicates to the accelerator via a PCIe bus, similar to an FPGA and GPU.
+The host communicates to the accelerator via a PCIe bus, similar to an FPGA and a GPU.
 With the flexibility of a CGRA, Plasticine delivers comparable compute and memory density to
 a fixed-function ML accelerator.
 
 At high-level, Plasticine resembles a DySER array replacing the function units with a compute or
 memory tile, each supplying a compute density comparable to the entire DySER array.
 As a large reconfigurable accelerator, Plasticine takes a longer time to reconfigure, around 10s
-of $\mu s$ as supposed cycles in traditional CGRAs~\cite{dyser}.
+of $\mu s$ as supposed to 10s of cycles in traditional CGRAs~\cite{dyser}.
 As a result, the expected reconfiguration window for Plasticine is around milliseconds or even
 seconds.
 To keep the accelerator busy for such a long period of time, Plasticine must support more flexible
@@ -59,15 +59,15 @@ basic blocks.
 %The difference in scale determines a completely different mapping strategy that \name exploits compared
 %to traditional compiler works on CGRAs.
 
-Wave DPU is another large-scale RDA developed commercially targeting deep learning applications.
+Wave DPU is another large-scale RDA developed commercially that targets deep learning applications.
 It uses a dataflow execution model with a globally asynchronous and locally synchronous (GALS) scheme
 that ensures a highly scalable architecture~\cite{wavecomputing}.
 With three levels of hierarchy, Wave DPU includes a mesh of CGRA clusters partitioned into compute
 machines that provide multiple memory and data I/O ports to an SoC AXI4 NOC; each cluster
-further contains a grid of accumulation PE and arithmetic units.
-Like Plasticine, Wave DPU is also an independent accelerator that does not require CPU to facilitate
+further contains a grid of accumulation PEs and arithmetic units.
+Like Plasticine, Wave DPU is also an independent accelerator that does not require a CPU to facilitate
 execution.
-Wave claims to be able to execute any language that can compile to an LLVM IR.
+Wave claims to be able to execute any language that can be compiled to an LLVM IR.
 From the description of the hardware, it is unclear whether Wave can handle data-dependent control flow and
 irregular memory accesses outside of the deep learning domain.
 
