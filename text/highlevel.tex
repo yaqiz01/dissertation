@@ -1,7 +1,7 @@
 \section{The High-Level Imperative Compiler} 
 
-We use Spatial~\cite{spatial_koeplinger}--a domain-specific language for reconfigurable
-accelerators--as the front-end of Plasticine.
+We use Spatial~\cite{spatial_koeplinger}---a domain-specific language for reconfigurable
+accelerators---as the front-end of Plasticine.
 Spatial describes applications with imperative control constructs, such as loops and branches,
 augmented with parallel patterns~\cite{parallelpattern}.
 Parallel patterns are transformation functions on memory collections that capture both access
@@ -106,8 +106,8 @@ unrolling shown in ~\Cref{fig:spatialegpar} (c).
   Pseudo example of \name's front-end language.
   (a) shows the an example of \name's front-end language. 
   (b) shows the control-flow graph in traditional CPU-based compiler.
-  The `par` keyword indicates outer loop unrolling factor, and
-  the `vec` keyword is followed by a inner-loop vectorization factor.
+  The \texttt{par} keyword indicates outer loop unrolling factor, and
+  the \texttt{vec} keyword is followed by a inner-loop vectorization factor.
   When an iterator is vectorized, instructions using the vectorized iterator is automatically
   vectorized. When unrolling the outer loop \texttt{A}, the enclosed loop body and
   next-level controllers are duplicated, as suggested in (c).

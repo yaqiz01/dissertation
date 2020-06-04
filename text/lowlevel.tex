@@ -89,17 +89,17 @@ loop iterators used in the datapath.
     Other stages need to propagate the required values through PRs.
     (b) shows a simplified configuration where registers are implicitly allocated.
     \Cref{sec:resalloc} discusses the register allocation.
+    \texttt{InStream} and \texttt{OutStream} within contexts in (a) are merged as a single
+    \texttt{Stream} in (b) outside of the context.
+    Each stream can have exactly one writer. 
+    If a stream has more than one reader in (b), effectively the
+    writer broadcasts the result to both input streams of the receiver contexts in the (a) style.
     The \texttt{valid} signal of the inner most counter \texttt{j} is high whenever the context is
     enabled. The context is implicitly triggered whenever its input streams \texttt{streamA},
     \texttt{streamB}, and \texttt{streamC} are non-empty and output stream \texttt{outputD} is ready.
     By configuring when each stream is enqueued and dequeued using signals from the chained counters, 
     these streams are effectively read and written within different loop bodies.
     (c) shows the effective execution of the declarative configuration achieved in an imperative program.
-    We move the definitions of streams outside of the context in (b) and (c), so they can be written by
-    other contexts. 
-    Each stream can have exactly one writer. 
-    If a stream has more than one reader, effectively the
-    writer broadcasts the result to both input buffers of the receiver contexts.
   }
   \label{fig:context}
 \end{figure}
@@ -116,13 +116,14 @@ branch statements, across contexts even though individual contexts can only exec
 branch-free}. 
 
 \Cref{fig:contextc} represents the effective execution achieved in an imperative program.
-For simplicity, we will use the imperative-style configuration in the later discussions.
+For simplicity, we will use the imperative-style configuration in our later discussions.
 However, it is important to realize the instructions in the imperative-style configuration are not
 executed in time, but rather in space.
-There is a one-to-one translation from the declarative-style configuration to the imperative-style, but not in a reverse way.
+Only a very restrictive form of the imperative program can be translated to the declarative
+configuration.
+%There is a one-to-one translation from the declarative-style configuration to the imperative-style, but not in a reverse way.
 %There are many restrictions on the structure of the program in the imperative-style. 
-For example, in the imperative-style, 
-instructions in the contexts must belongs to a single basic block, and the loops need to be
+For example, instructions in the contexts must belongs to a single basic block, and the loops need to be
 perfectly nested (only accesses to streams can occur in the outer loops).
 
 There is no global scheduler that orchestrates the execution order among contexts---the execution is purely
@@ -135,13 +136,14 @@ centralized scheduler, which again improves the clock frequency and scalability 
 PMUs hold all distributed scratchpads available on-chip. 
 Each PMU contains 16 SRAM banks with
 32-word access granularity. The PMU also contains pipeline stages specialized for address
-computation. Unlike SIMD pipelines in PCUs, these pipeline stages are non-vectorized and can only perform integer arithmetics. 
+computation. Unlike SIMD pipelines in PCUs, these pipeline stages are non-vectorized and can only
+perform only integer arithmetics. 
 The address produced by the address pipeline is broadcasted to 16 banks with a configurable offset added to each bank.
 In contrast to the PCU SIMD pipeline that has to be programmed atomically, the address pipeline stages within PMUs can be sliced into a write and a read context, triggered independently.
 In addition to compute stages, resources such as I/O ports, buffers, and counters are also shared across contexts.
 It is the software's responsibility to make sure the total resources consumed by all
 contexts do not exceed the resource limits of the PMU.
-All contexts within PMU have access to the scratchpads with unprotected order. To
+All contexts within PMU have access to the scratchpads with unprotected ordering across contexts. To
 restrict a read context to access the scratchpad after the write context, the software must explicitly allocate
 a token from the write context to the read context.
 \name automatically generates required control tokens across contexts such that the memory access order is
@@ -168,5 +170,5 @@ and no ordering guaranteed across streams.
 In streaming pipelined execution, the program can use multiple streams for DRAM accesses appeared in
 different locations of the program.
 To provide off-chip memory consistency, \name allocates
-synchronizations across different streams to preserve memory order expected by the program.
+synchronizations across different streams to preserve memory ordering expected by the program.
 

@@ -11,20 +11,21 @@ When mapping the example in \Cref{fig:spatialegpar} onto an FPGA, the outer cont
 sends an enable signal to each child controller, which signals back the parent controller when
 completed. If the user chooses to sequentially execute the outer loop \emph{A}, the parent
 controller enables the child controllers one at a time; if the user chooses to metapipeline
-(coarse-grain pipeline) the outer loop \emph{A}, the outer controllers enables multiple child controllers in a pipelined fashion.
+(coarse-grain pipeline) the outer loop \emph{A}, the outer controller enables multiple child controllers in a pipelined fashion.
 
 \begin{figure*}
 \centering
   \centering
 \includegraphics[width=0.8\textwidth]{figs/centralctrl.pdf}
   \caption[A na\"ive mapping strategy and distribute control flow in \name]{
-  (a) A na\"ive mapping strategy to map the control hierarchy onto Plasticine.
+  (a) A na\"ive mapping strategy to map a control hierarchy onto Plasticine.
   All units are distributed across an on-chip network that can introduce unpredictable latency.
   The number on the edges indicates event order.
   Here we show a scenario where read requests from \emph{C} do not observe the write requests from
   \emph{B} that occur earlier in the program order due to network latency between \emph{B} and
   \emph{mem}.
-  (b) Distributed controllers in \name. Each innermost controller makes a copy of all enclosing controllers. The signals from these controllers are used to generate synchronization between distributed compute units. To address the problem in (a), the memory also needs to provide a write acknowledgment per write request for synchronization.
+  (b) Distributed controllers in \name. Each innermost controller makes a copy of all enclosing
+  controllers. The signals from these controllers are used to generate synchronization between the distributed compute units. To address the problem in (a), the memory also needs to provide a write acknowledgment per write request for synchronization.
 }
 \label{fig:centralctrl}
 \end{figure*}
@@ -43,7 +44,7 @@ Furthermore, synchronizing the compute only is insufficient to ensure memory eff
 the remotely distributed accessors, as shown in \Cref{fig:centralctrl} (a).
 
 To address this challenge, we want to eliminate centralized outer controllers.
-At high-level, \name performs \term{loop divisions} on each outer controller, such that
+At high-level, \name performs \term{loop division} on each outer controller, such that
 all innermost controllers are perfectly nested, as shown in \Cref{fig:centralctrl} (b).
 \Cref{sec:loopdiv} discusses the loop division transformation.
 \name then allocates synchronization tokens across the distributed innermost controllers.
@@ -60,7 +61,8 @@ can consume an arbitrary amount of compute and memory resources, exceeding the c
 PUs. For instance, a user might write an on-chip memory multiple times throughout the program with writers
 mapped to different PUs. The physical scratchpad, however, only has a single write port and write address
 pipeline. 
-\name maps a subset of the address computation externally in other PUs and generates control tokens among the distributed writers, time-sharing the write port, and enforcing the
+\name maps a subset of the address computation externally in other PUs and generates control tokens
+among the distributed writers; the control token enables time-sharing of the write port and enforces the
 ordering between distributed writers.
 Using resource virtualization, \name composes or time-share the physical resources when software usage exceeding the hardware limit.
 
@@ -94,8 +96,8 @@ requires.
 \name further virtualizes resource allocation and hides the underlying resource constraints from the programmers.
 \Cref{sec:resalloc} dives into the \term{resource allocation} phase, where \name assigns each VU to a
 PU that processes the required resources. If no PU can fit a VU, \name partitions the
-VU into multiple VUs to resolve the constraint violation. If there is insufficient PU or the VU cannot be partitioned, the mapping process fails with appropriate hints to the programmer for the
-limiting resources.
+VU into multiple VUs to resolve the constraint violation. If there is insufficient PU or the VU
+cannot be partitioned, the mapping process fails with appropriate hints to programmers on the limiting resources.
 
 Throughout the first two phases, \name introduces various \term{optimizations} that either reduce the
 the resource cost of the VUDFG, or alleviate potential performance bottleneck in the streaming

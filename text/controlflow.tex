@@ -52,28 +52,8 @@ Each loop generated from loop division can only execute if all of their input qu
   The second loop can execute as soon as \texttt{tmp} receives the first element.
 }
 \label{fig:loopexp1}
-\end{figure*}
-
-When executing loop division on a single-threaded CPU, the CPU must context switching between the
-concurrent loops
-and executing the one with cleared input dependencies.
-Like loop fission, loop division is likely worsening the performance on a processor architecture, as
-the worst-case memory footprint of the intermediate result \texttt{tmp} increases from $O(1)$ to $O(N)$.
-On RDAs, the divided loops are executing
-concurrently in a streaming pipelined fashion. The size of the \texttt{tmp} can be limit to a small fixed
-size, efficiently implemented with a hardware FIFO. 
-Although loop transformations are generally optimizations on CPUs,
-loop division is a required transformation to converts an infeasible program to a feasible one for Plasticine.
-
-Loop fission is not always safe, as it may alter the execution order of the program.
-Loop division, on the other hand, does not change the underlying data-dependency and is always safe.
-To achieve this, loop division needs to introduce additional dummy data dependencies across divided
-loops to enforce the correct execution order.
-\Cref{fig:loopexp2} gives an example of an invalid loop fission and a correct loop division.
-\Cref{sec:controlalloc} gives more detail on how \name automatically generates the dummy
-data-dependencies to preserve program order.
-
-\begin{figure*}
+%\end{figure*}
+%\begin{figure*}
 \centering
 \begin{subfigure}[b]{0.28\textwidth}
 \inputminted{python}{code/loopexp2.py}
@@ -94,6 +74,25 @@ An example of an illegal loop fission and a legal loop division
 }
 \label{fig:loopexp2}
 \end{figure*}
+
+When executing loop division on a single-threaded CPU, the CPU must context switching between the
+concurrent loops
+and executing the one with cleared input dependencies.
+Like loop fission, loop division is likely worsening the performance on a processor architecture, as
+the worst-case memory footprint of the intermediate result \texttt{tmp} increases from $O(1)$ to $O(N)$.
+On RDAs, the divided loops are executing
+concurrently in a streaming pipelined fashion. The size of the \texttt{tmp} can be limit to a small fixed
+size, efficiently implemented with a hardware first-in-first-out (FIFO) unit. 
+Although loop transformations are generally optimizations on CPUs,
+loop division is a required transformation to converts an infeasible program to a feasible one for Plasticine.
+
+Loop fission is not always safe, as it may alter the execution order of the program.
+Loop division, on the other hand, does not change the underlying data-dependency and is always safe.
+To achieve this, loop division needs to introduce additional dummy data dependencies across divided
+loops to enforce the correct execution order.
+\Cref{fig:loopexp2} gives an example of an invalid loop fission and a correct loop division.
+\Cref{sec:controlalloc} gives more detail on how \name automatically generates the dummy
+data-dependencies to preserve program order.
 
 \subsection{Virtual Context Allocation} 
 
@@ -194,7 +193,7 @@ An example of an illegal loop fission and a legal loop division
 \end{figure*}
 
 At high-level, \name executes the entire program in a pipelined fashion, where each basic block
-in the program is a pipeline stage.
+in the program is a pipeline stage with dedicated hardware.
 %As a start, \name allocates a virtual memory to hold each data-structure in the program, and 
 %a context to execute each basic block within the innermost controllers. 
 %A basic block maps naturally to a context, as instructions within a basic block are control-free. 
