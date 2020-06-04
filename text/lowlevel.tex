@@ -127,7 +127,7 @@ perfectly nested (only accesses to streams can occur in the outer loops).
 
 There is no global scheduler that orchestrates the execution order among contexts---the execution is purely
 streaming and dataflow driven. 
-The only way to order the execution of two independent contexts is to introduce a control \term{token} between two contexts acting like a dummy data-dependency.
+The only way to order the execution of two independent contexts is to introduce a control token between two contexts acting like a dummy data-dependency.
 This restriction eliminates the possible long-traveling wires and communication hot spots caused by a
 centralized scheduler, which again improves the clock frequency and scalability of the architecture.
 

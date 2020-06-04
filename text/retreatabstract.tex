@@ -1,0 +1,7 @@
+Plasticine is a previously proposed large-scale reconfigurable dataflow architecture (RDA) showing an up to 76x performance/watt benefit over a Stradix V FPGA.
+Although RDAs can support a wide range of applications, programming RDAs requires low-level knowledge in microarchitecture design and hardware constraints that hinders their adoption.
+We introduce a compiler---SARA---that raises the programming abstraction of Plasticine to a target-agnostic imperative-style DSL with nested control flow that is easy to program and enables cross-kernel optimizations.
+SARA efficiently translates imperative control constructs to a streaming
+dataflow graph that scale performance with distributed on-chip resources.
+By virtualizing resources, SARA systematically handles the physical constraints, hiding the low-level physical limitations from programmers.
+Our evaluation shows that Plasticine compiled with SARA achieves a 2x averaged speedup and an area-normalized 4x speedup over a Tesla V100 GPU.
