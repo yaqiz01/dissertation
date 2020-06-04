@@ -55,8 +55,9 @@ produce a set of output streams.
 There are three types of streams---single-bit control streams, 32-bit word scalar streams, and
 16-word vector streams---corresponding to three types of global networks.
 As the control stream does not have any payload, it is efficiently implemented with an up-down counter
-(UDC), whose value is incremented when the token arrives and decremented when the token is consumed. 
-The UDC can produce a similar valid (not empty) and ready (not full) interface as other data FIFOs. 
+(UDC), whose value is incremented when the token arrives and decremented when the token is consumed,
+where a token is just a pulse on the single-bit control network.
+The UDC can produce a similar valid (count larger than one) and ready (count less than max) interface as other data FIFOs. 
 Execution of the PCU is triggered by the arrival of its input dependencies and back pressured by
 the downstream buffers.
 PCU also contains configurable counters, which can be chained to produce the values of nested
@@ -110,13 +111,13 @@ A context includes the branch-free instructions mapped across SIMD stages, the i
 The control signals of the configurable counters, such as counter saturation or \term{counter done}
 signals, can be used to dequeue and enqueue the input and output streams, respectively.
 The counter bounds (i.e., min, max, and stride) can also be data-dependent using values from the scalar input streams. Compared to other dataflow architectures, the dataflow engine in Plasticine is more flexible in that it allows dynamic enqueue and dequeue window for its input and output streams.
-\emph{This feature enables Plasticine to support complex control hierarchy, such as non-perfectly nested loops and
+\emph{This feature enables Plasticine to support nested control flow, such as non-perfectly nested loops and
 branch statements, across contexts even though individual contexts can only execute instructions that are
 branch-free}. 
 
-\Cref{fig:contextc} represents the effective execution achieved in an imperative-style program.
-For simplicity, we will use the imperative-style configuration in the later discussion.
-However, it is important to realize the instructions in the imperative-style configurations are not
+\Cref{fig:contextc} represents the effective execution achieved in an imperative program.
+For simplicity, we will use the imperative-style configuration in the later discussions.
+However, it is important to realize the instructions in the imperative-style configuration are not
 executed in time, but rather in space.
 There is a one-to-one translation from the declarative-style configuration to the imperative-style, but not in a reverse way.
 %There are many restrictions on the structure of the program in the imperative-style. 
