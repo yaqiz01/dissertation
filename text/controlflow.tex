@@ -559,7 +559,7 @@ address space.
 
 For forward dependencies, \name performs a transitive reduction (TR)\cite{tr} on the forward dependency
 graph. TR keeps the minimum of edges in a graph that preserves the connectivity of the original
-graph, enforcing the same ordering as the original dependency graph.
+graph, enforcing the same access ordering as the original dependency graph.
 
 Next, \name checks if each backward edge can be removed without breaking the execution order between
 accesses. 
@@ -672,8 +672,8 @@ For a branch in an outer loop,
 the branch condition is treated as a data-dependent enable of a controller under the branch clauses.
 If the controller is disabled by the branch condition, its \emph{done} signal raises to high immediately.
 Output tokens depending on the {\em done} signal will be immediately sent out.
-This way, the controllers under a branch does not need to execute if the outer branch condition
-evaluates to false.
+This way, the controllers under a branch does not need to execute if the outer branch clause
+is disabled.
 
 \Cref{fig:branch} shows an example with an outer branch statement.
 The input program in (a) writes and reads the memory \texttt{mem} on even and odd cycles of
@@ -690,13 +690,13 @@ The conditions are sent as data dependencies to contexts mapping the basic block
 As \texttt{ctxB} has no dependencies, \texttt{ctxB} computes the conditions for all iterations of
 \texttt{A} in
 pipelined fashion and broadcasts the conditions to the receiver contexts.
-The \emph{if} contexts (\texttt{ctxD}+\texttt{rspdW}) receives a \texttt{true} condition for the first
+The \emph{if} contexts (\texttt{ctxD}+\texttt{rspdW}) receives a \texttt{True} condition for the first
 iteration of \texttt{A} ($A_0$), 
 executing all iterations of D, and passes a token to the \emph{else} (\texttt{rqstR}+\texttt{ctxF}) contexts.
 Because \texttt{mem} is double-buffered, the credit is initialized with two elements in the
 receiver's input buffer, enabling the \emph{if} contexts to execute two iterations of outer loop
 \texttt{A} before
-waiting for the \em[h{else} contexts. For the second iteration of loop \texttt{A} ($A_1$), the \emph{if} contexts
+waiting for the \emph{else} contexts. For the second iteration of loop \texttt{A} ($A_1$), the \emph{if} contexts
 receives a \texttt{False} condition for branch \texttt{C}.
 Therefore, the enclosing loop controller \texttt{D}'s \texttt{done} signal is immediately high, sending the
 token to \texttt{rqstR} right away.
@@ -707,16 +707,18 @@ executing loop \texttt{F} as the \emph{else} clause is disabled for $A_0$.
 Next, the \emph{else} contexts check for the second token, 
 and executes loop \texttt{F} for $A_1$.
 
-Both the \emph{if} and the \emph{else} contexts only execute if the enables of their enclosed branch clauses are
-evaluated to be true. More interestingly, \Cref{fig:branch} (d) shows a overlapping execution of the
+Both the \emph{if} and the \emph{else} contexts only execute if their enclosed branch clauses are
+enabled. More interestingly, \Cref{fig:branch} (d) shows an overlapping execution of the
 \emph{if} and \emph{else} clauses across iterations of A. 
-The contexts allocated for both \emph{if} and \emph{else} clauses are active almost all time if loop \texttt{D}
-and \texttt{F} runs for large number of iterations.
-If the latency of loop \texttt{D} and \texttt{F} are both $L$ and the branch has 50\% active for both clauses, 
-the total runtime for $N$ iterations of loop \texttt{A} would be on the order of $\frac{N}{2}L$
-for Plasticine, assuming L and N are large.
-This is because the contexts mapping both clauses only executes if their clauses are enabled, which
-corresponds to $\frac{N}{2}$ iterations of the outer loop \texttt{A}.
+Both \emph{if} and \emph{else} contexts are active almost all the time if loop \texttt{D}
+and \texttt{F} runs for a large number of iterations.
+This branch has a 50\% split between the \emph{if} and \emph{else} clauses. As a result, the
+\emph{if} contexts only executes even iterations of \emph{A} and the \emph{else} contexts only
+executes odd iterations of \emph{A}, each corresponding to half of \emph{A}'s iterations.
+If the latency of loop \texttt{D} and \texttt{F} are both $L$,
+the total runtime for $N$ iterations of loop \texttt{A} would be on the order of $\frac{N}{2}L$ due
+to overlapping between the even and odd iterations between the \emph{if} and \emph{else} contexts, 
+assuming L and N are large.
 \emph{The runtime is almost twice as fast as a traditional coarse-grained pipeline with hierarchical FMS
 schedulers}, like Spatial's FPGA back-end, which runs in $NL$.
 
@@ -785,7 +787,7 @@ and the do-while loop controller that consumes a value of the condition for ever
 %\emph{A}. 
 %There is a loop-carried dependency between the reader of \emph{stop} from loop \emph{A} and the
 %writer of the stop from block \emph{C}. 
-(d) shows the timing of execution. As we can see, the (II) of loop \texttt{A}
+(d) shows the timing of execution. As we can see, the II of loop \texttt{A}
 in the steady-state is bounded by the latency to evaluate \emph{stop}, which is the number of
 operations in stop expression rounded up to a multiple of 6~\footnote{When mapping an expression
 with less than 6 operations to the SIMD pipeline in PCU, the latency of the expression is still 6 
@@ -796,10 +798,13 @@ Our front-end language Spatial currently does not capture procedure calls;
 all functions are inlined in the IR and do not share resources. 
 In future work, we can extend \name's token mechanism to handle the procedure calls, similar to how
 \name handles memory consistency.
-The reused hardware in a function call 
-can be viewed as a shared resource like memories; contexts containing callers of the function
-must pass around tokens to serialize their accessing order based on the program order of the
-callers; the order only matters if the function call is stateful and have side effects.
+Instead of inlining the function call, there is a single copy of the hardware allocated for each
+declared function, reused across multiple function calls.
+The function hardware can be viewed as a shared resource like memories; 
+contexts containing callers of the function must pass tokens around to serialize their accesses to the shared hardware.
+We need a similar dependency graph described in~\Cref{sec:controlalloc} to ensure the calling order
+among different callers is program-consistent.
+The order matters because the function call might be stateful and has side effects.
 
 \subsection{Virtual Unit Allocation}
 After all contexts and shared memory are allocated and synchronized, 
