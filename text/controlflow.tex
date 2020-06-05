@@ -143,10 +143,10 @@ data-dependencies to preserve program order.
   %produced and a backward \texttt{credit} is consumed every \texttt{B} iterations; on the reader
   %side, a forward \texttt{token} is consumed and a backward credit is produced every \texttt{C}
   %iterations. 
-  For the forward token, the LCA controller between \emph{W1} and \emph{R1} is \emph{A}. The
-  immediate child of the LCA controller in ancestor controllers of \emph{W1} is \emph{B}, therefore,
-  the enqueue enable of the token is configured to \emph{B.done} in \emph{respW1}. Similarly on the
-  receiving cide, the dequeue enable of the token is \emph{C.done} in \emph{rqstR1}.
+  For the forward token, the LCA controller between \texttt{W1} and \texttt{R1} is \texttt{A}. The
+  immediate child of the LCA controller in ancestor controllers of \texttt{W1} is \texttt{B}, therefore,
+  the enqueue enable of the token is configured to \texttt{B.done} in \texttt{respW1}. Similarly on the
+  receiving cide, the dequeue enable of the token is \texttt{C.done} in \texttt{rqstR1}.
   The resulting timing of the execution is shown in (e).
 }
 \label{fig:contextalloc}
@@ -175,18 +175,19 @@ data-dependencies to preserve program order.
 \caption{Timing on Plasticine for dense on-chip memory}
 \end{subfigure}
 \caption[Dense specialization]{
-  Specialization for dense memory lowering if the if the memory \emph{mem} in 
+  Specialization for dense memory lowering if the if the memory \texttt{mem} in 
   \Cref{fig:contextalloc} (a) is a dense scratchpad.
   (a) and (c) shows the allocated contexts.
-  Context \emph{rqstW1} and \emph{rqstR1} are allocated \emph{in the same} VU as the memory. The latency of 
+  Context \texttt{rqstW1} and \texttt{rqstR1} are allocated \emph{in the same} VU as the memory
+  \texttt{mem}. The latency of 
   the forward token and the backward credit take only one cycle, which are not shown in (d).
   The latency to compute read and write addresses are also not shown.
   For complex address calculation, \name split the address computations to separate contexts shown
-  in (b). The addresses can be precomputed in \emph{rqstW1} and \emph{rqstR1} and are back-pressured by 
-  \emph{rqstW1'} and \emph{rqstR1'}, respectively. This way, the latency of address calculation does
+  in (b). The addresses can be precomputed in \texttt{rqstW1} and \texttt{rqstR1} and are back-pressured by 
+  \texttt{rqstW1'} and \texttt{rqstR1'}, respectively. This way, the latency of address calculation does
   not create pipeline bubble even if token and credit are frequently exchanged (e.g. when loop B and C
   runs a small number of iterations).
-  \emph{rqstW1} and \emph{rqstR1} can be mapped outside of the memory VU if running out of address
+  \texttt{rqstW1} and \texttt{rqstR1} can be mapped outside of the memory VU if running out of address
   stages.
 }
 \label{fig:densespecial}
@@ -223,8 +224,8 @@ hierarchy of the imperative program.
 
 Unlike traditional out-of-order execution, where both static scheduling in the software and dynamic
 scheduling in the hardware search for independent instructions to execute concurrently, 
-\name starts with executing \emph{all} basic blocks of a program concurrently,
-introducing minimum synchronizations wherever necessary.
+\name starts with executing \emph{all} basic blocks in the nested control flow concurrently,
+introducing minimum synchronizations to enforce memory ordering.
 Unsurprisingly, a control-heavy program with many basic blocks can easily run out of PUs.
 Nonetheless, data-analytic programs, which are the intended workloads for RDAs, have relatively
 simple control flow and abundant data-level parallelism (i.e., few basic blocks with high repetition
@@ -240,7 +241,7 @@ while different chunks are executed in-time by reconfiguring the accelerator.
 
 \subsection{Control Allocation} \label{sec:controlalloc}
 \label{sec:sync}
-\name uses control tokens to enforce the memory access order in an imperative program, 
+\name uses control tokens to enforce the memory access order of an imperative program, 
 which is the minimum synchronization necessary to produce a correct execution.
 In this section, we first explain \emph{how} \name uses tokens to enforce the memory access 
 order between distributed contexts, achieving complex control flows on a data-flow architecture;
@@ -311,15 +312,16 @@ This way, a token is produced/consumed for every iteration of the LCA controller
 controllers within the context containing the dependent/depending access.
 \Cref{fig:contextalloc} (c) shows an example of how the enqueue and dequeue signals are configured.
 
-By controlling \emph{when} a token is produced and consumed, \name is able to achieve the complex
-and nesting control flows in an imperative program on a dataflow accelerator.
+By controlling \emph{when} a token is produced and consumed, \name is able to implement
+nested control flows in an imperative program on a dataflow accelerator using control tokens.
 \Cref{sec:datactrl} dives into more complex control constructs with 
 data-dependent control flows.
 
 The requesting and receiving contexts pair are general schemes we use on general streaming memory
-interface with variable access latency, such as an off-chip DRAM or an on-chip SRAM when supporting 
+interface with variable access latency, such as an off-chip memory or an on-chip memory with
 sparse accesses.
-In common cases, we can simplify the synchronization logic for certain on-chip memory types.
+In the common case, we can simplify the synchronization logic for on-chip memory with dense access and
+non-indexable memory, such as queues and scalar variables.
 
 \subparagraph{Specialization for dense on-chip scratchpad}
 Spatial can statically analyze the dense access pattern of on-chip arrays and partitions the memories
@@ -375,10 +377,9 @@ execution order.
 To tackle this problem, \name builds a dependency graph between all accesses of a memory in the input IR; 
 nodes of the graph are accesses and edges represent dependencies between accesses.
 The dependency graph is \emph{per data-structure} without unnecessary ordering across different memories.
-Next, \name removes edges in the graph, if the removed edge does not relax the ordering
-across accesses.
-Lastly, only for each edge within the reduced dependency graph does \name insert a token
-between the source and destination of the edge, using mechanism explained in the previous section.
+Next, \name removes edges in the graph that do not relax ordering across accesses.
+Lastly, only for edges within the reduced dependency graph does \name insert tokens
+between their source and destination accesses, using the mechanism explained in the previous section.
 
 \subparagraph{Dependency Graph Construction}
 For every access in the input IR, \name{} checks other accesses on the same data-structure occurred earlier in the program order
@@ -393,7 +394,7 @@ for a possible forward dependency, and later in the program order for a possible
 \end{outline}
 \Cref{tab:memtype} lists hardware memories available on Plasticine and software data-structures that
 can be mapped onto these memories.
-The type of the memories matters because they have different programming interface on the hardware.
+The type of the memories matters because they have different programming interface in the hardware.
 \Cref{tab:interferetab} shows the interference relations of different memories on Plasticine.
 \Cref{fig:depeg} shows derived dependency graphs of a few example programs.
 
@@ -433,7 +434,7 @@ address space.
   \centering
 \includegraphics[width=0.6\textwidth]{figs/dep1.pdf}
 \caption{
-  Access dependency graph of \emph{mem} (on-chip) in (a)
+  Access dependency graph of \texttt{mem} (on-chip) in (a)
 }
 \end{subfigure}
 \hfill
@@ -441,7 +442,7 @@ address space.
   \centering
 \includegraphics[width=0.7\textwidth]{figs/dep2.pdf}
 \caption{
-  Access dependency graph of \emph{mem} (off-chip) in (a)
+  Access dependency graph of \texttt{mem} (off-chip) in (a)
 }
 \end{subfigure}
 \\
@@ -452,7 +453,7 @@ address space.
 \begin{subfigure}[b]{0.5\textwidth}
   \centering
 \includegraphics[width=0.4\textwidth]{figs/dep3.pdf}
-  \caption{Access dependency graph for \emph{mem} (off-chip) in (d)}
+  \caption{Access dependency graph for \texttt{mem} (off-chip) in (d)}
 \end{subfigure}
 
 \caption[Access dependency graph]{
@@ -461,25 +462,25 @@ address space.
   dashed edges indicate backward loop-carried dependencies (LCDs).
   Each access in the dependency graph will be mapped to a context executed in space. 
   In (b) and (c),
-  \emph{$W_0$} and \emph{$W_1$} are unrolled accesses for $W$ in lane 0 and 1 of loop \emph{A}
+  \texttt{$W_0$} and \texttt{$W_1$} are unrolled accesses for $W$ in lane 0 and 1 of loop \texttt{A}
   in (a), respectively.
-  (b) is the dependency graph if \emph{mem} is mapped to an on-chip memory and (d)
-  is the dependency graph if \emph{mem} is mapped to an off-chip memory.
+  (b) is the dependency graph if \texttt{mem} is mapped to an on-chip memory and (d)
+  is the dependency graph if \texttt{mem} is mapped to an off-chip memory.
   The on-chip version does not need the cross-lane synchronization because 
-  lane 0 and 1 are implicitly ordered when \name partitions \emph{mem} 
+  lane 0 and 1 are implicitly ordered when \name partitions \texttt{mem} 
   (discussed later in \Cref{sec:memsplit}).
-  In (d), there is no forward dependency between \emph{W1} and \emph{R0} because the LCA controller
-  of the two accesses is branch \emph{C}, which means the two accesses cannot happen simultaneously 
-  for the same iteration of loop \emph{A}.
-  There is, however, loop-carried dependencies between \emph{R0} and \emph{W1}, preventing access
-  in iteration $i+1$ occur before iteration $i$ of loop \emph{A} between \emph{W1} and \emph{R0} in
+  In (d), there is no forward dependency between \texttt{W1} and \texttt{R0} because the LCA controller
+  of the two accesses is branch \texttt{C}, which means the two accesses cannot happen simultaneously 
+  for the same iteration of loop \texttt{A}.
+  There is, however, loop-carried dependencies between \texttt{R0} and \texttt{W1}, preventing access
+  in iteration $i+1$ occur before iteration $i$ of loop \texttt{A} between \texttt{W1} and \texttt{R0} in
   two distributed contexts.
   There is no need to enforce the LCD between an access and itself because 
   the hardware guarantees a single request stream from the same context is served in-order.
-  For each iteration of \emph{A}, \emph{R0} and \emph{W1} will produce and consume a credit from
+  For each iteration of \texttt{A}, \texttt{R0} and \texttt{W1} will produce and consume a credit from
   each other no matter what value the condition takes. 
   \Cref{sec:datactrl} will elaborate more on how tokens are used for branches.
-  \emph{R0} and \emph{R1} do not depend on each other because they are both DRAM read accesses as explained in \Cref{tab:interferetab}.
+  \texttt{R0} and \texttt{R1} do not depend on each other because they are both DRAM read accesses as explained in \Cref{tab:interferetab}.
 }
 \label{fig:depeg}
 \end{figure*}
@@ -491,7 +492,7 @@ address space.
 \begin{subfigure}[b]{0.34\textwidth}
 \inputminted{python}{code/graphred1.py}
 \caption {
-  Example program with off-chip \emph{mem}
+  Example program with off-chip \texttt{mem}
 }
 \end{subfigure}
 \begin{subfigure}[b]{0.3\textwidth}
@@ -512,7 +513,7 @@ address space.
 \begin{subfigure}[b]{0.34\textwidth}
 \inputminted{python}{code/graphred2.py}
 \caption{
-  Example program with off-chip \emph{mem}
+  Example program with off-chip \texttt{mem}
 }
 \end{subfigure}
 \begin{subfigure}[b]{0.3\textwidth}
@@ -535,19 +536,19 @@ address space.
   respectively.
   Solid edges indicate forward dependencies and
   dashed edges indicate backward loop-carried dependencies (LCDs).
-  Colors of the LCD edges indicate the associated loop, \textcolor{pureblue}{blue} for loop \emph{A} and
-  \textcolor{red}{red} for loop \emph{B}.
+  Colors of the LCD edges indicate the associated loop, \textcolor{pureblue}{blue} for loop \texttt{A} and
+  \textcolor{red}{red} for loop \texttt{B}.
   For forward edges (black edges), \name uses transitive reduction (TR) to remove the redundant
   edges. The outputs of TR are shown in (c,f).
   For backward edges, an edge can be removed if there is still a path from its source to
   destination with all forward edges plus \emph{a single} backward edge of the same loop after the edge is
   removed.
-  For example from (b) to (c), edge \emph{R2-R1} is removed because there is path \emph{R2-W1-R1}.
-  Edge \emph{W2-W1} is removed because there is path \emph{W2-R2-W1} after the edge is removed in (c). 
-  Edge \emph{R2-W1} cannot be removed because there is no path from \emph{R2} to \emph{W1} with a
+  For example from (b) to (c), edge \texttt{R2-R1} is removed because there is path \texttt{R2-W1-R1}.
+  Edge \texttt{W2-W1} is removed because there is path \texttt{W2-R2-W1} after the edge is removed in (c). 
+  Edge \texttt{R2-W1} cannot be removed because there is no path from \texttt{R2} to \texttt{W1} with a
   single back edge after the edge is removed.
-  Similarly, \emph{R2-W1} cannot be
-  removed in (e) because there is no path from \emph{R2} to \emph{W1} after the edge is removed.
+  Similarly, \texttt{R2-W1} cannot be
+  removed in (e) because there is no path from \texttt{R2} to \texttt{W1} after the edge is removed.
 }
 \label{fig:graphred}
 \end{figure*}
@@ -647,13 +648,13 @@ that maps the loop body.
 \end{subfigure}
 \caption[Branching example]{
   An example program with a outer branch statement. 
-  The LCA controller of the write access \emph{W} and the read access \emph{R} is branch \emph{C}.
-  Therefore, the enqueue enable of \emph{token} and dequeue enable of \emph{credit} is connected to
-  \emph{D.done}, and the dequeue enable of \emph{token} and enqueue enable of \emph{credit} is
-  connected to \emph{F.done} in their respective contexts.
-  If \emph{C}'s condition evaluates to \emph{true}, \emph{D.done} raises to high without executing
-  iterations of loop \emph{D}. Similarly for \emph{F.done} if \emph{C}'s condition evaluates to
-  \emph{false}.
+  The LCA controller of the write access \texttt{W} and the read access \texttt{R} is branch \texttt{C}.
+  Therefore, the enqueue enable of \texttt{token} and dequeue enable of \texttt{credit} is connected to
+  \texttt{D.done}, and the dequeue enable of \texttt{token} and enqueue enable of \texttt{credit} is
+  connected to \texttt{F.done} in their respective contexts.
+  If \texttt{C}'s condition evaluates to \texttt{true}, \texttt{D.done} raises to high without executing
+  iterations of loop \texttt{D}. Similarly for \texttt{F.done} if \texttt{C}'s condition evaluates to
+  \texttt{False}.
   (d) shows the timing of execution with $A=4$, $D=3$, and $F=2$.
 }
 \label{fig:branch} 
@@ -675,47 +676,47 @@ This way, the controllers under a branch does not need to execute if the outer b
 evaluates to false.
 
 \Cref{fig:branch} shows an example with an outer branch statement.
-The input program in (a) writes and reads the memory \emph{mem} on even and odd cycles of
-the outer loop \emph{A}, respectively. 
+The input program in (a) writes and reads the memory \texttt{mem} on even and odd cycles of
+the outer loop \texttt{A}, respectively. 
 \name maps the three basic blocks in the program in three
-contexts, \emph{ctxB}, \emph{ctxD}, and \emph{ctxF}, as shown in (b) and (c). 
+contexts, \texttt{ctxB}, \texttt{ctxD}, and \texttt{ctxF}, as shown in (b) and (c). 
 For the read and write accesses, \name
-allocates a context \emph{respW} to accumulate write acknowledgments and a context \emph{rqstR} 
+allocates a context \texttt{respW} to accumulate write acknowledgments and a context \texttt{rqstR} 
 to generate read requests. 
-\emph{ctxB} generates the branch conditions for both the \emph{if} and the \emph{else} clauses.
+\texttt{ctxB} generates the branch conditions for both the \emph{if} and the \emph{else} clauses.
 The conditions are sent as data dependencies to contexts mapping the basic blocks under the branch conditions.
 
 \Cref{fig:branch} (d) shows the timing of execution.
-As \emph{ctxB} has no dependencies, \emph{ctxB} computes the conditions for all iterations of
-\emph{A} in
+As \texttt{ctxB} has no dependencies, \texttt{ctxB} computes the conditions for all iterations of
+\texttt{A} in
 pipelined fashion and broadcasts the conditions to the receiver contexts.
-The \emph{if} contexts (\emph{ctxD}+\emph{rspdW}) receives a \texttt{true} condition for the first
-iteration of \emph{A} ($A_0$), 
-executing all iterations of D, and passes a token to the \emph{else} (\emph{rqstR}+\emph{ctxF}) contexts.
-Because \emph{mem} is double-buffered, the credit is initialized with two elements in the
+The \emph{if} contexts (\texttt{ctxD}+\texttt{rspdW}) receives a \texttt{true} condition for the first
+iteration of \texttt{A} ($A_0$), 
+executing all iterations of D, and passes a token to the \emph{else} (\texttt{rqstR}+\texttt{ctxF}) contexts.
+Because \texttt{mem} is double-buffered, the credit is initialized with two elements in the
 receiver's input buffer, enabling the \emph{if} contexts to execute two iterations of outer loop
-\emph{A} before
-waiting for the \emph{else} contexts. For the second iteration of loop \emph{A} ($A_1$), the \emph{if} contexts
-receives a \texttt{false} condition for branch \emph{C}.
-Therefore, the enclosing loop controller \emph{D}'s \emph{done} signal is immediately high, sending the
-token to \emph{rqstR} right away.
+\texttt{A} before
+waiting for the \em[h{else} contexts. For the second iteration of loop \texttt{A} ($A_1$), the \emph{if} contexts
+receives a \texttt{False} condition for branch \texttt{C}.
+Therefore, the enclosing loop controller \texttt{D}'s \texttt{done} signal is immediately high, sending the
+token to \texttt{rqstR} right away.
 On the other side, the $A_0$ of the \emph{else} contexts is blocked by the token from
 the \emph{if} contexts. 
 As soon as the token arrives, the \emph{else} contexts send out the credit immediately without
-executing loop \emph{f} as the \emph{else} clause is disabled for $A_0$.
+executing loop \texttt{F} as the \emph{else} clause is disabled for $A_0$.
 Next, the \emph{else} contexts check for the second token, 
-and executes loop \emph{F} for $A_1$.
+and executes loop \texttt{F} for $A_1$.
 
 Both the \emph{if} and the \emph{else} contexts only execute if the enables of their enclosed branch clauses are
 evaluated to be true. More interestingly, \Cref{fig:branch} (d) shows a overlapping execution of the
 \emph{if} and \emph{else} clauses across iterations of A. 
-The contexts allocated for both \emph{if} and \emph{else} clauses are active almost all time if loop \emph{D}
-and \emph{F} runs for large number of iterations.
-If the latency of loop \emph{D} and \emph{F} are both $L$ and the branch has 50\% active for both clauses, 
-the total runtime for $N$ iterations of loop \emph{A} would be on the order of $\frac{N}{2}L$
+The contexts allocated for both \emph{if} and \emph{else} clauses are active almost all time if loop \texttt{D}
+and \texttt{F} runs for large number of iterations.
+If the latency of loop \texttt{D} and \texttt{F} are both $L$ and the branch has 50\% active for both clauses, 
+the total runtime for $N$ iterations of loop \texttt{A} would be on the order of $\frac{N}{2}L$
 for Plasticine, assuming L and N are large.
 This is because the contexts mapping both clauses only executes if their clauses are enabled, which
-corresponds to $\frac{N}{2}$ iterations of the outer loop \emph{A}.
+corresponds to $\frac{N}{2}$ iterations of the outer loop \texttt{A}.
 \emph{The runtime is almost twice as fast as a traditional coarse-grained pipeline with hierarchical FMS
 schedulers}, like Spatial's FPGA back-end, which runs in $NL$.
 
@@ -745,27 +746,27 @@ schedulers}, like Spatial's FPGA back-end, which runs in $NL$.
 \end{subfigure}
 \caption[Do-while loop example]{
   An example program for a do while loop. 
-  Loop \emph{A} in (a) is a loop running forever, with a conditional \emph{stop} variable.
-Loop \emph{A} reads and block \emph{C} writes a value of stop for every iteration of loop
-\emph{A}.
+  Loop \texttt{A} in (a) is a loop running forever, with a conditional \texttt{stop} variable.
+Loop \texttt{A} reads and block \texttt{C} writes a value of stop for every iteration of loop
+\texttt{A}.
 \Cref{fig:dowhile} (b) shows the dataflow graph, mapping each basic block to a context.
-\emph{ctxC} computes the stop condition, which is used by both \emph{ctxC} and \emph{ctxB}.
-  The break statements in (c) correspond to configuring the stop signal of the enclosing controller \emph{A}
-  to the output of the stop input buffer. The stop buffer is dequeued in every iteration of loop \emph{A}.
-  Due to LCD,  the \emph{stop} stream is initialized with \texttt{False} to enable the execution of
-the first iteration of \emph{A}.
-The \emph{accum} variable in (a) has two readers in block \emph{B} and block \emph{D}; one has a
+\texttt{ctxC} computes the stop condition, which is used by both \texttt{ctxC} and \texttt{ctxB}.
+  The break statements in (c) correspond to configuring the stop signal of the enclosing controller \texttt{A}
+  to the output of the stop input buffer. The stop buffer is dequeued in every iteration of loop \texttt{A}.
+  Due to LCD,  the \texttt{stop} stream is initialized with \texttt{False} to enable the execution of
+the first iteration of \texttt{A}.
+The \texttt{accum} variable in (a) has two readers in block \texttt{B} and block \texttt{D}; one has a
 loop-carried dependency with the writer (line 9) and the other has a forward data-dependency (line
 11). 
-Therefore, the variable is mapped to two copies of \emph{accum}, one for each reader. 
+Therefore, the variable is mapped to two copies of \texttt{accum}, one for each reader. 
 Because the accumulate operation is a single operation ADD, the accumulator gets optimized to the special
-accumulate pipeline register \emph{accum1}, 
-Without this optimization, \emph{accum1} would be another \texttt{ScalarStream} with an initial
+accumulate pipeline register \texttt{accum1}, 
+Without this optimization, \texttt{accum1} would be another \texttt{ScalarStream} with an initial
 element 0.
-The other \emph{accum} becomes a scalar stream \emph{accum2}, written by \emph{ctxB} when loop \emph{A}
+The other \texttt{accum} becomes a scalar stream \texttt{accum2}, written by \texttt{ctxB} when loop \texttt{A}
 is done.
-  \emph{accum1}'s reset signal is connected to \emph{A.done}. The reset signal is determined by where
-  \emph{accum} is declared in (a), which in this case is outside of loop \emph{A}.
+  \texttt{accum1}'s reset signal is connected to \texttt{A.done}. The reset signal is determined by where
+  \texttt{accum} is declared in (a), which in this case is outside of loop \texttt{A}.
 }
 \label{fig:dowhile} 
 \end{figure*}
@@ -784,7 +785,7 @@ and the do-while loop controller that consumes a value of the condition for ever
 %\emph{A}. 
 %There is a loop-carried dependency between the reader of \emph{stop} from loop \emph{A} and the
 %writer of the stop from block \emph{C}. 
-(d) shows the timing of execution. As we can see, the (II) of loop \emph{A}
+(d) shows the timing of execution. As we can see, the (II) of loop \texttt{A}
 in the steady-state is bounded by the latency to evaluate \emph{stop}, which is the number of
 operations in stop expression rounded up to a multiple of 6~\footnote{When mapping an expression
 with less than 6 operations to the SIMD pipeline in PCU, the latency of the expression is still 6 
