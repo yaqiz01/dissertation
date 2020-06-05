@@ -1,7 +1,10 @@
 \section{Resource Allocation} \label{sec:resalloc}
 
 The output of the imperative to dataflow transformation discussed in \Cref{sec:control} is a VUDFG that 
-can execute on a Plasticine with physical units (PUs) that have infinite resources.
+executes the nested control hierarchy in a streaming data-flow fashion with appropriate
+synchronization to enforce memory consistency.
+The VU of this graph, however, can consume arbitrary amount of compute and memory resources,
+exceeding the limit of any PU.
 The \emph{Resource Allocation} phase enforces and addresses constraint violations given 
 the specification of the Plasticine units. 
 At the end of this phase, \name assigns each VU in the VUDFG graph to a PU type with required
