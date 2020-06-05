@@ -1,6 +1,7 @@
 \section{Placement and Routing} \label{sec:par}
-The input to the \emph{placement and routing (PaR)} phase is a VUDFG, with each VU tagged to a type of PU.
-Before PaR, \name also performs a runtime analysis of the program, annotating each edge in VUDFG
+The input to the \emph{placement and routing (PaR)} phase is a VUDFG, with each VU tagged to a PU
+type.
+Before PaR, \name also performs a runtime analysis of the program, annotating each edge in the VUDFG
 with a link priority. The link priority is used to determine the routing order during PaR.
 PaR then iteratively places VUs and route edges in VUDFG onto the global network.
 
@@ -29,7 +30,7 @@ Lastly, \Cref{sec:heuristic} describes how \name generates link priority.
 
 \subsection{Iterative Placement} \label{sec:place}
 
-At high-level, the PaR algorithm works very similarly to the FPGA PaR algorithm using
+At high-level, the PaR algorithm works very similarly to the FPGA PaR using
 simulated annealing~\cite{simanneal}. 
 For the initial placement, the algorithm places VUs in VUDFG in topological order.
 Each VU is placed to the next available PU with minimum Manhattan distance to the placed
@@ -37,8 +38,8 @@ neighbors of that VU.
 Next, the algorithm routes all edges in the VUDFG, starting from edges with the highest link
 priority. If no routes are available on the static network, the route will be moved onto the dynamic
 network. For purely static networks, there is an ``imaginary'' dynamic network for this step.
-At the end of the PaR, if there are still routes on the fake dynamic network, PaR is considered
-failed for the static network.
+If there are still routes on the fake dynamic network at the end of the PaR, PaR is considered
+failed for the purely static network.
 After all routes are routed, either on the static or dynamic network, the PaR evaluates the
 congestion cost of the current placement.
 Then, a genetic algorithm shuffles the VUs whose edges contribute most to congestion, 
@@ -71,7 +72,7 @@ multiplied by the factor each time the hop is reused for the same broadcast edge
 In other words, the reused path has a lower hop cost compared to other paths.
 This trick provides a balance between the shortest path and link reuse: a smaller factor encourages link
 reuse, even though individual source-destination pairs are not the shortest path; a factor equals to 1 ensure all source-destination pairs are routed with the shortest path.
-The other objective for routing broadcast links is balancing the hop counts between all
+The second objective for routing broadcast links is balancing the hop counts between all
 destinations. This is because the shorter path will back pressure the sender before packets reaching to the longer path, causing pipeline stalls.
 To achieve this, we start with the source-destination pair with the longest Manhattan distance, ensuring
 the most far apart source-destination pair is routed on the shortest path.
