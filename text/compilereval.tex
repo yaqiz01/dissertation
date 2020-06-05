@@ -19,7 +19,7 @@ cycle-accurate simulator to model the HBM2 technology, providing a \SI{1}{TB/s} 
 
 \begin{figure*}
 \centering
-\includegraphics[width=1\textwidth]{/Users/yaqiz/pldi20/paper/figures/par_thesis.pdf}
+\includegraphics[width=1\textwidth]{figs/par_thesis.pdf}
 \caption[Scalability evaluation]{
   Scalability evaluation. 
   Benchmarks include multi-layer perceptron (mlp), BlackScholes (bs), random forests (rf), page rank
@@ -110,7 +110,8 @@ on-chip resources.
       \bottomrule
     \end{tabular}
   \caption[Performance comparison of Plasticine with a Tesla V100 GPU]{
-Performance comparison of Plasticine with a Tesla V100 GPU (Normalized throughput to transistor count in parentheses).
+Performance comparison of Plasticine with a Tesla V100 GPU (area-normalized throughput in
+  parentheses accounting for technology difference).
 }
   \label{tab:gpu-comparison}
 \end{table}
